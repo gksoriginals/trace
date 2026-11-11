@@ -2,7 +2,7 @@
 
 **Status:** directional. This is not a locked architecture. **Owner:** Gopi · **Date:** 11 November 2026
 
-Companion to [PRD v0.2](prd.md) and [Design & UX v0.2](design.md). The PRD owns scope and safety. The design owns presentation. This document names the pieces and the data they share. Gopi locked the product choices in [ADR-0002](adr/0002-locked-product-decisions.md). When a guess below changes, record it in [docs/adr/](adr/).
+Companion to [PRD v0.2](prd.md) and [Design & UX v0.2](design.md). The PRD owns scope and safety. The design owns presentation. This document names the pieces and the data they share. Gopi locked the product choices in [ADR-0002](adr/0002-locked-product-decisions.md). How the skills ship is [ADR-0004](adr/0004-skills-not-a-plugin.md). When a guess below changes, record it in [docs/adr/](adr/).
 
 Checked against official agent docs on 11 November 2026. Those capabilities are documented, not device-tested on Gopi's Mac. `gksoriginals/shed` returned 404 from this environment; Shed lessons below are the ones the PRD kept after reading that archive.
 
@@ -36,6 +36,7 @@ Two kinds of decision sit in this document.
 18. **First agents.** Cursor over ACP, and Codex over app-server. Claude and Gemini are later adapters. The eval harness and the throwaway spikes follow that order.
 19. **Models.** Trace cannot always choose the model. For an app-triggered run the user picks the coding agent. The evals compare that agent's available models and name a best-value model per agent (quality, then cost), scored on the model that actually ran. If only some models handle a skill well, the skill may ask for that model in a subagent. On Cursor that request is a preference, never a gate: the skill still runs, a mismatch is not a failure, and the skill is labeled **best effort on Cursor** when the pin does not stick.
 20. **Minimum macOS is 14.**
+21. **Skills, not a plugin.** Three portable Agent Skills share one set of schemas, scripts, and safety rules. They install into the host's own skills folder. Each project gets one line saying when to use them. Hooks are optional and only call the same helper or queue work. Memory is written during the work or at the end of a turn. There is no MCP server. A plugin, later, is only a thin wrapper for marketplace install or team policy. [ADR-0004](adr/0004-skills-not-a-plugin.md).
 
 Conservative defaults are part of the safety rules: shared, unknown, protected, and prior-regret items are not preselected.
 
@@ -66,6 +67,16 @@ Skills do the everyday work inside the coding agent, while the user is still in 
 | **Run** | App, on demand | Three stages: **Reviewing**, then **Actions** (cards), then **Execute**. The user picks the coding agent. Uses memory, then a targeted catch-up where coverage has a gap. Shows usage as the agent reports it. There is no token cap. Costs more of the subscription quota than a skill, which is why it stays on demand. | The way everyday cleanup happens, a capped job, or a refresh on every app open. |
 
 Skills work with the app closed. They share Trash, the never-delete list, and the journal through a small local action boundary, so a skill does not need a window open to move an already-approved path to Trash.
+
+### Skills, not a plugin
+
+The three skills are Agent Skills: a directory a host loads from its own skills folder, with one `SKILL.md` each. The layout of that directory is a guess. The split is not. Schemas, scripts, and safety rules live in one shared place. The three skills call that place. They are not three copies, and they are not a plugin.
+
+Install is two steps. Copy the skills into the host's skills folder. `npx skills add` is the example, not a requirement that the command never change. Then add one line to that project's `AGENTS.md`, Cursor rule, or `CLAUDE.md` saying when to use them: before an install, before removing session leftovers, and when recording what the session created. Vercel saw a skill go unused in 56% of runs; explicit instructions raised use above 95%. A project that opted out does not get the line. The exact sentence is a guess. The requirement to say when is not.
+
+Hooks are optional, opt-in, and per host. Where a host has a stop or session-end hook, it may call the same helper or queue work. Session-end budgets are about 1–3 seconds, so the hook does not scan, delete, or write the log. The skill writes memory during the work or at the end of a turn, while the session still has time. A missing hook is not a broken install.
+
+There is no MCP server. The log, the queue, and the index are versioned files. Replacing a file is a write to a temp file and a rename. Appending a log line stays append-only. A plugin, if M2 wants marketplace install or team policy, is a thin wrapper around this layout.
 
 Run's three stages, in order:
 
@@ -194,7 +205,7 @@ A signed-in CLI is recorded as a status the adapter reports (`ready`, `unknown`,
 
 ### During a coding session
 
-Hygienic setup runs before the agent creates storage. It asks, looks up the current practice, and puts the steps on the agent's own checklist (Cursor, Codex, and Claude each keep one; the skill uses whichever list that session already has). It records the location it actually used and the decision the user made. Session-end cleanup runs while that session still has the context. It asks before a removal, writes proposals and queue items, and moves a path to Trash through the action boundary only when the user approved that exact item before. The memory writer appends events for all of that, including the decision. The app can be closed the whole time. The skill updates the project index if this project is new.
+Hygienic setup runs before the agent creates storage. It asks, looks up the current practice, and puts the steps on the agent's own checklist (Cursor, Codex, and Claude each keep one; the skill uses whichever list that session already has). It records the location it actually used and the decision the user made. Session-end cleanup runs while that session still has the context. It asks before a removal, writes proposals and queue items, and moves a path to Trash through the action boundary only when the user approved that exact item before. The memory writer appends events for all of that, including the decision, during the work or at the end of the turn. It does not wait for a hook. The app can be closed the whole time. The skill updates the project index if this project is new. An opted-in stop or session-end hook may call the same helper or queue work. It is not required.
 
 ### Home
 
@@ -216,7 +227,7 @@ If consumers are incomplete, the item is kept or queued. It is not proposed as s
 
 A current guess at the boundaries a spike is allowed to cross differently:
 
-- **Skill package, per agent.** The three skills plus a thin writer for the log, the queue, and the index. Installation is opt-in, whole agent by default, per-project opt-out, and has to be verified per harness. Do not inherit Shed's hook contract. If the evals show that only some of an agent's models do a skill well, the skill names that model and asks the agent to run it in a subagent. The mechanism is that agent's own, and it is a guess until the spike sees it work.
+- **Skills.** Three Agent Skills plus one shared set of schemas, scripts, and safety rules. Installation is opt-in, into the host's skills folder, whole agent by default, per-project opt-out, and has to be verified per harness. The project instruction line is part of that install. Do not inherit Shed's hook contract, and do not ship a plugin or an MCP server. If the evals show that only some of an agent's models do a skill well, the skill names that model and asks the agent to run it in a subagent. The mechanism is that agent's own, and it is a guess until the spike sees it work. On Cursor the pin is a preference.
 - **Local store.** Skills append the per-project log and replace the index. The app reads both and is the only writer of the database, the journal, and checkpoints. Version check at the door.
 - **Action boundary.** The only path from "the user approved this exact id" to the Trash service. Skills and Execute both call it. Ask does not.
 - **Retrieval.** Given a question and a project id, return memory events and notes with ids and timestamps. No generation.
@@ -293,7 +304,7 @@ Two surfaces, with different jobs.
 
 **App-server** is the two-way API, documented on the [app-server page](https://developers.openai.com/codex/app-server/). Default transport is stdio, newline-delimited JSON-RPC (`--listen stdio://`). The wire omits the `"jsonrpc":"2.0"` header. WebSocket listen exists and is described as experimental; a non-loopback listener has allowed unauthenticated connections during rollout. Trace uses stdio only. No listening socket.
 
-Methods the session supervisor needs, as documented: `thread/start`, `thread/resume`, `thread/fork`, `turn/start`, streamed item events, approval replies, `turn/interrupt` (turn ends `interrupted`), and terminal `turn/completed`. Resume by the stored thread id. `excludeTurns: true` plus the pagination methods avoids pulling the entire history in one response. If the saved model provider does not match the current one, resume fails with a provider mismatch; fork starts a new thread from that history. A required MCP server that fails to initialize fails `thread/start` and `thread/resume` rather than continuing without it. Session history is not a filesystem rollback.
+Methods the session supervisor needs, as documented: `thread/start`, `thread/resume`, `thread/fork`, `turn/start`, streamed item events, approval replies, `turn/interrupt` (turn ends `interrupted`), and terminal `turn/completed`. Resume by the stored thread id. `excludeTurns: true` plus the pagination methods avoids pulling the entire history in one response. If the saved model provider does not match the current one, resume fails with a provider mismatch; fork starts a new thread from that history. A required MCP server that fails to initialize fails `thread/start` and `thread/resume` rather than continuing without it. Trace does not register one. Session history is not a filesystem rollback.
 
 The same page's auth section: local and open-source apps may keep using app-server authentication, Sign in with ChatGPT is the recommended migration, and **app-server authentication has never been permitted for commercial or hosted services.** Account methods (`account/read`, `account/login/start`, `account/updated`) report mode. They are not a license to open `auth.json`.
 
@@ -307,7 +318,7 @@ OpenAI's [platform note](https://developers.openai.com/blog/codex-as-a-platform)
 
 **Fallback:** `codex exec --json` and `codex exec resume <id> --json` for the eval harness and for other scripted one-turn jobs. Interactive `codex resume` belongs to the user's terminal.
 
-**Not a path:** hosting Codex via MCP, an unauthenticated WebSocket, or exec as the Run transport.
+**Not a path:** hosting Codex via MCP, an unauthenticated WebSocket, exec as the Run transport, or a Trace MCP server. Memory and the queue are versioned files.
 
 #### Cursor
 
@@ -317,7 +328,7 @@ Flow the docs specify: `initialize`, `authenticate` with `methodId: "cursor_logi
 
 Blocking extension methods `cursor/ask_question` and `cursor/create_plan` wait until the client responds. A client that ignores them leaves the agent stuck. Trace shows them as "Needs your answer" and defaults a scope-widening request to deny. `allow-always` is not used for Trash or for a wider root.
 
-Project and user `.cursor/mcp.json` servers can be used. Team-level MCP from the Cursor dashboard is not supported in ACP, per that page.
+Cursor can load MCP servers the user already configured in project or user `.cursor/mcp.json`. Trace does not add one. Team-level MCP from the Cursor dashboard is not supported in ACP, per that page.
 
 The generic ACP spec's `session/resume` and `session/close` are capability-gated. Cursor's page documents `session/load` and `session/cancel`, not `session/resume` or `session/close`. Call only what `initialize` advertised.
 
@@ -327,7 +338,7 @@ The generic ACP spec's `session/resume` and `session/close` are capability-gated
 
 #### Gemini CLI
 
-Official [ACP mode](https://geminicli.com/docs/cli/acp-mode/) (page updated 10 April 2026): `gemini --acp`, JSON-RPC over stdio. The page names `initialize`, `authenticate`, `newSession`, `loadSession`, `prompt`, and `cancel`, plus `setSessionMode` and unstable `unstable_setSessionModel`. The wire names are the ACP methods (`session/new`, `session/load`, `session/prompt`, `session/cancel`); the spike confirms the installed binary rather than assuming the prose names are the method strings. The client can register an MCP server at `initialize`. File access can be proxied through the client, which is the boundary Trace wants for reads and writes.
+Official [ACP mode](https://geminicli.com/docs/cli/acp-mode/) (page updated 10 April 2026): `gemini --acp`, JSON-RPC over stdio. The page names `initialize`, `authenticate`, `newSession`, `loadSession`, `prompt`, and `cancel`, plus `setSessionMode` and unstable `unstable_setSessionModel`. The wire names are the ACP methods (`session/new`, `session/load`, `session/prompt`, `session/cancel`); the spike confirms the installed binary rather than assuming the prose names are the method strings. The client can register an MCP server at `initialize`. Trace does not. File access can be proxied through the client, which is the boundary Trace wants for reads and writes.
 
 The [ACP session-setup spec](https://agentclientprotocol.com/protocol/session-setup) requires `initialize` first. `session/load` is legal only when `agentCapabilities.loadSession` is true, and it replays history as `session/update`. `session/resume` (no replay) exists only when `sessionCapabilities.resume` is advertised. `session/close` exists only when `sessionCapabilities.close` is advertised, and it cancels like `session/cancel`. Gemini's own page lists load and cancel. It does not list `session/resume` or `session/close`. Do not call them on hope.
 
@@ -366,7 +377,7 @@ Session.checkpoint() -> { protocol, session_id, cursor, scope_hash, pending, usa
 
 Events: `status`, `assistant` (factual text, not chain-of-thought), `tool`, `permission`, `question`, `usage`, `completed`, `error`. Unknown events are ignored. A decode error does not tear down the UI.
 
-`capabilities` the supervisor checks before enabling the adapter: stream, multi-turn send, permission reply, interrupt, resume by id, and a terminal event. Missing a required one means unavailable, with the reason on Setup. Optional: MCP servers the user already configured, load-with-replay versus resume-without-replay.
+`capabilities` the supervisor checks before enabling the adapter: stream, multi-turn send, permission reply, interrupt, resume by id, and a terminal event. Missing a required one means unavailable, with the reason on Setup. An MCP server is not one of those capabilities. Load-with-replay versus resume-without-replay is optional and host-specific.
 
 `reply` never sends allow-always for a delete, a credential read, or a wider root. A permission that would expand scope defaults to deny if the user does not answer. Approving a read is not approving Trash.
 

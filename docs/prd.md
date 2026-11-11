@@ -1,6 +1,6 @@
 # Trace — PRD v0.2
 
-**Status:** skills/app split, Ask Trace and two-way sessions revision; supersedes v0.1. Product decisions in §13 are locked by [ADR-0002](adr/0002-locked-product-decisions.md). · **Owner:** Gopi · **Date:** 11 November 2026 (IST)
+**Status:** skills/app split, Ask Trace and two-way sessions revision; supersedes v0.1. Product decisions in §13 are locked by [ADR-0002](adr/0002-locked-product-decisions.md). How the skills ship is [ADR-0004](adr/0004-skills-not-a-plugin.md). · **Owner:** Gopi · **Date:** 11 November 2026 (IST)
 
 Trace is the chosen working name. A closely adjacent AI-agent analytics app and another macOS app already use it; qualify or revisit the public name before launch. Do not assume an unqualified `trace`, `trace-cli` or `tracecli` command is available. This document defines a new product, not another phase of Shed.
 
@@ -37,7 +37,9 @@ Start with Gopi using Cursor and Codex on his Mac, across coding projects and da
 
 **Decide later is a durable local queue**, produced by any skill when a storage decision is doubtful. Each item has a stable ID, project/agent/session, affected artifact or action, why it is doubtful, known bytes/completeness, evidence references, what would resolve the doubt, first/last observed time and status. Deduplicate repeated reports; a new observation updates evidence, not notification count. Proposed states: open, planned, deferred, kept, resolved or stale. Nothing is deleted because a queue item is old. A resolved item's outcome remains in history.
 
-Skills work without the app. Harness packages/hooks are adapters whose current installation, lifecycle and permission support must be verified per agent; do not inherit old hook contracts as facts.
+Skills work without the app. They are three portable Agent Skills — hygienic setup, session-end cleanup, and the memory writer — that share one set of schemas, scripts, and safety rules. Install copies them into that host's own skills folder, for example with `npx skills add`, and adds one line to the project's `AGENTS.md`, Cursor rule, or `CLAUDE.md` saying when to use them. Models often skip a skill that is installed but not named. A project that opted out does not get that line.
+
+Hooks are optional, opt-in, and per host. A hook is a stop or session-end hook, and it only calls the same helper or queues work. Session-end budgets are about 1–3 seconds, so the hook is not where the work happens. Memory is written during the work or at the end of a turn. There is no MCP server. Versioned files with atomic writes are the store. A plugin comes later, only as a thin wrapper for marketplace install or team policy. [ADR-0004](adr/0004-skills-not-a-plugin.md).
 
 ### App information architecture
 
@@ -81,7 +83,7 @@ The adapter contract includes capability/auth handshake; multi-turn send/stream;
 
 Use a compact visual stepper; merge the requested six concerns into four meaningful steps, not six obligatory text pages:
 
-1. **Agents & skills:** official agent-logo cards, CLI installed/version and signed-in verified/unknown states; opt-in checkboxes for the three skills. Install is **whole agent by default**, with a per-project opt-out. No install writes until final save. Whole-agent scope covers that agent's applicable sessions; it is not permission to clean unrelated personal data. Explain the distinction from the app's project scope. Cursor and Codex are the first cards. Claude and Gemini can appear as unavailable later adapters.
+1. **Agents & skills:** official agent-logo cards, CLI installed/version and signed-in verified/unknown states; opt-in checkboxes for the three skills. Install is **whole agent by default**, with a per-project opt-out. It copies the portable skills into that host's skills folder and writes one line in the project's `AGENTS.md`, Cursor rule, or `CLAUDE.md` saying when to use them. It does not install a plugin, register an MCP server, or require a hook. No install writes until final save. Whole-agent scope covers that agent's applicable sessions; it is not permission to clean unrelated personal data. Explain the distinction from the app's project scope. Cursor and Codex are the first cards. Claude and Gemini can appear as unavailable later adapters.
 2. **Projects & scope:** suggest directories from permitted agent workspace history/IDE/Git evidence and let the user select/deselect or use a folder picker. Discover projects only inside the selected roots and evidenced related stores. Show caches, builds/environments, worktrees, containers, models and project data as illustrated category cards: **all categories on by default**, individually deselectable. Category inclusion means inspect/manage, never blanket deletion permission. Shared caches remain never preselected as actions.
 3. **Guardrails:** never-touch folders; narrow access and Full Disk Access only for an identified need; which coding agent an app run uses (the user picks the agent; Trace does not promise a model picker); Trash/recovery and memory-retention policy; menu bar and Decide-later notifications; optional background review schedule, off by default, and only while the menu bar app is running. There is no token budget and no time budget. Advanced options expand in place. Do not silently enable an OS notification permission, login item, scheduler or helper that survives quit.
 4. **Save & first run:** concise summary of exact install/config scopes, selected roots/categories, per-project opt-outs and the provider boundary. **Save & first run** saves configuration, installs opted-in skills, verifies host trust/activation and starts a read-only first Reviewing pass. It never authorizes Execute. M1's first run only establishes/read-refreshes insights and returns Home. If no agent is ready, saving without running is an explicit fallback. Usage from that pass is shown afterwards, or “unavailable”.
@@ -177,7 +179,7 @@ Supporting measures, initially baselines rather than invented targets:
 
 ### M0 — skills + Decide-later queue
 
-Dogfood the three working skills in Gopi's Cursor and Codex sessions, with a per-project log, the skill-maintained project index, setup-change and decision events, coverage receipts and a durable deduplicated Decide-later queue. Review queued choices through the harness before the app exists. Install is whole agent by default, with a per-project opt-out. Validate host installation, task friction and the 30-day metric. No app dependency for everyday hygiene. Claude is not an M0 harness.
+Dogfood the three working skills in Gopi's Cursor and Codex sessions, with a per-project log, the skill-maintained project index, setup-change and decision events, coverage receipts and a durable deduplicated Decide-later queue. Review queued choices through the harness before the app exists. Install is the host skills folder plus the one instruction line, whole agent by default, with a per-project opt-out. Hooks stay off unless Gopi opts in. Validate host installation, whether the instruction line is what makes the skill run, task friction and the 30-day metric. No app dependency for everyday hygiene. Claude is not an M0 harness.
 
 ### M1 — Setup + Home insights, cleanup read-only
 
@@ -200,7 +202,7 @@ The companion [Design & UX specification](design.md) is the end-to-end presentat
 | Agents can record useful ownership/lifecycle evidence without disrupting the task. | M0: inspect real Cursor and Codex sessions, missed artifacts, extra turns and user friction. |
 | Suggested directories plus explicit root selection find active projects without a whole-disk crawl. | M1: compare with Gopi's actual projects; inspect misses, nested/overlapping roots and inaccessible locations. |
 | Shared-store consumers can be attributed well enough to support a decision. | M0/M1: compare notes with actual tool metadata across projects; deliberately test missing/unknown consumers. |
-| Local Home insights and receipts avoid unnecessary deep runs while catch-up remains reliable. | M0/M2: compare actual host sessions to receipts; test failed hooks, sleeping/offline periods, scope changes and concurrent work; measure model use versus missing evidence. |
+| Local Home insights and receipts avoid unnecessary deep runs while catch-up remains reliable. | M0/M2: compare actual host sessions to receipts; test a missed session, including an opted-in hook that did not run, plus sleeping/offline periods, scope changes and concurrent work; measure model use versus missing evidence. |
 | Project-directed storage hygiene is valuable beyond Gopi. | After personal dogfood, run a small voluntary trial; observe real cleanup decisions rather than inventing market evidence. |
 
 ## 13. Locked decisions, and what is still open
@@ -217,6 +219,8 @@ Locked by Gopi on 11 November 2026. The record is [ADR-0002](adr/0002-locked-pro
 8. **First agents.** Cursor (ACP) and Codex (app-server). Claude and Gemini come later. Codex app-server is fine for local dogfood; its commercial auth limits are an M2 question.
 9. **Models.** The user picks the coding agent for an app-triggered run. Skills are evaluated across that agent's available models to name a best-value model per agent, scored on the model that actually ran. If only some models handle a skill well, the skill may ask for that model in a subagent. On Cursor the pin is a preference, never a gate. The skill always runs. A mismatch is not a failure. When the pin does not stick, the skill is **best effort on Cursor**.
 10. **Minimum macOS** is 14.
+
+How those skills are packaged is [ADR-0004](adr/0004-skills-not-a-plugin.md): three portable Agent Skills, one shared core, one project line saying when to use them, optional hooks, no MCP, and a plugin only later as a thin wrapper.
 
 Still open, and not decided by that list:
 

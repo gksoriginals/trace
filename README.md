@@ -10,7 +10,7 @@ Trace starts with three skills for coding agents. Each one does a single job.
 - **Session-end cleanup.** It asks before removing short-lived files. It skips the question only for an exact item you already approved.
 - **Memory writer.** It logs each thing that was created: what it is, why it was made, which agent made it, for which project, when it can be removed, and the decisions you made.
 
-Skills install for the whole agent by default. A project can opt out. The first agents are Cursor and Codex. The app reads each project's local memory. On demand it can run a deeper pass with the agent you pick. It shows what that pass used. It does not set a token cap.
+The three skills are portable Agent Skills. They share one set of schemas, scripts, and safety rules, and they install into the agent's own skills folder. Each project gets one line saying when to use them. A hook is optional. There is no plugin and no MCP server. Skills install for the whole agent by default. A project can opt out. The first agents are Cursor and Codex. The app reads each project's local memory. On demand it can run a deeper pass with the agent you pick. It shows what that pass used. It does not set a token cap.
 
 ## Goal
 
