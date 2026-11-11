@@ -26,4 +26,9 @@ These are carried over from Shed:
 
 ## Status
 
-Early. See [docs/prd.md](docs/prd.md) for the product spec.
+Early.
+
+## Docs
+
+- [Product requirements](docs/prd.md)
+- [Design & UX specification](docs/design.md)
