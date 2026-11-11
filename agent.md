@@ -16,8 +16,11 @@ Trace cleans up the storage that project work and coding agents create, includin
 - Never remove anything without the user's explicit yes.
 - Keep defaults conservative.
 
-## Testing
-Don't lock in hard tests or acceptance gates up front. Add tests only once a behavior has settled.
+## Testing rule
+- Write only skill evals and safety checks up front.
+- No UI tests and no tests on internal design until that part has stayed stable.
+- If two fix attempts in a row fail, stop and report back instead of patching tests.
+- Treat everything outside the firm rules (safety, memory log format, two-way resumable agent sessions, evals first) as a current guess you can change freely. Record each pivot in `docs/adr/`.
 
 ## Workflow
 - Keep changes small and focused, and update `docs/prd.md` when behavior changes.
