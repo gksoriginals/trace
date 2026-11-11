@@ -1,4 +1,6 @@
 evals/out/
 **/__pycache__/
 *.pyc
-evals/out/
+app/*.xcodeproj/
+app/DerivedData/
+*.xcuserstate
