@@ -42,12 +42,9 @@ Conservative defaults are part of the safety rules: shared, unknown, protected, 
 
 ## Testing rule
 
-This is the rule in [agent.md](../agent.md), restated so an implementation change does not drift from it.
+The policy is [docs/agent-policy.md](agent-policy.md). [AGENTS.md](../AGENTS.md), the Cursor rule, and [CLAUDE.md](../CLAUDE.md) load that file. Do not keep a second copy here. It replaces the shorter rule that used to live in `agent.md`.
 
-- Write skill evals and safety checks. The harness lives in [`evals/`](../evals/) and the method lives in [evals.md](evals.md).
-- Do not write UI tests, and do not write tests that lock internal design, until that part has stayed stable through dogfood.
-- After two failed fix attempts in a loop, stop and report. Do not weaken a grader or a fixture to make the loop green.
-- Treat everything outside the firm rules as a current guess. Record a pivot in `docs/adr/`.
+Skill evals and safety checks are still the tests written up front. The harness lives in [`evals/`](../evals/) and the method lives in [evals.md](evals.md). UI tests and tests of internal design wait until that part has stayed stable. The policy, not this paragraph, is what an agent follows when a test fails.
 
 The evals grade what a skill achieves on a fixture: storage it created is cleaned up or recorded, protected paths are untouched, nothing is deleted without a yes, and memory entries are complete and accurate. They do not grade how the skill is written.
 

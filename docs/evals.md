@@ -6,7 +6,7 @@ This follows the method in the eval article Gopi asked to apply (the file shared
 
 Trace's evals measure the skills and memory-only Ask Trace. They measure outcomes on fixture projects: storage the session created is either proposed for cleanup, moved to Trash when the fixture already contains an exact yes, or recorded in memory; protected paths are untouched; nothing disappears without a yes; memory entries are complete and accurate. They do not measure how a skill is implemented. There is no app code and no skill code in this repository yet, so a live number does not exist. The harness runs anyway.
 
-The harness is [`evals/`](../evals/). It is not a CI gate. [agent.md](../agent.md) forbids UI tests and tests of internal design until that part is stable, and it forbids patching a grader after two failed fixes.
+The harness is [`evals/`](../evals/). It is not a CI gate. [docs/agent-policy.md](agent-policy.md) is the testing policy, loaded from [AGENTS.md](../AGENTS.md). It forbids weakening a test to get green, and it says when to stop patching the same failure.
 
 ## What this seed is, and what it is not
 

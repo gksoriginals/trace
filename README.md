@@ -35,3 +35,5 @@ Early.
 - [Engineering direction](docs/engineering.md)
 - [Evals](docs/evals.md)
 - [Decision records](docs/adr/)
+- [Instructions for coding agents](AGENTS.md)
+- [Testing policy](docs/agent-policy.md)

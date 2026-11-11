@@ -1,0 +1,8 @@
+---
+description: Trace testing policy. The text lives in docs/agent-policy.md.
+alwaysApply: true
+---
+
+@docs/agent-policy.md
+
+The testing policy is `docs/agent-policy.md`. Read that file and follow it. Do not use a shorter testing rule. Product instructions are in `AGENTS.md`.
