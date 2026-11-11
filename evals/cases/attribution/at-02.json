@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "id": "at-02",
+  "skill": "attribution",
+  "split": "test",
+  "title": "A timestamp lines up with a session that names the build",
+  "fixture": {
+    "project_id": "proj-at-02",
+    "files": {
+      "project/target/debug/app": "binary\n",
+      "evidence/mtime.txt": "ev-mtime-2 project/target/debug/app mtime 2026-11-02T15:04:00Z\n",
+      "evidence/transcript.txt": "ev-window-2 sess-at-02 harness codex at 2026-11-02T15:04:00Z says wrote project/target/debug/app\n"
+    },
+    "protected": [
+      "project/target/debug/app"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "The timestamp does not quote the write. The session in that minute names the path. Infer. Do not treat the timestamp alone as verified.",
+    "artifacts": [
+      {
+        "id": "debug-build",
+        "path": "project/target/debug/app"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-mtime-2",
+        "kind": "mtime",
+        "text": "ev-mtime-2 project/target/debug/app mtime 2026-11-02T15:04:00Z\n"
+      },
+      {
+        "id": "ev-window-2",
+        "kind": "transcript",
+        "text": "ev-window-2 sess-at-02 harness codex at 2026-11-02T15:04:00Z says wrote project/target/debug/app\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "project/target/debug/app"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "debug-build",
+        "creator": "codex",
+        "session_id": "sess-at-02",
+        "label": "inferred",
+        "source": "mtime",
+        "evidence": [
+          "ev-mtime-2",
+          "ev-window-2"
+        ],
+        "forbidden_evidence": [],
+        "counts": true
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-02",
+        "event_type": "artifact",
+        "what": {
+          "id": "debug-build",
+          "kind": "build",
+          "location": "project/target/debug/app",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "mtime matches Codex session sess-at-02, which names this path. The timestamp itself does not state the write.",
+        "claim": "inferred",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-at-02"
+        },
+        "project": {
+          "id": "proj-at-02",
+          "consumers": [
+            "proj-at-02"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "observed"
+        },
+        "can_go_when": "no remaining consumers",
+        "evidence_ids": [
+          "ev-mtime-2",
+          "ev-window-2"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "mtime",
+          "label": "inferred",
+          "counts": true
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

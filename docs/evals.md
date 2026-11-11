@@ -43,6 +43,9 @@ Built in the order they would hurt a user. Code catches the ones with a definite
 | `memory_fields` | An event lacks what, why, agent, project, created, or can_go_when | Code |
 | `memory_why` | The why misses a required fact or contains a secret or a known false claim | Code for the list; judge for anything off the list |
 | `ask_facts` | The answer misses a fact, invents a citation id, or fails to say unknown | Code |
+| `attribution_source` | The creator, session, evidence kind, or ratio flag does not match | Code |
+| `attribution_label` | The verified, inferred, or unattributed label does not match the claim | Code |
+| `attribution_evidence` | A cited evidence id is missing, invented, or is a trap the gold forbids | Code |
 | `unsupported_claim` | The why or the answer states something the session or the memory does not support | Judge, binary, with a quote |
 
 Similarity to a reference answer is not a grader. It can later act as a drift alarm between two live runs. It is not the headline.
@@ -68,9 +71,10 @@ Sample size of this seed:
 | Memory writer | 4 | 8 | Complete events, redaction, corrections, unknown agent, coverage |
 | Decide-later queueing | 4 | 8 | Dedup, every status, unknown size left unknown |
 | Ask from memory | 4 | 8 | Cited facts, unknowns, conflicts, stale notes, no deletion |
-| Grader calibration | — | 8 planted failures | Not a product split |
+| Attribution | 4 | 8 | One recoverable case per evidence kind, bytes that stay unknown, and misattribution traps |
+| Grader calibration | — | 9 planted failures | Not a product split |
 
-40 test cases and 20 dev cases is the article's "start from a few dozen tasks" shape for the whole effort, and it is **not** 20 to 50 tasks drawn from real failures. Those come after dogfood. Per skill, 8 test cases cannot see a small regression. The variance section says how the report states that.
+48 test cases and 24 dev cases is the article's "start from a few dozen tasks" shape for the whole effort, and it is **not** 20 to 50 tasks drawn from real failures. Those come after dogfood. Per skill, 8 test cases cannot see a small regression. The variance section says how the report states that.
 
 Anthropic's agent-eval guidance, as the article cites it (Grace et al., 2026), is to start from real failures. Until those exist, this grid is persona-free on purpose: each row is a storage situation, not a story.
 
@@ -100,7 +104,7 @@ The case matrix is skill × agent × model. The rows are the fixtures in `evals/
 
 The same 8 cases are reused in every cell, so a model comparison is paired. The detection floor still applies inside a cell: at n = 8 a small quality gap is invisible. Say so next to the pick. Do not crown a winner from a gap the floor cannot see; a tie on pass rate can still break on cost when both costs were reported.
 
-Trace cannot always choose the model. For an app-triggered run the user picks the agent. This matrix is how a best-value model per agent gets chosen. If only some models handle a skill well, the skill pins that model and tells the agent to run the skill in a subagent on it. The harness grades the outcome either way. It does not grade the subagent mechanism.
+Trace cannot always choose the model. For an app-triggered run the user picks the agent. This matrix is how a best-value model per agent gets chosen. If only some models handle a skill well, the skill may ask for that model in a subagent. On Cursor the pin is a preference, never a gate. The skill always runs. A mismatch is not a failure and does not change the exit status. The cell is scored on the observed model, or as `unobserved` when Cursor reports none. When a requested Cursor model is not the observed one, the report sets `best_effort_on_cursor`. The harness grades the outcome either way. It does not grade the subagent mechanism.
 
 ## Variance
 
@@ -128,6 +132,7 @@ Checks, by name, as they appear in a report:
 - `memory_covers`, `memory_fields`, `memory_claim`, `memory_why_contains`, `memory_why_forbids`, `memory_can_go_when`, `memory_version`, `memory_correction`.
 - `setup_locations`.
 - `answer_facts`, `answer_forbidden`, `answer_citations`, `answer_unknown`, `filesystem_unchanged`.
+- `attribution_source`, `attribution_label`, `attribution_evidence` when the gold file lists an attribution.
 
 `memory_fields` requires schema version 1 and non-empty `what` (id, kind, location), `why`, `claim`, `agent.harness`, `agent.session_id`, `project.id`, `created.at`, `created.source`, and `can_go_when`. That is the firm log contract in [engineering.md](engineering.md).
 
@@ -208,11 +213,21 @@ If the judge is later used to pick prompts, keep one check it never sees. Grader
 
 **Pass.** Every required fact is present, every citation resolves, unknown is set when required, no forbidden phrase, no file changed.
 
+### Attribution
+
+**Inputs.** An artifact whose creator is not yet in memory, plus an evidence catalog. Eight test fixtures, one for each allowed source and two that must not be forced: git history that names a Cursor session, a timestamp that lines up with a Codex session which names the path, a Cursor session log that states the write, a Codex transcript that states the write, lock metadata that names the install session, a tool manifest that names the session, a file that remains unknown after every source is checked, and a `cursor`-named path that git shows a person copied. Four dev fixtures: a timestamp with no matching session, a lockfile that lists a different package, a transcript that only says it might write a path git shows is older, and a timestamp that coincides with a session which never names the file.
+
+**Gold.** Creator, session, evidence kind (`git`, `mtime`, `session_log`, `transcript`, `package_lock`, `tool_manifest`, or `none`), label (`verified`, `inferred`, or `unattributed`), the evidence ids that must be cited, any trap ids that must not be cited, and whether the bytes count toward the agent-created ratio. A human creator is `user` and does not count. Still-unknown bytes cite the sources that were checked.
+
+**Graders.** `attribution_source`, `attribution_label`, `attribution_evidence`, plus the safety trio. The evidence check fails an invented id, a missing required id, and a cited trap. A path name is not a source. No judge.
+
+**Pass.** The creator, the label, and the cited evidence match, protected hashes match, and nothing was deleted.
+
 This eval does not grade agent-tier Ask. That tier does not exist until M2, and grading it will add a second stage: did retrieval say "not enough" before any hosted call, and did the answer separate memory facts from newly observed ones. There is no budget to grade. Grade the retrieval and the answer separately. A bad answer from a bad retrieval is a different fix from a bad answer from a bad writer (the article's Level 6).
 
 ## Grader calibration
 
-Eight planted results, one file each under `evals/cases/calibration/`. Each one is a skill outcome that should fail, and the case names the checks that must fail.
+Nine planted results, one file each under `evals/cases/calibration/`. Each one is a skill outcome that should fail, and the case names the checks that must fail.
 
 | Case | Planted miss | Checks that must fail |
 | --- | --- | --- |
@@ -224,6 +239,7 @@ Eight planted results, one file each under `evals/cases/calibration/`. Each one 
 | `cal-queue-missing` | doubtful volume not queued | `decide_later_ids` |
 | `cal-invented-citation` | answer cites an id the log does not have | `answer_citations` |
 | `cal-duplicate-copy` | setup writes the forbidden second store | `absent` |
+| `cal-bad-attribution` | Cursor is named from an evidence id the fixture does not have | `attribution_source`, `attribution_label`, `attribution_evidence` |
 
 The calibration catch rate is the share of these cases that failed overall **and** failed each named check. A planted miss that the grader accepts fails the run. That number is the grader's number. It is printed under its own heading so it cannot be read as a skill pass rate.
 
@@ -259,7 +275,7 @@ The process writes a human report to stdout and `evals/out/report.json`. `evals/
 
 Live drivers copy the fixture to a temp directory, set the working directory there, and kill the process group on timeout. Cursor is `agent acp` (with `--model` when one was passed). Codex is `codex app-server --listen stdio://`. Claude, only when named, is `claude -p` with JSON output and `--permission-mode acceptEdits`, not a permissions bypass. Gemini, only when named, is `gemini --acp`. The task prompt is `evals/tasks/<skill>.md` plus the fixture. It is an eval instruction, not the Trace skill. When a real skill is installed, point the driver at it and keep this prompt as the description of the job; do not grade the prompt's wording.
 
-The report prints the cell (`agent × model`), pass rate with a Wilson interval and a bootstrap interval, the detection floor, and usage (input tokens, output tokens, cost, or unavailable). It then prints a best-value line per first agent. A stub run leaves those picks unmeasured.
+The report prints the cell (`agent × model`), pass rate with a Wilson interval and a bootstrap interval, the detection floor, and usage (input tokens, output tokens, cost, or unavailable). The model in that cell is the one that ran. On Cursor a requested pin that did not stick sets `best_effort_on_cursor` and does not fail the run. It then prints a best-value line per first agent. A stub run leaves those picks unmeasured and prints `best_effort_on_cursor: no`.
 
 ## What a later report should show
 

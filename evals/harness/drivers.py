@@ -110,6 +110,8 @@ def render_prompt(task: str, fixture: dict) -> str:
         "session": fixture.get("session") or {},
         "files": sorted((fixture.get("files") or {}).keys()),
         "notes": fixture.get("notes") or "",
+        "artifacts": fixture.get("artifacts") or [],
+        "evidence": fixture.get("evidence") or [],
     }
     return (
         task.rstrip()

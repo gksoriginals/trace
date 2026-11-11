@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "id": "at-05",
+  "skill": "attribution",
+  "split": "test",
+  "title": "Lock metadata names the install session",
+  "fixture": {
+    "project_id": "proj-at-05",
+    "files": {
+      "project/node_modules/left-pad/index.js": "module.exports = 1\n",
+      "project/package-lock.json": "ev-lock-5 package-lock metadata: node_modules/left-pad installed by sess-at-05 harness codex\n"
+    },
+    "protected": [
+      "project/node_modules/left-pad/index.js"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "The lock metadata names the session. That is package metadata, not a guess from the folder.",
+    "artifacts": [
+      {
+        "id": "left-pad",
+        "path": "project/node_modules/left-pad/index.js"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-lock-5",
+        "kind": "package_lock",
+        "text": "ev-lock-5 package-lock metadata: node_modules/left-pad installed by sess-at-05 harness codex\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "project/node_modules/left-pad/index.js"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "left-pad",
+        "creator": "codex",
+        "session_id": "sess-at-05",
+        "label": "inferred",
+        "source": "package_lock",
+        "evidence": [
+          "ev-lock-5"
+        ],
+        "forbidden_evidence": [],
+        "counts": true
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-05",
+        "event_type": "artifact",
+        "what": {
+          "id": "left-pad",
+          "kind": "dependency",
+          "location": "project/node_modules/left-pad/index.js",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "Lock metadata names Codex session sess-at-05 as the installer. The lock does not quote a write command.",
+        "claim": "inferred",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-at-05"
+        },
+        "project": {
+          "id": "proj-at-05",
+          "consumers": [
+            "proj-at-05"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "observed"
+        },
+        "can_go_when": "no remaining consumers",
+        "evidence_ids": [
+          "ev-lock-5"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "package_lock",
+          "label": "inferred",
+          "counts": true
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

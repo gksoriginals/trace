@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "id": "at-dev-02",
+  "skill": "attribution",
+  "split": "dev",
+  "title": "A nearby lockfile does not name the weights",
+  "fixture": {
+    "project_id": "proj-at-dev-02",
+    "files": {
+      "project/data/weights.bin": "weights\n",
+      "project/package-lock.json": "ev-lock-d2 package-lock lists left-pad only. It does not name project/data/weights.bin\n",
+      "evidence/git.log": "ev-git-d2 no commit names project/data/weights.bin\n"
+    },
+    "protected": [
+      "project/data/weights.bin"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Do not attribute the weights to the agent that installed left-pad.",
+    "artifacts": [
+      {
+        "id": "weights",
+        "path": "project/data/weights.bin"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-lock-d2",
+        "kind": "package_lock",
+        "text": "ev-lock-d2 package-lock lists left-pad only. It does not name project/data/weights.bin\n"
+      },
+      {
+        "id": "ev-git-d2",
+        "kind": "git",
+        "text": "ev-git-d2 no commit names project/data/weights.bin\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "project/data/weights.bin"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "weights",
+        "creator": "unknown",
+        "session_id": "unknown",
+        "label": "unattributed",
+        "source": "none",
+        "evidence": [
+          "ev-lock-d2",
+          "ev-git-d2"
+        ],
+        "forbidden_evidence": [],
+        "counts": false
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-dev-02",
+        "event_type": "artifact",
+        "what": {
+          "id": "weights",
+          "kind": "data",
+          "location": "project/data/weights.bin",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "The lockfile lists left-pad and does not name this file. Git does not either.",
+        "claim": "observed",
+        "agent": {
+          "harness": "unknown",
+          "session_id": "unknown"
+        },
+        "project": {
+          "id": "proj-at-dev-02",
+          "consumers": [
+            "proj-at-dev-02"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "discovered"
+        },
+        "can_go_when": "creator is not an agent-created artifact in the ratio",
+        "evidence_ids": [
+          "ev-lock-d2",
+          "ev-git-d2"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "none",
+          "label": "unattributed",
+          "counts": false
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

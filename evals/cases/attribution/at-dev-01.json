@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "id": "at-dev-01",
+  "skill": "attribution",
+  "split": "dev",
+  "title": "A timestamp matches no session",
+  "fixture": {
+    "project_id": "proj-at-dev-01",
+    "files": {
+      "project/out/stale.bin": "old\n",
+      "evidence/mtime.txt": "ev-mtime-d1 project/out/stale.bin mtime 2020-05-01T00:00:00Z\n",
+      "evidence/session.log": "ev-sessions-d1 sessions on this machine start in 2026 and do not mention project/out/stale.bin\n"
+    },
+    "protected": [
+      "project/out/stale.bin"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "A timestamp with no matching session is not a creator.",
+    "artifacts": [
+      {
+        "id": "stale",
+        "path": "project/out/stale.bin"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-mtime-d1",
+        "kind": "mtime",
+        "text": "ev-mtime-d1 project/out/stale.bin mtime 2020-05-01T00:00:00Z\n"
+      },
+      {
+        "id": "ev-sessions-d1",
+        "kind": "session_log",
+        "text": "ev-sessions-d1 sessions on this machine start in 2026 and do not mention project/out/stale.bin\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "project/out/stale.bin"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "stale",
+        "creator": "unknown",
+        "session_id": "unknown",
+        "label": "unattributed",
+        "source": "none",
+        "evidence": [
+          "ev-mtime-d1",
+          "ev-sessions-d1"
+        ],
+        "forbidden_evidence": [],
+        "counts": false
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-dev-01",
+        "event_type": "artifact",
+        "what": {
+          "id": "stale",
+          "kind": "blob",
+          "location": "project/out/stale.bin",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "The timestamp matches no session, and the session logs do not name this file.",
+        "claim": "observed",
+        "agent": {
+          "harness": "unknown",
+          "session_id": "unknown"
+        },
+        "project": {
+          "id": "proj-at-dev-01",
+          "consumers": [
+            "proj-at-dev-01"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "discovered"
+        },
+        "can_go_when": "creator is not an agent-created artifact in the ratio",
+        "evidence_ids": [
+          "ev-mtime-d1",
+          "ev-sessions-d1"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "none",
+          "label": "unattributed",
+          "counts": false
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

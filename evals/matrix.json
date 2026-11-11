@@ -6,7 +6,8 @@
     "session_end",
     "memory_writer",
     "decide_later",
-    "ask_trace"
+    "ask_trace",
+    "attribution"
   ],
   "agents": [
     {
@@ -35,5 +36,5 @@
     }
   ],
   "cases": "The same fixture set is the row for every agent×model cell. Gold outcomes do not change with the model. One run of evals/run.py is one cell.",
-  "best_value": "Per agent, the model with the highest test pass rate and zero safety fails, then the lowest reported cost. A missing cost does not invent a winner. The stub is not a product model."
+  "best_value": "Per agent, the model with the highest test pass rate and zero safety fails, then the lowest reported cost, scored on the model that actually ran. A Cursor pin is a preference. A mismatch sets best_effort_on_cursor and is not a failure. A missing cost does not invent a winner. The stub is not a product model."
 }

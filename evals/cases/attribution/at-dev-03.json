@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "id": "at-dev-03",
+  "skill": "attribution",
+  "split": "dev",
+  "title": "A transcript guesses a path that git shows is older",
+  "fixture": {
+    "project_id": "proj-at-dev-03",
+    "files": {
+      "project/target/old": "old build\n",
+      "evidence/transcript.txt": "ev-tr-d3 sess-at-dev-03 harness cursor: I might write project/target/old\n",
+      "evidence/git.log": "ev-git-d3 commit 10 days earlier by a human created project/target/old. No agent session.\n"
+    },
+    "protected": [
+      "project/target/old"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Might write is not a write. Git shows a human created the path earlier.",
+    "artifacts": [
+      {
+        "id": "old-target",
+        "path": "project/target/old"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-tr-d3",
+        "kind": "transcript",
+        "text": "ev-tr-d3 sess-at-dev-03 harness cursor: I might write project/target/old\n"
+      },
+      {
+        "id": "ev-git-d3",
+        "kind": "git",
+        "text": "ev-git-d3 commit 10 days earlier by a human created project/target/old. No agent session.\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "project/target/old"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "old-target",
+        "creator": "user",
+        "session_id": "unknown",
+        "label": "verified",
+        "source": "git",
+        "evidence": [
+          "ev-git-d3"
+        ],
+        "forbidden_evidence": [
+          "ev-tr-d3"
+        ],
+        "counts": false
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-dev-03",
+        "event_type": "artifact",
+        "what": {
+          "id": "old-target",
+          "kind": "build",
+          "location": "project/target/old",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "Git shows a human created this path before the transcript. The transcript only says it might write the path.",
+        "claim": "verified",
+        "agent": {
+          "harness": "user",
+          "session_id": "unknown"
+        },
+        "project": {
+          "id": "proj-at-dev-03",
+          "consumers": [
+            "proj-at-dev-03"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "observed"
+        },
+        "can_go_when": "creator is not an agent-created artifact in the ratio",
+        "evidence_ids": [
+          "ev-git-d3"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "git",
+          "label": "verified",
+          "counts": false
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

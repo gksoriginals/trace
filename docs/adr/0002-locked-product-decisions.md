@@ -4,6 +4,8 @@
 - **Date:** 2026-11-11
 - **Deciders:** Gopi
 
+Items 4 and 9 are narrowed by [ADR-0003](0003-attribution-and-cursor-pin.md). Unknown bytes get a deep attribution pass before they stay out of the ratio. A Cursor model pin is a preference, not a gate.
+
 ## Context
 
 PRD v0.2 and the engineering direction left ten product choices open: how much a skill may do on its own, install scope, budgets, the 70% metric, where files live, background work, distribution, which agents come first, how a model is chosen, and the minimum macOS version. Design and onboarding still described token budgets and a macOS 13 candidate. Those conflicted with a decision, so they are updated in the same change. This record locks the choices. It does not replace ADR-0001.

@@ -20,7 +20,7 @@ Trace cleans up the storage that project work and coding agents create, includin
 - Write only skill evals and safety checks up front.
 - No UI tests and no tests on internal design until that part has stayed stable.
 - If two fix attempts in a row fail, stop and report back instead of patching tests.
-- Treat everything outside the firm rules as a current guess you can change freely. Record each pivot in `docs/adr/`. The firm rules are safety, the memory log format, two-way resumable agent sessions, evals first, local storage with split writers, skill autonomy, whole-agent install with a per-project opt-out, no Trace token or time caps, the 70% metric, background work only while the app is running, local dogfood until M2, Cursor and Codex first, the model-choice rule, and macOS 14. The winning model id, file paths, and timeout numbers are guesses.
+- Treat everything outside the firm rules as a current guess you can change freely. Record each pivot in `docs/adr/`. The firm rules are safety, the memory log format, two-way resumable agent sessions, evals first, local storage with split writers, skill autonomy, whole-agent install with a per-project opt-out, no Trace token or time caps, the 70% metric with a deep attribution pass before bytes stay unknown, background work only while the app is running, local dogfood until M2, Cursor and Codex first, the model-choice rule (a Cursor pin is a preference, not a gate), and macOS 14. The winning model id, file paths, and timeout numbers are guesses.
 
 ## Workflow
 - Keep changes small and focused, and update `docs/prd.md` when behavior changes.

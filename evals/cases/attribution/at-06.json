@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "id": "at-06",
+  "skill": "attribution",
+  "split": "test",
+  "title": "The tool manifest names the Cursor session",
+  "fixture": {
+    "project_id": "proj-at-06",
+    "files": {
+      "project/.build/cache": "layers\n",
+      "project/.build/manifest.json": "ev-manifest-6 tool manifest: project/.build/cache created by cursor session sess-at-06\n"
+    },
+    "protected": [
+      "project/.build/cache"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Use the tool manifest.",
+    "artifacts": [
+      {
+        "id": "image-cache",
+        "path": "project/.build/cache"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-manifest-6",
+        "kind": "tool_manifest",
+        "text": "ev-manifest-6 tool manifest: project/.build/cache created by cursor session sess-at-06\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "project/.build/cache"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "image-cache",
+        "creator": "cursor",
+        "session_id": "sess-at-06",
+        "label": "verified",
+        "source": "tool_manifest",
+        "evidence": [
+          "ev-manifest-6"
+        ],
+        "forbidden_evidence": [],
+        "counts": true
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-06",
+        "event_type": "artifact",
+        "what": {
+          "id": "image-cache",
+          "kind": "cache",
+          "location": "project/.build/cache",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "The tool manifest states Cursor session sess-at-06 created this cache.",
+        "claim": "verified",
+        "agent": {
+          "harness": "cursor",
+          "session_id": "sess-at-06"
+        },
+        "project": {
+          "id": "proj-at-06",
+          "consumers": [
+            "proj-at-06"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "observed"
+        },
+        "can_go_when": "no remaining consumers",
+        "evidence_ids": [
+          "ev-manifest-6"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "tool_manifest",
+          "label": "verified",
+          "counts": true
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

@@ -47,6 +47,7 @@ SKILLS = (
     "memory_writer",
     "decide_later",
     "ask_trace",
+    "attribution",
 )
 AGENTS = ("auto", "stub", "cursor", "codex", "claude", "gemini")
 FIRST_AGENTS = ("cursor", "codex")
@@ -71,6 +72,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     if not _best_value_self_check():
         print("best-value self-check failed: the cheaper equal-quality model should win, and a safety miss should not")
+        return 2
+    if not _cursor_pin_self_check():
+        print("cursor pin self-check failed: a mismatch is not a failure, and the score follows the observed model")
         return 2
     if args.repeats < 1:
         print("--repeats must be at least 1")
@@ -122,6 +126,23 @@ def _best_value_self_check() -> bool:
         {"agent": "codex", "model": "solo", "pass_rate": 0.5, "safety_fails": 0, "cost": None},
     ])
     return picks["cursor"]["model"] == "cheap" and picks["codex"]["basis"] == "only_model"
+
+
+def _cursor_pin_self_check() -> bool:
+    scored_on_observed = _model_label("cursor", "pinned-fast", "composer-other") == "composer-other"
+    unobserved = _model_label("cursor", "pinned-fast", None) == "unobserved"
+    mismatch_is_best_effort = _best_effort_on_cursor("cursor", "pinned-fast", "composer-other")
+    match_is_not = not _best_effort_on_cursor("cursor", "pinned-fast", "pinned-fast")
+    other_agent = not _best_effort_on_cursor("codex", "a", "b")
+    no_pin = not _best_effort_on_cursor("cursor", None, "whatever")
+    return all((scored_on_observed, unobserved, mismatch_is_best_effort, match_is_not, other_agent, no_pin))
+
+
+def _best_effort_on_cursor(driver: str, requested: str | None, observed: str | None) -> bool:
+    """A Cursor pin is a preference. Ignoring it does not fail the skill."""
+    if driver != "cursor" or not requested:
+        return False
+    return observed != requested
 
 
 def load_cases(skill: str | None) -> list[dict]:
@@ -257,6 +278,7 @@ def build_report(driver, args, headline, runs, cal_results, kappa_example) -> di
         "split": args.split,
         "matrix": load_matrix(),
         "cell": cell,
+        "best_effort_on_cursor": _best_effort_on_cursor(driver, args.model, observed),
         "skills": by_skill,
         "best_value": _best_value_report([cell]),
         "calibration": {
@@ -293,6 +315,10 @@ def _first_observed(rows: list[dict]) -> str | None:
 def _model_label(driver: str, requested: str | None, observed: str | None) -> str:
     if driver == "stub":
         return requested or "stub"
+    # Cursor scores follow the model that actually ran. A requested pin is not
+    # that model until the session reports it.
+    if driver == "cursor":
+        return observed or "unobserved"
     return observed or requested or "default"
 
 
@@ -409,6 +435,9 @@ def print_report(report: dict) -> None:
     print(f"cell: {cell['agent']} × {cell['model']}")
     if report["requested_model"] and report["observed_model"] and report["requested_model"] != report["observed_model"]:
         print(f"requested model {report['requested_model']}  observed model {report['observed_model']}")
+        print("model mismatch is not a failure. The pass rate is scored on the observed model.")
+    flag = "yes" if report.get("best_effort_on_cursor") else "no"
+    print(f"best_effort_on_cursor: {flag}")
     if report["product_measured"]:
         print("product measured: attempting, via the eval task prompt")
         print("An installed Trace skill is not what this run executed.")

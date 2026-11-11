@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "id": "at-04",
+  "skill": "attribution",
+  "split": "test",
+  "title": "A Codex transcript states the scratch file",
+  "fixture": {
+    "project_id": "proj-at-04",
+    "files": {
+      "project/.codex-tmp/scratch": "scratch\n",
+      "evidence/transcript.txt": "ev-tr-4 assistant sess-at-04 harness codex: I created project/.codex-tmp/scratch\n"
+    },
+    "protected": [
+      "project/.codex-tmp/scratch"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "The transcript states the write.",
+    "artifacts": [
+      {
+        "id": "scratch",
+        "path": "project/.codex-tmp/scratch"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-tr-4",
+        "kind": "transcript",
+        "text": "ev-tr-4 assistant sess-at-04 harness codex: I created project/.codex-tmp/scratch\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "project/.codex-tmp/scratch"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "scratch",
+        "creator": "codex",
+        "session_id": "sess-at-04",
+        "label": "verified",
+        "source": "transcript",
+        "evidence": [
+          "ev-tr-4"
+        ],
+        "forbidden_evidence": [],
+        "counts": true
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-04",
+        "event_type": "artifact",
+        "what": {
+          "id": "scratch",
+          "kind": "temp",
+          "location": "project/.codex-tmp/scratch",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "The Codex transcript states this session created the scratch file.",
+        "claim": "verified",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-at-04"
+        },
+        "project": {
+          "id": "proj-at-04",
+          "consumers": [
+            "proj-at-04"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "observed"
+        },
+        "can_go_when": "no remaining consumers",
+        "evidence_ids": [
+          "ev-tr-4"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "transcript",
+          "label": "verified",
+          "counts": true
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

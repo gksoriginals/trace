@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "id": "at-03",
+  "skill": "attribution",
+  "split": "test",
+  "title": "A Cursor session log states the write",
+  "fixture": {
+    "project_id": "proj-at-03",
+    "files": {
+      "Library/Caches/cursor/proj-at-03/index": "index\n",
+      "evidence/session.log": "ev-log-3 cursor session sess-at-03 wrote Library/Caches/cursor/proj-at-03/index\n"
+    },
+    "protected": [
+      "Library/Caches/cursor/proj-at-03/index"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Use the session log, not the cache directory name.",
+    "artifacts": [
+      {
+        "id": "cursor-index",
+        "path": "Library/Caches/cursor/proj-at-03/index"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-log-3",
+        "kind": "session_log",
+        "text": "ev-log-3 cursor session sess-at-03 wrote Library/Caches/cursor/proj-at-03/index\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "Library/Caches/cursor/proj-at-03/index"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "cursor-index",
+        "creator": "cursor",
+        "session_id": "sess-at-03",
+        "label": "verified",
+        "source": "session_log",
+        "evidence": [
+          "ev-log-3"
+        ],
+        "forbidden_evidence": [],
+        "counts": true
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-03",
+        "event_type": "artifact",
+        "what": {
+          "id": "cursor-index",
+          "kind": "cache",
+          "location": "Library/Caches/cursor/proj-at-03/index",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "The Cursor session log states this write.",
+        "claim": "verified",
+        "agent": {
+          "harness": "cursor",
+          "session_id": "sess-at-03"
+        },
+        "project": {
+          "id": "proj-at-03",
+          "consumers": [
+            "proj-at-03"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "observed"
+        },
+        "can_go_when": "no remaining consumers",
+        "evidence_ids": [
+          "ev-log-3"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "session_log",
+          "label": "verified",
+          "counts": true
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "id": "at-01",
+  "skill": "attribution",
+  "split": "test",
+  "title": "Git history names the Cursor session that wrote the cache",
+  "fixture": {
+    "project_id": "proj-at-01",
+    "files": {
+      "project/.npm-cache/content": "cache\n",
+      "evidence/git.log": "ev-git-1 commit 9f3c1a2 2026-11-01 author session sess-at-01 harness cursor\ncreated project/.npm-cache/content\n"
+    },
+    "protected": [
+      "project/.npm-cache/content"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Recover the creator from git history.",
+    "artifacts": [
+      {
+        "id": "npm-cache",
+        "path": "project/.npm-cache/content"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-git-1",
+        "kind": "git",
+        "text": "ev-git-1 commit 9f3c1a2 2026-11-01 author session sess-at-01 harness cursor\ncreated project/.npm-cache/content\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "project/.npm-cache/content"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "npm-cache",
+        "creator": "cursor",
+        "session_id": "sess-at-01",
+        "label": "verified",
+        "source": "git",
+        "evidence": [
+          "ev-git-1"
+        ],
+        "forbidden_evidence": [],
+        "counts": true
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-01",
+        "event_type": "artifact",
+        "what": {
+          "id": "npm-cache",
+          "kind": "cache",
+          "location": "project/.npm-cache/content",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "Git commit 9f3c1a2 states Cursor session sess-at-01 wrote this cache.",
+        "claim": "verified",
+        "agent": {
+          "harness": "cursor",
+          "session_id": "sess-at-01"
+        },
+        "project": {
+          "id": "proj-at-01",
+          "consumers": [
+            "proj-at-01"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "observed"
+        },
+        "can_go_when": "no remaining consumers",
+        "evidence_ids": [
+          "ev-git-1"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "git",
+          "label": "verified",
+          "counts": true
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

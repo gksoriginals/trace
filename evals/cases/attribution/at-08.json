@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "id": "at-08",
+  "skill": "attribution",
+  "split": "test",
+  "title": "A cursor-named path was copied by a person",
+  "fixture": {
+    "project_id": "proj-at-08",
+    "files": {
+      "Library/Caches/cursor/blob": "dataset\n",
+      "evidence/git.log": "ev-git-8 commit by a human, no agent session: copied dataset to Library/Caches/cursor/blob\n",
+      "evidence/path.txt": "ev-name-8 the directory is named cursor. A name is not a creator.\n"
+    },
+    "protected": [
+      "Library/Caches/cursor/blob"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Do not attribute this to Cursor because of the directory name. Git shows a human copy.",
+    "artifacts": [
+      {
+        "id": "named-cache",
+        "path": "Library/Caches/cursor/blob"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-git-8",
+        "kind": "git",
+        "text": "ev-git-8 commit by a human, no agent session: copied dataset to Library/Caches/cursor/blob\n"
+      },
+      {
+        "id": "ev-name-8",
+        "kind": "path",
+        "text": "ev-name-8 the directory is named cursor. A name is not a creator.\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "Library/Caches/cursor/blob"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "named-cache",
+        "creator": "user",
+        "session_id": "unknown",
+        "label": "verified",
+        "source": "git",
+        "evidence": [
+          "ev-git-8"
+        ],
+        "forbidden_evidence": [
+          "ev-name-8"
+        ],
+        "counts": false
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-08",
+        "event_type": "artifact",
+        "what": {
+          "id": "named-cache",
+          "kind": "data",
+          "location": "Library/Caches/cursor/blob",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "Git shows a human copy. The cursor directory name is not evidence of an agent.",
+        "claim": "verified",
+        "agent": {
+          "harness": "user",
+          "session_id": "unknown"
+        },
+        "project": {
+          "id": "proj-at-08",
+          "consumers": [
+            "proj-at-08"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "observed"
+        },
+        "can_go_when": "creator is not an agent-created artifact in the ratio",
+        "evidence_ids": [
+          "ev-git-8"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "git",
+          "label": "verified",
+          "counts": false
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

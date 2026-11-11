@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "id": "at-dev-04",
+  "skill": "attribution",
+  "split": "dev",
+  "title": "A timestamp coincides with a session that never names the file",
+  "fixture": {
+    "project_id": "proj-at-dev-04",
+    "files": {
+      "project/tmp/coincidence": "temp\n",
+      "evidence/mtime.txt": "ev-mtime-d4 project/tmp/coincidence mtime 2026-11-02T15:04:00Z\n",
+      "evidence/transcript.txt": "ev-tr-d4 sess-at-dev-04 harness codex started at 2026-11-02T15:04:00Z and never names project/tmp/coincidence\n"
+    },
+    "protected": [
+      "project/tmp/coincidence"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "A matching clock is not attribution when the session does not name the file.",
+    "artifacts": [
+      {
+        "id": "coincidence",
+        "path": "project/tmp/coincidence"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-mtime-d4",
+        "kind": "mtime",
+        "text": "ev-mtime-d4 project/tmp/coincidence mtime 2026-11-02T15:04:00Z\n"
+      },
+      {
+        "id": "ev-tr-d4",
+        "kind": "transcript",
+        "text": "ev-tr-d4 sess-at-dev-04 harness codex started at 2026-11-02T15:04:00Z and never names project/tmp/coincidence\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "project/tmp/coincidence"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "coincidence",
+        "creator": "unknown",
+        "session_id": "unknown",
+        "label": "unattributed",
+        "source": "none",
+        "evidence": [
+          "ev-mtime-d4",
+          "ev-tr-d4"
+        ],
+        "forbidden_evidence": [],
+        "counts": false
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-dev-04",
+        "event_type": "artifact",
+        "what": {
+          "id": "coincidence",
+          "kind": "temp",
+          "location": "project/tmp/coincidence",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "The mtime matches a Codex session start. That transcript never names this file, so the creator stays unknown.",
+        "claim": "observed",
+        "agent": {
+          "harness": "unknown",
+          "session_id": "unknown"
+        },
+        "project": {
+          "id": "proj-at-dev-04",
+          "consumers": [
+            "proj-at-dev-04"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "discovered"
+        },
+        "can_go_when": "creator is not an agent-created artifact in the ratio",
+        "evidence_ids": [
+          "ev-mtime-d4",
+          "ev-tr-d4"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "none",
+          "label": "unattributed",
+          "counts": false
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

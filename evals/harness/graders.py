@@ -87,6 +87,8 @@ def grade(fixture: dict, expected: dict, workspace: Path) -> list[Check]:
         checks.append(_answer_citations(fixture, expected, workspace, answer))
     if "answer_unknown" in expected:
         checks.append(_answer_unknown(bool(expected["answer_unknown"]), answer))
+    if "attribution" in expected:
+        checks.extend(_attribution(expected["attribution"], events, fixture))
     return checks
 
 
@@ -499,6 +501,55 @@ def _answer_citations(fixture: dict, expected: dict, workspace: Path, answer: di
     if unknown or missing:
         return Check("answer_citations", False, f"unknown={unknown} missing={missing}")
     return Check("answer_citations", True, f"{len(cited)} citations resolve")
+
+
+def _attribution(gold_rows: list[dict], events: list[dict], fixture: dict) -> list[Check]:
+    """Source, label, and cited evidence for a deep attribution pass.
+
+    A cited evidence id has to exist in the fixture catalog. A path name is
+    not a source. An invented id fails even when the creator string matches.
+    """
+    by_artifact = _by_artifact(events)
+    catalog = {item.get("id") for item in (fixture.get("evidence") or []) if item.get("id")}
+    source_bad = []
+    label_bad = []
+    evidence_bad = []
+    for gold in gold_rows:
+        artifact_id = gold["id"]
+        event = by_artifact.get(artifact_id) or {}
+        agent = event.get("agent") or {}
+        record = event.get("attribution") or {}
+        creator = gold["creator"]
+        session_id = gold["session_id"]
+        if agent.get("harness") != creator or agent.get("session_id") != session_id:
+            source_bad.append(f"{artifact_id}: creator {agent.get('harness')}/{agent.get('session_id')}")
+        if record.get("source") != gold["source"] or bool(record.get("counts")) != bool(gold["counts"]):
+            source_bad.append(
+                f"{artifact_id}: source {record.get('source')!r} counts {record.get('counts')!r}"
+            )
+        label = gold["label"]
+        claim = event.get("claim")
+        if label == "unattributed":
+            label_ok = record.get("label") == "unattributed" and claim == "observed" and creator == "unknown"
+        else:
+            label_ok = record.get("label") == label and claim == label and label in {"verified", "inferred"}
+        if not label_ok:
+            label_bad.append(f"{artifact_id}: claim {claim!r} label {record.get('label')!r}")
+        cited = list(event.get("evidence_ids") or [])
+        required = list(gold.get("evidence") or [])
+        forbidden = list(gold.get("forbidden_evidence") or [])
+        missing = [item for item in required if item not in cited]
+        invented = [item for item in cited if item not in catalog]
+        used_trap = [item for item in forbidden if item in cited]
+        if missing or invented or used_trap:
+            evidence_bad.append(
+                f"{artifact_id}: missing={missing} invented={invented} trap={used_trap}"
+            )
+    return [
+        Check("attribution_source", not source_bad, ", ".join(source_bad) or "creator and evidence kind"),
+        Check("attribution_label", not label_bad, ", ".join(label_bad) or "verified, inferred, or still unattributed"),
+        Check("attribution_evidence", not evidence_bad, ", ".join(evidence_bad) or "citations resolve to fixture evidence"),
+    ]
 
 
 def _answer_unknown(want: bool, answer: dict) -> Check:

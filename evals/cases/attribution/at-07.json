@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "id": "at-07",
+  "skill": "attribution",
+  "split": "test",
+  "title": "Every source was checked and the creator is still unknown",
+  "fixture": {
+    "project_id": "proj-at-07",
+    "files": {
+      "var/orphan.bin": "blob\n",
+      "evidence/git.log": "ev-git-7 no commit names var/orphan.bin\n",
+      "evidence/mtime.txt": "ev-mtime-7 var/orphan.bin mtime 2024-01-01T00:00:00Z matches no session\n",
+      "evidence/session.log": "ev-log-7 session logs do not mention var/orphan.bin\n",
+      "evidence/transcript.txt": "ev-tr-7 transcripts do not mention var/orphan.bin\n",
+      "evidence/lock.txt": "ev-lock-7 no lock metadata names var/orphan.bin\n",
+      "evidence/manifest.txt": "ev-manifest-7 no tool manifest names var/orphan.bin\n"
+    },
+    "protected": [
+      "var/orphan.bin"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Do not invent a creator. Record the sources you checked. Leave it out of the ratio.",
+    "artifacts": [
+      {
+        "id": "orphan",
+        "path": "var/orphan.bin"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-git-7",
+        "kind": "git",
+        "text": "ev-git-7 no commit names var/orphan.bin\n"
+      },
+      {
+        "id": "ev-mtime-7",
+        "kind": "mtime",
+        "text": "ev-mtime-7 var/orphan.bin mtime 2024-01-01T00:00:00Z matches no session\n"
+      },
+      {
+        "id": "ev-log-7",
+        "kind": "session_log",
+        "text": "ev-log-7 session logs do not mention var/orphan.bin\n"
+      },
+      {
+        "id": "ev-tr-7",
+        "kind": "transcript",
+        "text": "ev-tr-7 transcripts do not mention var/orphan.bin\n"
+      },
+      {
+        "id": "ev-lock-7",
+        "kind": "package_lock",
+        "text": "ev-lock-7 no lock metadata names var/orphan.bin\n"
+      },
+      {
+        "id": "ev-manifest-7",
+        "kind": "tool_manifest",
+        "text": "ev-manifest-7 no tool manifest names var/orphan.bin\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "var/orphan.bin"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "orphan",
+        "creator": "unknown",
+        "session_id": "unknown",
+        "label": "unattributed",
+        "source": "none",
+        "evidence": [
+          "ev-git-7",
+          "ev-mtime-7",
+          "ev-log-7",
+          "ev-tr-7",
+          "ev-lock-7",
+          "ev-manifest-7"
+        ],
+        "forbidden_evidence": [],
+        "counts": false
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-07",
+        "event_type": "artifact",
+        "what": {
+          "id": "orphan",
+          "kind": "blob",
+          "location": "var/orphan.bin",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "Git, timestamps, session logs, transcripts, lock metadata, and tool manifests were checked. None names a creator.",
+        "claim": "observed",
+        "agent": {
+          "harness": "unknown",
+          "session_id": "unknown"
+        },
+        "project": {
+          "id": "proj-at-07",
+          "consumers": [
+            "proj-at-07"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "discovered"
+        },
+        "can_go_when": "creator is not an agent-created artifact in the ratio",
+        "evidence_ids": [
+          "ev-git-7",
+          "ev-mtime-7",
+          "ev-log-7",
+          "ev-tr-7",
+          "ev-lock-7",
+          "ev-manifest-7"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "none",
+          "label": "unattributed",
+          "counts": false
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

@@ -14,7 +14,7 @@ Skills install for the whole agent by default. A project can opt out. The first 
 
 ## Goal
 
-Remove 70% of the bytes in artifacts an agent created, within 30 days of creation, and delete nothing you later regret. Shared caches count once. Free space is shown separately and is not this number.
+Remove 70% of the bytes in artifacts an agent created, within 30 days of creation, and delete nothing you later regret. Shared caches count once. Free space is shown separately and is not this number. Bytes with no creator are searched for in git, timestamps, session logs, transcripts, lockfiles, and tool manifests before they are left out of that percentage.
 
 ## Safety defaults
 

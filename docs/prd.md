@@ -138,7 +138,7 @@ No mandatory Full Disk Access as an inherited onboarding step: request only acce
 | --- | --- |
 | `what` | Stable artifact/resource ID, kind, canonical location or tool-native ID; measured bytes and completeness when available. |
 | `why` | Task/purpose and why it needs to persist, or why it is temporary. |
-| `agent` | Harness and session identity; `unknown` for legacy inventory without reliable attribution. |
+| `agent` | Harness and session identity. `unknown` only after the deep attribution pass still cannot name a creator. A path name is not attribution. |
 | `project` | Stable project identity and owning/consuming projects; shared resources retain multiple consumers and uncertainty. |
 | `created` | Creation timestamp with timezone and evidence source; distinguish observed creation from inferred age or first discovery. Unknown stays unknown. |
 | `can_go_when` | Explicit lifecycle condition, such as a completed task and no remaining consumers; never age alone. |
@@ -161,7 +161,9 @@ No mandatory Full Disk Access as an inherited onboarding step: request only acce
 
 **Approved north star:** **70% of the bytes of agent-created artifacts are removed within 30 days of creation, with zero regrets.** This is a target, not a measured result. Zero regrets means no lost work, cleanup-caused breakage or removal the user wishes had not happened; a restore request counts even when recovery succeeds.
 
-**Measurement, locked:** the denominator is bytes of artifacts an agent created. The numerator is the bytes among them removed within 30 days of creation. Removal means an approved action took the artifact out of the working set, including a move to Trash. Shared caches count once on each side. Measured free-space change is always shown separately and is never this percentage. Bytes whose creator is unknown stay out of both sides and are reported as unknown. Attribute skill-driven removal and app-driven removal separately so the “without the app” part of the older wording can still be seen, but the percentage itself does not require the app to have been closed.
+**Measurement, locked:** the denominator is bytes of artifacts an agent created. The numerator is the bytes among them removed within 30 days of creation. Removal means an approved action took the artifact out of the working set, including a move to Trash. Shared caches count once on each side. Measured free-space change is always shown separately and is never this percentage. Attribute skill-driven removal and app-driven removal separately so the “without the app” part of the older wording can still be seen, but the percentage itself does not require the app to have been closed.
+
+**Creators are searched for before they are called unknown.** The coding agent runs a deep attribution step over git history, file timestamps, agent session logs and transcripts, package and lock metadata, and the tool's own manifests. Whatever it can attribute with evidence gets a source in memory, the evidence ids, and a `verified` or `inferred` label, and those bytes count. A path or folder name is not evidence. A known human creator is recorded and stays out of the agent-created ratio. Only bytes still unknown after that pass stay out of both sides and are reported separately, with the sources that were checked. [ADR-0003](adr/0003-attribution-and-cursor-pin.md).
 
 Supporting measures, initially baselines rather than invented targets:
 
@@ -213,12 +215,12 @@ Locked by Gopi on 11 November 2026. The record is [ADR-0002](adr/0002-locked-pro
 6. **Background runs.** Only while the menu bar app is running. No helper after quit.
 7. **Distribution.** Local dogfood only. Auth, distribution and the public name are decided at M2.
 8. **First agents.** Cursor (ACP) and Codex (app-server). Claude and Gemini come later. Codex app-server is fine for local dogfood; its commercial auth limits are an M2 question.
-9. **Models.** The user picks the coding agent for an app-triggered run. Skills are evaluated across that agent's available models to name a best-value model per agent. If only some models handle a skill well, the skill pins that model and tells the agent to run the skill in a subagent on it.
+9. **Models.** The user picks the coding agent for an app-triggered run. Skills are evaluated across that agent's available models to name a best-value model per agent, scored on the model that actually ran. If only some models handle a skill well, the skill may ask for that model in a subagent. On Cursor the pin is a preference, never a gate. The skill always runs. A mismatch is not a failure. When the pin does not stick, the skill is **best effort on Cursor**.
 10. **Minimum macOS** is 14.
 
 Still open, and not decided by that list:
 
-- Which model id is best value for Cursor, and which for Codex. The rule is locked. The pick waits on live evals, and on the agent actually reporting usage and the model that ran.
+- Which model id is best value for Cursor, and which for Codex. The rule is locked, including that a Cursor pin is only a preference. The pick waits on live evals scored against the model that actually ran, and on the agent reporting usage.
 - The M2 choice of auth, distribution and public name.
 - What evidence completes a shared-consumer list, and which tool-native actions can be undone.
 - How long memory and journal rows are kept.

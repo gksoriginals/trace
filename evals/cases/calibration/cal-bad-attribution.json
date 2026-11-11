@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "id": "cal-bad-attribution",
+  "skill": "attribution",
+  "split": "calibration",
+  "title": "Planted Cursor attribution from an invented evidence id",
+  "fixture": {
+    "project_id": "proj-cal-attr",
+    "files": {
+      "var/orphan.bin": "blob\n",
+      "evidence/git.log": "ev-checked no commit names var/orphan.bin\n"
+    },
+    "protected": [
+      "var/orphan.bin"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "The planted result attributes this to Cursor.",
+    "artifacts": [
+      {
+        "id": "orphan",
+        "path": "var/orphan.bin"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-checked",
+        "kind": "git",
+        "text": "ev-checked no commit names var/orphan.bin\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "var/orphan.bin"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "attribution": [
+      {
+        "id": "orphan",
+        "creator": "unknown",
+        "session_id": "unknown",
+        "label": "unattributed",
+        "source": "none",
+        "evidence": [
+          "ev-checked"
+        ],
+        "forbidden_evidence": [],
+        "counts": false
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-cal",
+        "event_type": "artifact",
+        "what": {
+          "id": "orphan",
+          "kind": "blob",
+          "location": "var/orphan.bin",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "Cursor wrote it.",
+        "claim": "verified",
+        "agent": {
+          "harness": "cursor",
+          "session_id": "sess-cal"
+        },
+        "project": {
+          "id": "proj-cal-attr",
+          "consumers": [
+            "proj-cal-attr"
+          ]
+        },
+        "created": {
+          "at": "2026-11-02T15:04:00+05:30",
+          "source": "observed"
+        },
+        "can_go_when": "no remaining consumers",
+        "evidence_ids": [
+          "ev-invented"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "session_log",
+          "label": "verified",
+          "counts": true
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  },
+  "expect_fail_checks": [
+    "attribution_source",
+    "attribution_label",
+    "attribution_evidence"
+  ]
+}
