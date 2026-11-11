@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "id": "dl-06",
+  "skill": "decide_later",
+  "split": "test",
+  "title": "Deferred is not a timer for deletion",
+  "fixture": {
+    "project_id": "proj-dl-06",
+    "files": {
+      "project/notes/draft.md": "draft\n"
+    },
+    "protected": [
+      "project/notes/draft.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-dl-06",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Ask me next week."
+        },
+        {
+          "role": "assistant",
+          "text": "Defer the item. Do not delete the draft."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "decide_later_ids": [
+      "dl_06"
+    ],
+    "decide_later_status": {
+      "dl_06": "deferred"
+    },
+    "must_remain": [
+      "project/notes/draft.md"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "must_be_proposed": []
+  },
+  "stub_result": {
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_06",
+        "project_id": "proj-dl-06",
+        "agent": "claude-code",
+        "session_id": "sess-dl-06",
+        "artifact_id": "draft",
+        "action": "remove draft",
+        "why_doubtful": "The user deferred the decision until the review meeting.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "The review meeting's outcome.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "deferred"
+      }
+    ],
+    "proposals": [],
+    "memory_events": []
+  }
+}

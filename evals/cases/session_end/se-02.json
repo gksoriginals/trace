@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "id": "se-02",
+  "skill": "session_end",
+  "split": "test",
+  "title": "Build output is proposed, sources stay",
+  "fixture": {
+    "project_id": "proj-se-02",
+    "files": {
+      "project/src/main.ts": "export {}\n",
+      "project/package-lock.json": "{}\n",
+      "project/dist/bundle.js": "bundle\n"
+    },
+    "protected": [
+      "project/src/main.ts",
+      "project/package-lock.json"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-02",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Build the bundle."
+        },
+        {
+          "role": "assistant",
+          "text": "The build wrote project/dist/bundle.js. package-lock.json can recreate it."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "must_be_proposed": [
+      "project/dist/bundle.js"
+    ],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/src/main.ts",
+      "project/package-lock.json",
+      "project/dist/bundle.js"
+    ],
+    "created_paths": [],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "proposals": [
+      "project/dist/bundle.js"
+    ],
+    "trash_paths": [],
+    "decide_later": [],
+    "memory_events": []
+  }
+}

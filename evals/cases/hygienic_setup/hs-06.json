@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "id": "hs-06",
+  "skill": "hygienic_setup",
+  "split": "test",
+  "title": "Local container image is not saved twice",
+  "fixture": {
+    "project_id": "proj-hs-06",
+    "files": {
+      "shared/images/app.tar": "image\n",
+      "project/Dockerfile": "FROM scratch\n"
+    },
+    "protected": [
+      "shared/images/app.tar",
+      "project/Dockerfile"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-hs-06",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Use the app image."
+        },
+        {
+          "role": "assistant",
+          "text": "app.tar is already in the shared image store."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "setup_locations": [
+      "shared/images/app.tar"
+    ],
+    "memory_covers": [
+      "app_image"
+    ],
+    "must_remain": [
+      "shared/images/app.tar",
+      "project/Dockerfile"
+    ],
+    "must_not_exist": [
+      "project/app-image-copy.tar"
+    ],
+    "created_paths": [],
+    "decide_later_ids": [],
+    "memory_why_contains": {
+      "app_image": [
+        "already local"
+      ]
+    },
+    "memory_claim": {
+      "app_image": "observed"
+    }
+  },
+  "stub_result": {
+    "create_files": {},
+    "setup": {
+      "locations": [
+        {
+          "id": "app_image",
+          "path": "shared/images/app.tar"
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_hs06",
+        "event_type": "artifact",
+        "what": {
+          "id": "app_image",
+          "kind": "container",
+          "location": "shared/images/app.tar",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "The image tarball is already local. Do not save a second copy in the project.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-hs-06"
+        },
+        "project": {
+          "id": "proj-hs-06",
+          "consumers": [
+            "proj-hs-06"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When no project still references this image id.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [],
+    "proposals": []
+  }
+}

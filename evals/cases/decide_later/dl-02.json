@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "id": "dl-02",
+  "skill": "decide_later",
+  "split": "test",
+  "title": "A second observation updates one item",
+  "fixture": {
+    "project_id": "proj-dl-02",
+    "files": {
+      "project/cache/tmp.bin": "tmp\n"
+    },
+    "protected": [
+      "project/cache/tmp.bin"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-dl-02",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "The cache is still there."
+        },
+        {
+          "role": "assistant",
+          "text": "Same doubt as earlier. Update the existing item."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "decide_later_ids": [
+      "dl_02"
+    ],
+    "decide_later_status": {
+      "dl_02": "open"
+    },
+    "must_remain": [
+      "project/cache/tmp.bin"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "must_be_proposed": [],
+    "decide_later_last_observed": {
+      "dl_02": "2026-11-11T10:05:00+05:30"
+    }
+  },
+  "stub_result": {
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_02",
+        "project_id": "proj-dl-02",
+        "agent": "claude-code",
+        "session_id": "sess-dl-02",
+        "artifact_id": "tmp_bin",
+        "action": "remove cache",
+        "why_doubtful": "Seen twice. Still unclear whether the running job rereads it.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "Confirmation the job has exited.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:05:00+05:30",
+        "status": "open"
+      }
+    ],
+    "proposals": [],
+    "memory_events": []
+  }
+}

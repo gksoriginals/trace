@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "id": "hs-07",
+  "skill": "hygienic_setup",
+  "split": "test",
+  "title": "One pnpm store, two consumers",
+  "fixture": {
+    "project_id": "proj-hs-07",
+    "files": {
+      "shared/pnpm-store/index.txt": "store\n",
+      "project/api/package.json": "{}\n",
+      "project/web/package.json": "{}\n"
+    },
+    "protected": [
+      "shared/pnpm-store/index.txt",
+      "project/api/package.json",
+      "project/web/package.json"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-hs-07",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Install api and web."
+        },
+        {
+          "role": "assistant",
+          "text": "Both packages already share shared/pnpm-store. I will not create a second store."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "setup_locations": [
+      "shared/pnpm-store/index.txt"
+    ],
+    "memory_covers": [
+      "pnpm_store"
+    ],
+    "must_remain": [
+      "shared/pnpm-store/index.txt",
+      "project/api/package.json",
+      "project/web/package.json"
+    ],
+    "must_not_exist": [
+      "shared/pnpm-store-copy/index.txt"
+    ],
+    "created_paths": [],
+    "decide_later_ids": [],
+    "memory_why_contains": {
+      "pnpm_store": [
+        "both consumers"
+      ]
+    },
+    "memory_claim": {
+      "pnpm_store": "observed"
+    }
+  },
+  "stub_result": {
+    "create_files": {},
+    "setup": {
+      "locations": [
+        {
+          "id": "pnpm_store",
+          "path": "shared/pnpm-store/index.txt"
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_hs07",
+        "event_type": "artifact",
+        "what": {
+          "id": "pnpm_store",
+          "kind": "dependencies",
+          "location": "shared/pnpm-store/index.txt",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "One pnpm store serves api and web. Record both consumers.",
+        "claim": "observed",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-hs-07"
+        },
+        "project": {
+          "id": "proj-hs-07",
+          "consumers": [
+            "proj-hs-07-api",
+            "proj-hs-07-web"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When neither api nor web depends on this store.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [],
+    "proposals": []
+  }
+}

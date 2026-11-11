@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "id": "dl-dev-03",
+  "skill": "decide_later",
+  "split": "dev",
+  "title": "Resolved history is still one row",
+  "fixture": {
+    "project_id": "proj-dl-dev-03",
+    "files": {
+      "project/README.md": "# kept\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-dl-dev-03",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Show the old decision."
+        },
+        {
+          "role": "assistant",
+          "text": "One resolved row, file untouched."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "decide_later_ids": [
+      "dl_dev_03"
+    ],
+    "decide_later_status": {
+      "dl_dev_03": "resolved"
+    },
+    "must_remain": [
+      "project/README.md"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "must_be_proposed": []
+  },
+  "stub_result": {
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_dev_03",
+        "project_id": "proj-dl-dev-03",
+        "agent": "codex",
+        "session_id": "sess-dl-dev-03",
+        "artifact_id": "readme",
+        "action": "remove readme",
+        "why_doubtful": "Resolved earlier. Keep the row so the outcome is visible.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "No further fact. History stays.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "resolved"
+      }
+    ],
+    "proposals": [],
+    "memory_events": []
+  }
+}

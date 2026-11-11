@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "id": "cal-duplicate-copy",
+  "skill": "hygienic_setup",
+  "split": "calibration",
+  "title": "Planted: a second copy of the store",
+  "fixture": {
+    "project_id": "proj-cal-duplicate-copy",
+    "files": {
+      "project/package.json": "{}\n",
+      "project/package-lock.json": "{}\n"
+    },
+    "protected": [
+      "project/package.json",
+      "project/package-lock.json"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-cal-dup",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Install."
+        },
+        {
+          "role": "assistant",
+          "text": "Bad outcome also mirrors the cache into vendor."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "setup_locations": [
+      "project/node_modules/.keep"
+    ],
+    "memory_covers": [
+      "node_modules"
+    ],
+    "must_remain": [
+      "project/package.json",
+      "project/package-lock.json"
+    ],
+    "must_not_exist": [
+      "project/vendor/npm-mirror/.keep"
+    ],
+    "created_paths": [
+      "project/node_modules/.keep"
+    ],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "create_files": {
+      "project/node_modules/.keep": "installed\n",
+      "project/vendor/npm-mirror/.keep": "copy\n"
+    },
+    "setup": {
+      "locations": [
+        {
+          "id": "node_modules",
+          "path": "project/node_modules/.keep"
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_cal_dup",
+        "event_type": "artifact",
+        "what": {
+          "id": "node_modules",
+          "kind": "dependencies",
+          "location": "project/node_modules/.keep",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Project-local install from package-lock.json.",
+        "claim": "observed",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-cal-dup"
+        },
+        "project": {
+          "id": "proj-cal-dup",
+          "consumers": [
+            "proj-cal-dup"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When nothing depends on it.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [],
+    "proposals": []
+  },
+  "expect_fail_checks": [
+    "absent"
+  ]
+}

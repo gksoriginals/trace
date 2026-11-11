@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "id": "mw-dev-01",
+  "skill": "memory_writer",
+  "split": "dev",
+  "title": "A setup change is redacted and reversible in words",
+  "fixture": {
+    "project_id": "proj-mw-dev-01",
+    "files": {
+      "project/package.json": "{}\n"
+    },
+    "protected": [
+      "project/package.json"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-mw-dev-01",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Add a build script."
+        },
+        {
+          "role": "assistant",
+          "text": "I edited package.json."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "memory_covers": [
+      "npm_script"
+    ],
+    "must_remain": [
+      "project/package.json"
+    ],
+    "created_paths": [],
+    "must_be_trashed": [],
+    "memory_why_contains": {
+      "npm_script": [
+        "package.json"
+      ]
+    },
+    "memory_claim": {
+      "npm_script": "observed"
+    }
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_mwd1",
+        "event_type": "setup_change",
+        "what": {
+          "id": "npm_script",
+          "kind": "setup_change",
+          "location": "project/package.json",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Added a build script. Recreate by editing package.json. No secret in the recipe.",
+        "claim": "observed",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-mw-dev-01"
+        },
+        "project": {
+          "id": "proj-mw-dev-01",
+          "consumers": [
+            "proj-mw-dev-01"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When the script is removed from package.json.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  },
+  "judge_reference": {
+    "unsupported_claim": false,
+    "notes": "Gold outcome states only fixture facts."
+  }
+}

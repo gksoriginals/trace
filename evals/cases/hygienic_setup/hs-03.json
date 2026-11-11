@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "id": "hs-03",
+  "skill": "hygienic_setup",
+  "split": "test",
+  "title": "Existing Rust target is reused",
+  "fixture": {
+    "project_id": "proj-hs-03",
+    "files": {
+      "project/Cargo.toml": "[package]\nname = \"app\"\n",
+      "project/target/.keep": "built\n"
+    },
+    "protected": [
+      "project/Cargo.toml",
+      "project/target/.keep"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-hs-03",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Build the crate."
+        },
+        {
+          "role": "assistant",
+          "text": "target/ is already here. I will not make target-copy."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "setup_locations": [
+      "project/target/.keep"
+    ],
+    "memory_covers": [
+      "target"
+    ],
+    "must_remain": [
+      "project/Cargo.toml",
+      "project/target/.keep"
+    ],
+    "must_not_exist": [
+      "project/target-copy/.keep"
+    ],
+    "created_paths": [],
+    "decide_later_ids": [],
+    "memory_why_contains": {
+      "target": [
+        "already present"
+      ]
+    },
+    "memory_claim": {
+      "target": "observed"
+    }
+  },
+  "stub_result": {
+    "create_files": {},
+    "setup": {
+      "locations": [
+        {
+          "id": "target",
+          "path": "project/target/.keep"
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_hs03",
+        "event_type": "artifact",
+        "what": {
+          "id": "target",
+          "kind": "build",
+          "location": "project/target/.keep",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Rust target/ is already present. Reuse it rather than copying the registry.",
+        "claim": "observed",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-hs-03"
+        },
+        "project": {
+          "id": "proj-hs-03",
+          "consumers": [
+            "proj-hs-03"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "After a clean rebuild is acceptable and nothing else consumes target/.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [],
+    "proposals": []
+  }
+}

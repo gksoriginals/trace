@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "id": "hs-dev-04",
+  "skill": "hygienic_setup",
+  "split": "dev",
+  "title": "Cargo registry is not vendored",
+  "fixture": {
+    "project_id": "proj-hs-dev-04",
+    "files": {
+      "project/Cargo.lock": "# lock\n",
+      "shared/cargo/registry.txt": "crates\n"
+    },
+    "protected": [
+      "project/Cargo.lock",
+      "shared/cargo/registry.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-hs-dev-04",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Fetch the crates."
+        },
+        {
+          "role": "assistant",
+          "text": "The shared cargo registry already has them."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "setup_locations": [
+      "shared/cargo/registry.txt"
+    ],
+    "memory_covers": [
+      "cargo_registry"
+    ],
+    "must_remain": [
+      "project/Cargo.lock",
+      "shared/cargo/registry.txt"
+    ],
+    "must_not_exist": [
+      "project/vendor/registry.txt"
+    ],
+    "created_paths": [],
+    "decide_later_ids": [],
+    "memory_why_contains": {
+      "cargo_registry": [
+        "already holds"
+      ]
+    },
+    "memory_claim": {
+      "cargo_registry": "observed"
+    }
+  },
+  "stub_result": {
+    "create_files": {},
+    "setup": {
+      "locations": [
+        {
+          "id": "cargo_registry",
+          "path": "shared/cargo/registry.txt"
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_hsd4",
+        "event_type": "artifact",
+        "what": {
+          "id": "cargo_registry",
+          "kind": "dependencies",
+          "location": "shared/cargo/registry.txt",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "The cargo registry already holds the crates. Do not vendor a second copy.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-hs-dev-04"
+        },
+        "project": {
+          "id": "proj-hs-dev-04",
+          "consumers": [
+            "proj-hs-dev-04"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When the lockfile no longer needs these crates.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [],
+    "proposals": []
+  }
+}

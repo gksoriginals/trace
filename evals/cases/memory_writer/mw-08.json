@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "id": "mw-08",
+  "skill": "memory_writer",
+  "split": "test",
+  "title": "Unknown harness stays unknown",
+  "fixture": {
+    "project_id": "proj-mw-08",
+    "files": {
+      "project/out/out.txt": "out\n"
+    },
+    "protected": [
+      "project/out/out.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-mw-08",
+      "harness": "unknown",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Where did out.txt come from?"
+        },
+        {
+          "role": "assistant",
+          "text": "The log does not name a harness."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "memory_covers": [
+      "out"
+    ],
+    "must_remain": [
+      "project/out/out.txt"
+    ],
+    "created_paths": [],
+    "must_be_trashed": [],
+    "memory_why_contains": {
+      "out": [
+        "not available"
+      ]
+    },
+    "memory_why_forbids": {
+      "out": [
+        "claude",
+        "codex"
+      ]
+    },
+    "memory_claim": {
+      "out": "observed"
+    }
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_mw08",
+        "event_type": "artifact",
+        "what": {
+          "id": "out",
+          "kind": "build",
+          "location": "project/out/out.txt",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Attribution was not available for the harness that wrote this file.",
+        "claim": "observed",
+        "agent": {
+          "harness": "unknown",
+          "session_id": "sess-mw-08"
+        },
+        "project": {
+          "id": "proj-mw-08",
+          "consumers": [
+            "proj-mw-08"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "discovered",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When the producing project deletes it.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

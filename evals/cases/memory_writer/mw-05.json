@@ -1,0 +1,133 @@
+{
+  "schema_version": 1,
+  "id": "mw-05",
+  "skill": "memory_writer",
+  "split": "test",
+  "title": "A correction keeps the earlier event",
+  "fixture": {
+    "project_id": "proj-mw-05",
+    "files": {
+      "project/src/lib.ts": "export {}\n"
+    },
+    "protected": [
+      "project/src/lib.ts"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-mw-05",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "That file is the library, not scratch."
+        },
+        {
+          "role": "assistant",
+          "text": "I will correct the earlier note and leave it in the log."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "memory_covers": [
+      "lib"
+    ],
+    "must_remain": [
+      "project/src/lib.ts"
+    ],
+    "created_paths": [],
+    "must_be_trashed": [],
+    "memory_why_contains": {
+      "lib": [
+        "source checkout"
+      ]
+    },
+    "memory_claim": {
+      "lib": "verified"
+    },
+    "memory_correction": {
+      "evt_mw05_fix": "evt_mw05_orig"
+    }
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_mw05_orig",
+        "event_type": "artifact",
+        "what": {
+          "id": "lib",
+          "kind": "source",
+          "location": "project/src/lib.ts",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "First note called this temporary scratch.",
+        "claim": "observed",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-mw-05"
+        },
+        "project": {
+          "id": "proj-mw-05",
+          "consumers": [
+            "proj-mw-05"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "Superseded by the correction.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      },
+      {
+        "schema_version": 1,
+        "event_id": "evt_mw05_fix",
+        "event_type": "artifact",
+        "what": {
+          "id": "lib",
+          "kind": "source",
+          "location": "project/src/lib.ts",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Corrected: this is the source checkout and it stays.",
+        "claim": "verified",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-mw-05"
+        },
+        "project": {
+          "id": "proj-mw-05",
+          "consumers": [
+            "proj-mw-05"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "verified",
+          "evidence_ids": [
+            "turn-2"
+          ]
+        },
+        "can_go_when": "While it is the source checkout.",
+        "evidence_ids": [
+          "turn-2"
+        ],
+        "correction_of": "evt_mw05_orig"
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

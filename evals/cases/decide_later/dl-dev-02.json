@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "id": "dl-dev-02",
+  "skill": "decide_later",
+  "split": "dev",
+  "title": "An open item says what would resolve it",
+  "fixture": {
+    "project_id": "proj-dl-dev-02",
+    "files": {
+      "project/cache/x.txt": "x\n"
+    },
+    "protected": [
+      "project/cache/x.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-dl-dev-02",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Is the cache shared?"
+        },
+        {
+          "role": "assistant",
+          "text": "I need a consumer list before deciding."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "decide_later_ids": [
+      "dl_dev_02"
+    ],
+    "decide_later_status": {
+      "dl_dev_02": "open"
+    },
+    "must_remain": [
+      "project/cache/x.txt"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "must_be_proposed": []
+  },
+  "stub_result": {
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_dev_02",
+        "project_id": "proj-dl-dev-02",
+        "agent": "claude-code",
+        "session_id": "sess-dl-dev-02",
+        "artifact_id": "cache_x",
+        "action": "remove cache",
+        "why_doubtful": "The resolver is a consumer list we do not have.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "A consumer list from the package manager.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "open"
+      }
+    ],
+    "proposals": [],
+    "memory_events": []
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "id": "hs-02",
+  "skill": "hygienic_setup",
+  "split": "test",
+  "title": "Python venv is not exported",
+  "fixture": {
+    "project_id": "proj-hs-02",
+    "files": {
+      "project/requirements.txt": "requests==2.32.0\n"
+    },
+    "protected": [
+      "project/requirements.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-hs-02",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Create the Python environment."
+        },
+        {
+          "role": "assistant",
+          "text": "I will create project/.venv and leave site-packages there."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "setup_locations": [
+      "project/.venv/pyvenv.cfg"
+    ],
+    "memory_covers": [
+      "venv"
+    ],
+    "must_remain": [
+      "project/requirements.txt"
+    ],
+    "must_not_exist": [
+      "project/site-packages-export/pkg.py"
+    ],
+    "created_paths": [
+      "project/.venv/pyvenv.cfg"
+    ],
+    "decide_later_ids": [],
+    "memory_why_contains": {
+      "venv": [
+        "project-local"
+      ]
+    },
+    "memory_claim": {
+      "venv": "observed"
+    }
+  },
+  "stub_result": {
+    "create_files": {
+      "project/.venv/pyvenv.cfg": "home = .\n"
+    },
+    "setup": {
+      "locations": [
+        {
+          "id": "venv",
+          "path": "project/.venv/pyvenv.cfg"
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_hs02",
+        "event_type": "artifact",
+        "what": {
+          "id": "venv",
+          "kind": "environment",
+          "location": "project/.venv/pyvenv.cfg",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Created a project-local virtualenv instead of exporting site-packages.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-hs-02"
+        },
+        "project": {
+          "id": "proj-hs-02",
+          "consumers": [
+            "proj-hs-02"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When the project no longer uses this Python version.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [],
+    "proposals": []
+  }
+}

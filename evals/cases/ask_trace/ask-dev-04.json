@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "id": "ask-dev-04",
+  "skill": "ask_trace",
+  "split": "dev",
+  "title": "Both reader notes are in the answer",
+  "fixture": {
+    "project_id": "proj-ask-dev-04",
+    "files": {
+      "trace-input/memory.jsonl": "{\"schema_version\": 1, \"event_id\": \"evt_left\", \"event_type\": \"artifact\", \"what\": {\"id\": \"volume\", \"kind\": \"container\", \"location\": \"shared/vol\", \"bytes\": null, \"completeness\": \"known\"}, \"why\": \"Worker reads the volume.\", \"claim\": \"observed\", \"agent\": {\"harness\": \"claude-code\", \"session_id\": \"sess-l\"}, \"project\": {\"id\": \"proj-ask-dev-04\", \"consumers\": [\"worker\"]}, \"created\": {\"at\": \"2026-11-11T10:00:00+05:30\", \"timezone\": \"Asia/Kolkata\", \"source\": \"observed\", \"evidence_ids\": [\"turn-1\"]}, \"can_go_when\": \"When both readers are gone.\", \"evidence_ids\": [\"turn-1\"], \"correction_of\": null}\n{\"schema_version\": 1, \"event_id\": \"evt_right\", \"event_type\": \"artifact\", \"what\": {\"id\": \"volume\", \"kind\": \"container\", \"location\": \"shared/vol\", \"bytes\": null, \"completeness\": \"known\"}, \"why\": \"Notebook reads the volume.\", \"claim\": \"observed\", \"agent\": {\"harness\": \"codex\", \"session_id\": \"sess-r\"}, \"project\": {\"id\": \"proj-ask-dev-04\", \"consumers\": [\"notebook\"]}, \"created\": {\"at\": \"2026-11-11T10:00:00+05:30\", \"timezone\": \"Asia/Kolkata\", \"source\": \"observed\", \"evidence_ids\": [\"turn-2\"]}, \"can_go_when\": \"When both readers are gone.\", \"evidence_ids\": [\"turn-2\"], \"correction_of\": null}\n",
+      "project/README.md": "# project\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-ask-dev-04",
+      "harness": "memory",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Who reads the volume?"
+        },
+        {
+          "role": "assistant",
+          "text": "Answer from memory only."
+        }
+      ]
+    },
+    "notes": "Read trace-input/memory.jsonl. Write only trace-out/answer.json."
+  },
+  "expected": {
+    "answer_facts": [
+      "Worker",
+      "Notebook"
+    ],
+    "answer_citations": [
+      "evt_left",
+      "evt_right"
+    ],
+    "answer_unknown": false,
+    "answer_forbidden": [
+      "only the worker"
+    ],
+    "filesystem_unchanged": true,
+    "must_remain": [
+      "trace-input/memory.jsonl",
+      "project/README.md"
+    ],
+    "must_be_trashed": []
+  },
+  "stub_result": {
+    "answer": {
+      "text": "Worker reads the volume. Notebook reads the volume.",
+      "citations": [
+        "evt_left",
+        "evt_right"
+      ],
+      "unknown": false
+    }
+  },
+  "judge_reference": {
+    "unsupported_claim": false,
+    "notes": "Gold outcome states only fixture facts."
+  }
+}

@@ -1,0 +1,3 @@
+evals/out/
+**/__pycache__/
+*.pyc

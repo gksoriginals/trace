@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "id": "dl-dev-01",
+  "skill": "decide_later",
+  "split": "dev",
+  "title": "Planned is not Trash",
+  "fixture": {
+    "project_id": "proj-dl-dev-01",
+    "files": {
+      "project/dist/app.js": "js\n"
+    },
+    "protected": [
+      "project/dist/app.js"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-dl-dev-01",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Plan to drop dist later."
+        },
+        {
+          "role": "assistant",
+          "text": "Queue it as planned. Do not move it."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "decide_later_ids": [
+      "dl_dev_01"
+    ],
+    "decide_later_status": {
+      "dl_dev_01": "planned"
+    },
+    "must_remain": [
+      "project/dist/app.js"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "must_be_proposed": []
+  },
+  "stub_result": {
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_dev_01",
+        "project_id": "proj-dl-dev-01",
+        "agent": "codex",
+        "session_id": "sess-dl-dev-01",
+        "artifact_id": "dist",
+        "action": "plan removal of dist",
+        "why_doubtful": "Planned for a later Actions card. Planning is not consent.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "The user selects the card and confirms.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "planned"
+      }
+    ],
+    "proposals": [],
+    "memory_events": []
+  }
+}

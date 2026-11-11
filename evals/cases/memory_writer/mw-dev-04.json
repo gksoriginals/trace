@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "id": "mw-dev-04",
+  "skill": "memory_writer",
+  "split": "dev",
+  "title": "Two consumers are both named",
+  "fixture": {
+    "project_id": "proj-mw-dev-04",
+    "files": {
+      "shared/store/index.txt": "idx\n"
+    },
+    "protected": [
+      "shared/store/index.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-mw-dev-04",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Who uses the store?"
+        },
+        {
+          "role": "assistant",
+          "text": "The api and the worker both read it."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "memory_covers": [
+      "store"
+    ],
+    "must_remain": [
+      "shared/store/index.txt"
+    ],
+    "created_paths": [],
+    "must_be_trashed": [],
+    "memory_why_contains": {
+      "store": [
+        "api",
+        "worker"
+      ]
+    },
+    "memory_claim": {
+      "store": "observed"
+    }
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_mwd4",
+        "event_type": "artifact",
+        "what": {
+          "id": "store",
+          "kind": "cache",
+          "location": "shared/store/index.txt",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Shared by the api and the worker.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-mw-dev-04"
+        },
+        "project": {
+          "id": "proj-mw-dev-04",
+          "consumers": [
+            "proj-api",
+            "proj-worker"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When both the api and the worker stop using it.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  },
+  "judge_reference": {
+    "unsupported_claim": false,
+    "notes": "Gold outcome states only fixture facts."
+  }
+}

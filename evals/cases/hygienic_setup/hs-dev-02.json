@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "id": "hs-dev-02",
+  "skill": "hygienic_setup",
+  "split": "dev",
+  "title": "pip cache is reused",
+  "fixture": {
+    "project_id": "proj-hs-dev-02",
+    "files": {
+      "project/requirements.txt": "flask\n",
+      "shared/pip/http.txt": "cached\n"
+    },
+    "protected": [
+      "project/requirements.txt",
+      "shared/pip/http.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-hs-dev-02",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Install Flask."
+        },
+        {
+          "role": "assistant",
+          "text": "The pip cache already has the wheels."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "setup_locations": [
+      "shared/pip/http.txt"
+    ],
+    "memory_covers": [
+      "pip_cache"
+    ],
+    "must_remain": [
+      "project/requirements.txt",
+      "shared/pip/http.txt"
+    ],
+    "must_not_exist": [
+      "project/.pip-copy/http.txt"
+    ],
+    "created_paths": [],
+    "decide_later_ids": [],
+    "memory_why_contains": {
+      "pip_cache": [
+        "download cache"
+      ]
+    },
+    "memory_claim": {
+      "pip_cache": "observed"
+    }
+  },
+  "stub_result": {
+    "create_files": {},
+    "setup": {
+      "locations": [
+        {
+          "id": "pip_cache",
+          "path": "shared/pip/http.txt"
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_hsd2",
+        "event_type": "artifact",
+        "what": {
+          "id": "pip_cache",
+          "kind": "cache",
+          "location": "shared/pip/http.txt",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "pip's download cache already has the wheels. Do not copy it into the repo.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-hs-dev-02"
+        },
+        "project": {
+          "id": "proj-hs-dev-02",
+          "consumers": [
+            "proj-hs-dev-02"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When pip no longer needs these wheels.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [],
+    "proposals": []
+  }
+}

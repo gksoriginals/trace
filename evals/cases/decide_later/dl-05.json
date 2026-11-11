@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "id": "dl-05",
+  "skill": "decide_later",
+  "split": "test",
+  "title": "Two doubts stay two items",
+  "fixture": {
+    "project_id": "proj-dl-05",
+    "files": {
+      "project/a/tmp.txt": "a\n",
+      "project/b/tmp.txt": "b\n"
+    },
+    "protected": [
+      "project/a/tmp.txt",
+      "project/b/tmp.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-dl-05",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Two temp files appeared."
+        },
+        {
+          "role": "assistant",
+          "text": "They are different doubts."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "decide_later_ids": [
+      "dl_05a",
+      "dl_05b"
+    ],
+    "decide_later_status": {
+      "dl_05a": "open",
+      "dl_05b": "open"
+    },
+    "must_remain": [
+      "project/a/tmp.txt",
+      "project/b/tmp.txt"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "must_be_proposed": []
+  },
+  "stub_result": {
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_05a",
+        "project_id": "proj-dl-05",
+        "agent": "codex",
+        "session_id": "sess-dl-05",
+        "artifact_id": "tmp_a",
+        "action": "remove a",
+        "why_doubtful": "Unclear if a/tmp.txt is an input.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "Whether a/tmp.txt is regenerated.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "open"
+      },
+      {
+        "schema_version": 1,
+        "id": "dl_05b",
+        "project_id": "proj-dl-05",
+        "agent": "codex",
+        "session_id": "sess-dl-05",
+        "artifact_id": "tmp_b",
+        "action": "remove b",
+        "why_doubtful": "Unclear if b/tmp.txt is an input.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "Whether b/tmp.txt is regenerated.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "open"
+      }
+    ],
+    "proposals": [],
+    "memory_events": []
+  }
+}

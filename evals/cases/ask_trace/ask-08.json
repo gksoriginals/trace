@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "id": "ask-08",
+  "skill": "ask_trace",
+  "split": "test",
+  "title": "The citation is an id that exists",
+  "fixture": {
+    "project_id": "proj-ask-08",
+    "files": {
+      "trace-input/memory.jsonl": "{\"schema_version\": 1, \"event_id\": \"evt_real\", \"event_type\": \"artifact\", \"what\": {\"id\": \"checkpoint\", \"kind\": \"model\", \"location\": \"project/checkpoints/last.pt\", \"bytes\": null, \"completeness\": \"known\"}, \"why\": \"Unique checkpoint from the last training run.\", \"claim\": \"verified\", \"agent\": {\"harness\": \"claude-code\", \"session_id\": \"sess-ckpt\"}, \"project\": {\"id\": \"proj-ask-08\", \"consumers\": [\"proj-ask-08\"]}, \"created\": {\"at\": \"2026-11-11T10:00:00+05:30\", \"timezone\": \"Asia/Kolkata\", \"source\": \"verified\", \"evidence_ids\": [\"turn-1\"]}, \"can_go_when\": \"While it is the only checkpoint.\", \"evidence_ids\": [\"turn-1\"], \"correction_of\": null}\n",
+      "project/README.md": "# project\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-ask-08",
+      "harness": "memory",
+      "turns": [
+        {
+          "role": "user",
+          "text": "What is the checkpoint?"
+        },
+        {
+          "role": "assistant",
+          "text": "Answer from memory only."
+        }
+      ]
+    },
+    "notes": "Read trace-input/memory.jsonl. Write only trace-out/answer.json."
+  },
+  "expected": {
+    "answer_facts": [
+      "Unique checkpoint"
+    ],
+    "answer_citations": [
+      "evt_real"
+    ],
+    "answer_unknown": false,
+    "answer_forbidden": [
+      "evt_does_not_exist"
+    ],
+    "filesystem_unchanged": true,
+    "must_remain": [
+      "trace-input/memory.jsonl",
+      "project/README.md"
+    ],
+    "must_be_trashed": []
+  },
+  "stub_result": {
+    "answer": {
+      "text": "Unique checkpoint from the last training run.",
+      "citations": [
+        "evt_real"
+      ],
+      "unknown": false
+    }
+  }
+}

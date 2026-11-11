@@ -32,3 +32,6 @@ Early.
 
 - [Product requirements](docs/prd.md)
 - [Design & UX specification](docs/design.md)
+- [Engineering direction](docs/engineering.md)
+- [Evals](docs/evals.md)
+- [Decision records](docs/adr/)

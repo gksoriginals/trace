@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "id": "mw-02",
+  "skill": "memory_writer",
+  "split": "test",
+  "title": "Three artifacts each get a complete event",
+  "fixture": {
+    "project_id": "proj-mw-02",
+    "files": {
+      "project/.cache/tool.txt": "cache\n",
+      "project/dist/app.js": "js\n",
+      "project/.containers/app.id": "sha\n"
+    },
+    "protected": [
+      "project/dist/app.js"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-mw-02",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Run the stack."
+        },
+        {
+          "role": "assistant",
+          "text": "I created a cache, a bundle, and a container id."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "memory_covers": [
+      "tool_cache",
+      "dist",
+      "app_container"
+    ],
+    "must_remain": [
+      "project/.cache/tool.txt",
+      "project/dist/app.js",
+      "project/.containers/app.id"
+    ],
+    "created_paths": [],
+    "must_be_trashed": [],
+    "memory_why_contains": {
+      "tool_cache": [
+        "Tool cache"
+      ],
+      "dist": [
+        "Bundled"
+      ],
+      "app_container": [
+        "container id"
+      ]
+    },
+    "memory_claim": {
+      "tool_cache": "observed",
+      "dist": "observed",
+      "app_container": "observed"
+    }
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_mw02a",
+        "event_type": "artifact",
+        "what": {
+          "id": "tool_cache",
+          "kind": "cache",
+          "location": "project/.cache/tool.txt",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Tool cache from the test run.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-mw-02"
+        },
+        "project": {
+          "id": "proj-mw-02",
+          "consumers": [
+            "proj-mw-02"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When the tool is reinstalled.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      },
+      {
+        "schema_version": 1,
+        "event_id": "evt_mw02b",
+        "event_type": "artifact",
+        "what": {
+          "id": "dist",
+          "kind": "build",
+          "location": "project/dist/app.js",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Bundled output from the test run.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-mw-02"
+        },
+        "project": {
+          "id": "proj-mw-02",
+          "consumers": [
+            "proj-mw-02"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When the bundle is rebuilt.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      },
+      {
+        "schema_version": 1,
+        "event_id": "evt_mw02c",
+        "event_type": "artifact",
+        "what": {
+          "id": "app_container",
+          "kind": "container",
+          "location": "project/.containers/app.id",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Local container id from the test run.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-mw-02"
+        },
+        "project": {
+          "id": "proj-mw-02",
+          "consumers": [
+            "proj-mw-02"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When the image is no longer referenced.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

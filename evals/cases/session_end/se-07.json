@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "id": "se-07",
+  "skill": "session_end",
+  "split": "test",
+  "title": "An unexplained file is queued, not proposed",
+  "fixture": {
+    "project_id": "proj-se-07",
+    "files": {
+      "project/blob.bin": "unknown bytes\n",
+      "project/README.md": "# app\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-07",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Look at what appeared."
+        },
+        {
+          "role": "assistant",
+          "text": "blob.bin showed up and I do not know if it is a source of truth."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "must_be_proposed": [],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/blob.bin",
+      "project/README.md"
+    ],
+    "created_paths": [],
+    "decide_later_ids": [
+      "dl_se07"
+    ]
+  },
+  "stub_result": {
+    "proposals": [],
+    "trash_paths": [],
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_se07",
+        "project_id": "proj-se-07",
+        "agent": "claude-code",
+        "session_id": "sess-se-07",
+        "artifact_id": "blob",
+        "action": "remove project/blob.bin",
+        "why_doubtful": "The session created blob.bin and never said what it is.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "A purpose for blob.bin, or confirmation it is disposable.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "open"
+      }
+    ],
+    "memory_events": []
+  }
+}

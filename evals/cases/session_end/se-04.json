@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "id": "se-04",
+  "skill": "session_end",
+  "split": "test",
+  "title": "Dirty source stays, session scratch is proposed",
+  "fixture": {
+    "project_id": "proj-se-04",
+    "files": {
+      "project/src/dirty.py": "changed = True\n",
+      "project/scratch/notes.tmp": "scratch\n"
+    },
+    "protected": [
+      "project/src/dirty.py"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-04",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Edit the parser."
+        },
+        {
+          "role": "assistant",
+          "text": "src/dirty.py has uncommitted edits. scratch/notes.tmp is disposable."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "must_be_proposed": [
+      "project/scratch/notes.tmp"
+    ],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/src/dirty.py",
+      "project/scratch/notes.tmp"
+    ],
+    "created_paths": [],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "proposals": [
+      "project/scratch/notes.tmp"
+    ],
+    "trash_paths": [],
+    "decide_later": [],
+    "memory_events": []
+  }
+}

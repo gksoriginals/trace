@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "id": "dl-08",
+  "skill": "decide_later",
+  "split": "test",
+  "title": "Unknown size stays null",
+  "fixture": {
+    "project_id": "proj-dl-08",
+    "files": {
+      "project/mystery.bin": "??\n"
+    },
+    "protected": [
+      "project/mystery.bin"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-dl-08",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "How big is mystery.bin?"
+        },
+        {
+          "role": "assistant",
+          "text": "I did not measure it. Do not record zero."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "decide_later_ids": [
+      "dl_08"
+    ],
+    "decide_later_status": {
+      "dl_08": "open"
+    },
+    "must_remain": [
+      "project/mystery.bin"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "must_be_proposed": [],
+    "decide_later_bytes": {
+      "dl_08": null
+    }
+  },
+  "stub_result": {
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_08",
+        "project_id": "proj-dl-08",
+        "agent": "claude-code",
+        "session_id": "sess-dl-08",
+        "artifact_id": "mystery",
+        "action": "remove mystery.bin",
+        "why_doubtful": "Nobody measured the size.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "A measured size and a purpose.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "open"
+      }
+    ],
+    "proposals": [],
+    "memory_events": []
+  }
+}

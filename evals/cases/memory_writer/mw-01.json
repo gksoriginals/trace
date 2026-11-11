@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "id": "mw-01",
+  "skill": "memory_writer",
+  "split": "test",
+  "title": "One build directory is recorded in full",
+  "fixture": {
+    "project_id": "proj-mw-01",
+    "files": {
+      "project/target/.keep": "built\n"
+    },
+    "protected": [
+      "project/target/.keep"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-mw-01",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Build the release."
+        },
+        {
+          "role": "assistant",
+          "text": "I wrote project/target."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "memory_covers": [
+      "target"
+    ],
+    "must_remain": [
+      "project/target/.keep"
+    ],
+    "created_paths": [],
+    "must_be_trashed": [],
+    "memory_why_contains": {
+      "target": [
+        "Rebuildable"
+      ]
+    },
+    "memory_claim": {
+      "target": "observed"
+    },
+    "memory_can_go_when": {
+      "target": "no remaining consumers"
+    }
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_mw01",
+        "event_type": "artifact",
+        "what": {
+          "id": "target",
+          "kind": "build",
+          "location": "project/target/.keep",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Release build output. Rebuildable from Cargo.toml.",
+        "claim": "observed",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-mw-01"
+        },
+        "project": {
+          "id": "proj-mw-01",
+          "consumers": [
+            "proj-mw-01"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "After a clean rebuild is acceptable and no remaining consumers need target/.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

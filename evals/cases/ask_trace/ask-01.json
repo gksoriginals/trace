@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "id": "ask-01",
+  "skill": "ask_trace",
+  "split": "test",
+  "title": "Why it was kept, with a real citation",
+  "fixture": {
+    "project_id": "proj-ask-01",
+    "files": {
+      "trace-input/memory.jsonl": "{\"schema_version\": 1, \"event_id\": \"evt_keep_1\", \"event_type\": \"artifact\", \"what\": {\"id\": \"raw\", \"kind\": \"dataset\", \"location\": \"project/data/raw.csv\", \"bytes\": null, \"completeness\": \"known\"}, \"why\": \"Original dataset for the training run. Keep.\", \"claim\": \"observed\", \"agent\": {\"harness\": \"claude-code\", \"session_id\": \"sess-older\"}, \"project\": {\"id\": \"proj-ask-01\", \"consumers\": [\"proj-ask-01\"]}, \"created\": {\"at\": \"2026-11-11T10:00:00+05:30\", \"timezone\": \"Asia/Kolkata\", \"source\": \"observed\", \"evidence_ids\": [\"turn-1\"]}, \"can_go_when\": \"While it is the original dataset.\", \"evidence_ids\": [\"turn-1\"], \"correction_of\": null}\n",
+      "project/README.md": "# project\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-ask-01",
+      "harness": "memory",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Why was the dataset kept?"
+        },
+        {
+          "role": "assistant",
+          "text": "Answer from memory only."
+        }
+      ]
+    },
+    "notes": "Read trace-input/memory.jsonl. Write only trace-out/answer.json."
+  },
+  "expected": {
+    "answer_facts": [
+      "Original dataset"
+    ],
+    "answer_citations": [
+      "evt_keep_1"
+    ],
+    "answer_unknown": false,
+    "answer_forbidden": [
+      "safe to remove"
+    ],
+    "filesystem_unchanged": true,
+    "must_remain": [
+      "trace-input/memory.jsonl",
+      "project/README.md"
+    ],
+    "must_be_trashed": []
+  },
+  "stub_result": {
+    "answer": {
+      "text": "Original dataset for the training run. The memory says to keep it.",
+      "citations": [
+        "evt_keep_1"
+      ],
+      "unknown": false
+    }
+  }
+}

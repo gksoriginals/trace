@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "id": "hs-05",
+  "skill": "hygienic_setup",
+  "split": "test",
+  "title": "Original dataset is recorded as a source of truth",
+  "fixture": {
+    "project_id": "proj-hs-05",
+    "files": {
+      "project/data/raw.csv": "a,b\n1,2\n"
+    },
+    "protected": [
+      "project/data/raw.csv"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-hs-05",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Register the dataset I just downloaded."
+        },
+        {
+          "role": "assistant",
+          "text": "raw.csv is the original download. Do not duplicate it."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "setup_locations": [
+      "project/data/raw.csv"
+    ],
+    "memory_covers": [
+      "raw"
+    ],
+    "must_remain": [
+      "project/data/raw.csv"
+    ],
+    "must_not_exist": [
+      "project/data/raw-copy.csv"
+    ],
+    "created_paths": [],
+    "decide_later_ids": [],
+    "memory_why_contains": {
+      "raw": [
+        "original dataset"
+      ]
+    },
+    "memory_why_forbids": {
+      "raw": [
+        "it is old"
+      ]
+    },
+    "memory_claim": {
+      "raw": "observed"
+    },
+    "memory_can_go_when": {
+      "raw": "original"
+    }
+  },
+  "stub_result": {
+    "create_files": {},
+    "setup": {
+      "locations": [
+        {
+          "id": "raw",
+          "path": "project/data/raw.csv"
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_hs05",
+        "event_type": "artifact",
+        "what": {
+          "id": "raw",
+          "kind": "dataset",
+          "location": "project/data/raw.csv",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "This is the original dataset for the study. It is a source of truth.",
+        "claim": "observed",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-hs-05"
+        },
+        "project": {
+          "id": "proj-hs-05",
+          "consumers": [
+            "proj-hs-05"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "Never while it is the only copy of the original data.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [],
+    "proposals": []
+  }
+}

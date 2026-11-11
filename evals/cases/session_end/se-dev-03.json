@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "id": "se-dev-03",
+  "skill": "session_end",
+  "split": "dev",
+  "title": "An explicit no trashes nothing",
+  "fixture": {
+    "project_id": "proj-se-dev-03",
+    "files": {
+      "project/tmp/out.txt": "out\n",
+      "project/README.md": "# app\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-dev-03",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Do not delete tmp/out.txt."
+        },
+        {
+          "role": "assistant",
+          "text": "I will only propose it. Consent was refused."
+        }
+      ]
+    },
+    "notes": "consent is empty. The proposal is not a deletion."
+  },
+  "expected": {
+    "must_be_proposed": [
+      "project/tmp/out.txt"
+    ],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/tmp/out.txt",
+      "project/README.md"
+    ],
+    "created_paths": [],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "proposals": [
+      "project/tmp/out.txt"
+    ],
+    "trash_paths": [],
+    "decide_later": [],
+    "memory_events": []
+  }
+}

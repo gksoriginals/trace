@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "id": "dl-03",
+  "skill": "decide_later",
+  "split": "test",
+  "title": "Kept does not remove the file",
+  "fixture": {
+    "project_id": "proj-dl-03",
+    "files": {
+      "project/data/keep.csv": "id\n"
+    },
+    "protected": [
+      "project/data/keep.csv"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-dl-03",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Keep the csv."
+        },
+        {
+          "role": "assistant",
+          "text": "Marking the queue item kept."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "decide_later_ids": [
+      "dl_03"
+    ],
+    "decide_later_status": {
+      "dl_03": "kept"
+    },
+    "must_remain": [
+      "project/data/keep.csv"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "must_be_proposed": []
+  },
+  "stub_result": {
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_03",
+        "project_id": "proj-dl-03",
+        "agent": "codex",
+        "session_id": "sess-dl-03",
+        "artifact_id": "keep_csv",
+        "action": "remove dataset",
+        "why_doubtful": "The user kept this dataset for the next experiment.",
+        "bytes": 12,
+        "completeness": "known",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "A later decision that the experiment is finished.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "kept"
+      }
+    ],
+    "proposals": [],
+    "memory_events": []
+  }
+}

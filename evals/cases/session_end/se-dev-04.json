@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "id": "se-dev-04",
+  "skill": "session_end",
+  "split": "dev",
+  "title": "An unmerged file stays",
+  "fixture": {
+    "project_id": "proj-se-dev-04",
+    "files": {
+      "project/src/unmerged.ts": "<<<<<<<\n",
+      "project/tmp/agent-scratch.txt": "scratch\n"
+    },
+    "protected": [
+      "project/src/unmerged.ts"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-dev-04",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Finish the rebase later."
+        },
+        {
+          "role": "assistant",
+          "text": "src/unmerged.ts is mid-rebase. Only tmp/agent-scratch.txt is disposable."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "must_be_proposed": [
+      "project/tmp/agent-scratch.txt"
+    ],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/src/unmerged.ts",
+      "project/tmp/agent-scratch.txt"
+    ],
+    "created_paths": [],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "proposals": [
+      "project/tmp/agent-scratch.txt"
+    ],
+    "trash_paths": [],
+    "decide_later": [],
+    "memory_events": []
+  }
+}

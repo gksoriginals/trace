@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "id": "dl-dev-04",
+  "skill": "decide_later",
+  "split": "dev",
+  "title": "Two reports in one session stay one item",
+  "fixture": {
+    "project_id": "proj-dl-dev-04",
+    "files": {
+      "shared/store/blob.txt": "blob\n"
+    },
+    "protected": [
+      "shared/store/blob.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-dl-dev-04",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "I noticed the blob again."
+        },
+        {
+          "role": "assistant",
+          "text": "Update the same queue id."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "decide_later_ids": [
+      "dl_dev_04"
+    ],
+    "decide_later_status": {
+      "dl_dev_04": "open"
+    },
+    "must_remain": [
+      "shared/store/blob.txt"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "must_be_proposed": [],
+    "decide_later_last_observed": {
+      "dl_dev_04": "2026-11-11T10:05:00+05:30"
+    }
+  },
+  "stub_result": {
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_dev_04",
+        "project_id": "proj-dl-dev-04",
+        "agent": "claude-code",
+        "session_id": "sess-dl-dev-04",
+        "artifact_id": "blob",
+        "action": "remove shared blob",
+        "why_doubtful": "Reported twice in one session. Still one doubt.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "Whether the worker process has exited.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:05:00+05:30",
+        "status": "open"
+      }
+    ],
+    "proposals": [],
+    "memory_events": []
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "id": "ask-05",
+  "skill": "ask_trace",
+  "split": "test",
+  "title": "A path with no memory entry stays unknown",
+  "fixture": {
+    "project_id": "proj-ask-05",
+    "files": {
+      "trace-input/memory.jsonl": "{\"schema_version\": 1, \"event_id\": \"evt_other\", \"event_type\": \"artifact\", \"what\": {\"id\": \"readme\", \"kind\": \"source\", \"location\": \"project/README.md\", \"bytes\": null, \"completeness\": \"known\"}, \"why\": \"Project readme. Not the file being asked about.\", \"claim\": \"observed\", \"agent\": {\"harness\": \"codex\", \"session_id\": \"sess-other\"}, \"project\": {\"id\": \"proj-ask-05\", \"consumers\": [\"proj-ask-05\"]}, \"created\": {\"at\": \"2026-11-11T10:00:00+05:30\", \"timezone\": \"Asia/Kolkata\", \"source\": \"observed\", \"evidence_ids\": [\"turn-1\"]}, \"can_go_when\": \"While the readme is the project description.\", \"evidence_ids\": [\"turn-1\"], \"correction_of\": null}\n",
+      "project/README.md": "# project\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-ask-05",
+      "harness": "memory",
+      "turns": [
+        {
+          "role": "user",
+          "text": "What is project/mystery.bin?"
+        },
+        {
+          "role": "assistant",
+          "text": "Answer from memory only."
+        }
+      ]
+    },
+    "notes": "Read trace-input/memory.jsonl. Write only trace-out/answer.json."
+  },
+  "expected": {
+    "answer_facts": [
+      "No memory entry"
+    ],
+    "answer_citations": [],
+    "answer_unknown": true,
+    "answer_forbidden": [
+      "evt_invented"
+    ],
+    "filesystem_unchanged": true,
+    "must_remain": [
+      "trace-input/memory.jsonl",
+      "project/README.md"
+    ],
+    "must_be_trashed": []
+  },
+  "stub_result": {
+    "answer": {
+      "text": "No memory entry mentions project/mystery.bin.",
+      "citations": [],
+      "unknown": true
+    }
+  }
+}

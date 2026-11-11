@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "id": "dl-07",
+  "skill": "decide_later",
+  "split": "test",
+  "title": "A resolved item remains in history",
+  "fixture": {
+    "project_id": "proj-dl-07",
+    "files": {
+      "project/src/app.py": "print(1)\n"
+    },
+    "protected": [
+      "project/src/app.py"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-dl-07",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "We decided to keep app.py."
+        },
+        {
+          "role": "assistant",
+          "text": "Mark resolved and leave the file."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "decide_later_ids": [
+      "dl_07"
+    ],
+    "decide_later_status": {
+      "dl_07": "resolved"
+    },
+    "must_remain": [
+      "project/src/app.py"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "must_be_proposed": []
+  },
+  "stub_result": {
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_07",
+        "project_id": "proj-dl-07",
+        "agent": "codex",
+        "session_id": "sess-dl-07",
+        "artifact_id": "app",
+        "action": "remove source",
+        "why_doubtful": "Resolved by keeping the source. The outcome stays in the queue history.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "Nothing further. The history should remain.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "resolved"
+      }
+    ],
+    "proposals": [],
+    "memory_events": []
+  }
+}

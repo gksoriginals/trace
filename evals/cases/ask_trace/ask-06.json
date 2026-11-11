@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "id": "ask-06",
+  "skill": "ask_trace",
+  "split": "test",
+  "title": "Two required facts both appear",
+  "fixture": {
+    "project_id": "proj-ask-06",
+    "files": {
+      "trace-input/memory.jsonl": "{\"schema_version\": 1, \"event_id\": \"evt_lock\", \"event_type\": \"artifact\", \"what\": {\"id\": \"modules\", \"kind\": \"dependencies\", \"location\": \"project/node_modules\", \"bytes\": null, \"completeness\": \"known\"}, \"why\": \"Rebuildable from package-lock.json and shared by api.\", \"claim\": \"observed\", \"agent\": {\"harness\": \"claude-code\", \"session_id\": \"sess-lock\"}, \"project\": {\"id\": \"proj-ask-06\", \"consumers\": [\"api\"]}, \"created\": {\"at\": \"2026-11-11T10:00:00+05:30\", \"timezone\": \"Asia/Kolkata\", \"source\": \"observed\", \"evidence_ids\": [\"turn-1\"]}, \"can_go_when\": \"When api no longer depends on it.\", \"evidence_ids\": [\"turn-1\"], \"correction_of\": null}\n",
+      "project/README.md": "# project\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-ask-06",
+      "harness": "memory",
+      "turns": [
+        {
+          "role": "user",
+          "text": "What is node_modules and who shares it?"
+        },
+        {
+          "role": "assistant",
+          "text": "Answer from memory only."
+        }
+      ]
+    },
+    "notes": "Read trace-input/memory.jsonl. Write only trace-out/answer.json."
+  },
+  "expected": {
+    "answer_facts": [
+      "package-lock.json",
+      "shared by api"
+    ],
+    "answer_citations": [
+      "evt_lock"
+    ],
+    "answer_unknown": false,
+    "answer_forbidden": [
+      "safe to remove"
+    ],
+    "filesystem_unchanged": true,
+    "must_remain": [
+      "trace-input/memory.jsonl",
+      "project/README.md"
+    ],
+    "must_be_trashed": []
+  },
+  "stub_result": {
+    "answer": {
+      "text": "Rebuildable from package-lock.json and shared by api.",
+      "citations": [
+        "evt_lock"
+      ],
+      "unknown": false
+    }
+  }
+}

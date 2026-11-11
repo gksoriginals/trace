@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "id": "dl-04",
+  "skill": "decide_later",
+  "split": "test",
+  "title": "A stale item does not delete",
+  "fixture": {
+    "project_id": "proj-dl-04",
+    "files": {
+      "project/old/build.js": "js\n"
+    },
+    "protected": [
+      "project/old/build.js"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-dl-04",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "This item has been waiting."
+        },
+        {
+          "role": "assistant",
+          "text": "Leave the file. Mark the item stale."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "decide_later_ids": [
+      "dl_04"
+    ],
+    "decide_later_status": {
+      "dl_04": "stale"
+    },
+    "must_remain": [
+      "project/old/build.js"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "must_be_proposed": []
+  },
+  "stub_result": {
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_04",
+        "project_id": "proj-dl-04",
+        "agent": "claude-code",
+        "session_id": "sess-dl-04",
+        "artifact_id": "old_build",
+        "action": "remove build",
+        "why_doubtful": "The doubt is stale and still unresolved. Age is not a reason to delete.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "A fresh look at whether the build is still the one the app serves.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "stale"
+      }
+    ],
+    "proposals": [],
+    "memory_events": []
+  }
+}

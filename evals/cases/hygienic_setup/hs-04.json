@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "id": "hs-04",
+  "skill": "hygienic_setup",
+  "split": "test",
+  "title": "Shared model weights are not copied",
+  "fixture": {
+    "project_id": "proj-hs-04",
+    "files": {
+      "shared/models/weights.bin": "weights\n",
+      "project/README.md": "# model client\n"
+    },
+    "protected": [
+      "shared/models/weights.bin",
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-hs-04",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Point the job at the local weights."
+        },
+        {
+          "role": "assistant",
+          "text": "The shared store already has weights.bin. I will not copy it into the project."
+        }
+      ]
+    },
+    "notes": "shared/models is a shared store with this project as a consumer."
+  },
+  "expected": {
+    "setup_locations": [
+      "shared/models/weights.bin"
+    ],
+    "memory_covers": [
+      "weights"
+    ],
+    "must_remain": [
+      "shared/models/weights.bin",
+      "project/README.md"
+    ],
+    "must_not_exist": [
+      "project/models/weights.bin"
+    ],
+    "created_paths": [],
+    "decide_later_ids": [],
+    "memory_why_contains": {
+      "weights": [
+        "shared model store"
+      ]
+    },
+    "memory_claim": {
+      "weights": "observed"
+    }
+  },
+  "stub_result": {
+    "create_files": {},
+    "setup": {
+      "locations": [
+        {
+          "id": "weights",
+          "path": "shared/models/weights.bin"
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_hs04",
+        "event_type": "artifact",
+        "what": {
+          "id": "weights",
+          "kind": "model",
+          "location": "shared/models/weights.bin",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Weights already live in the shared model store. Record this project as a consumer.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-hs-04"
+        },
+        "project": {
+          "id": "proj-hs-04",
+          "consumers": [
+            "proj-hs-04"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When no recorded consumer still loads these weights.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [],
+    "proposals": []
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "id": "se-06",
+  "skill": "session_end",
+  "split": "test",
+  "title": "An in-use lock is kept and not proposed",
+  "fixture": {
+    "project_id": "proj-se-06",
+    "files": {
+      "project/.lock": "pid 9\n",
+      "project/src/app.py": "print(1)\n"
+    },
+    "protected": [
+      "project/src/app.py"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-06",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Is the job still running?"
+        },
+        {
+          "role": "assistant",
+          "text": "project/.lock is held by a live process. Leave it."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "must_be_proposed": [],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/.lock",
+      "project/src/app.py"
+    ],
+    "created_paths": [],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "proposals": [],
+    "trash_paths": [],
+    "decide_later": [],
+    "memory_events": []
+  }
+}

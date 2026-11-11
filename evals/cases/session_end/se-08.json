@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "id": "se-08",
+  "skill": "session_end",
+  "split": "test",
+  "title": "A clean tree proposes nothing",
+  "fixture": {
+    "project_id": "proj-se-08",
+    "files": {
+      "project/README.md": "# done\n",
+      "project/src/app.py": "print(1)\n"
+    },
+    "protected": [
+      "project/README.md",
+      "project/src/app.py"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-08",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Anything to tidy?"
+        },
+        {
+          "role": "assistant",
+          "text": "This session created no disposable files."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "must_be_proposed": [],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/README.md",
+      "project/src/app.py"
+    ],
+    "created_paths": [],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "proposals": [],
+    "trash_paths": [],
+    "decide_later": [],
+    "memory_events": []
+  }
+}

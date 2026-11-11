@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "id": "dl-01",
+  "skill": "decide_later",
+  "split": "test",
+  "title": "Unknown volume consumers stay open",
+  "fixture": {
+    "project_id": "proj-dl-01",
+    "files": {
+      "shared/volumes/data.txt": "vol\n",
+      "project/README.md": "# job\n"
+    },
+    "protected": [
+      "shared/volumes/data.txt",
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-dl-01",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Remove the data volume?"
+        },
+        {
+          "role": "assistant",
+          "text": "I cannot list every mount."
+        }
+      ]
+    },
+    "notes": "shared/volumes may have other consumers."
+  },
+  "expected": {
+    "decide_later_ids": [
+      "dl_01"
+    ],
+    "decide_later_status": {
+      "dl_01": "open"
+    },
+    "must_remain": [
+      "shared/volumes/data.txt",
+      "project/README.md"
+    ],
+    "must_be_trashed": [],
+    "created_paths": [],
+    "must_be_proposed": []
+  },
+  "stub_result": {
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_01",
+        "project_id": "proj-dl-01",
+        "agent": "codex",
+        "session_id": "sess-dl-01",
+        "artifact_id": "vol_data",
+        "action": "remove volume",
+        "why_doubtful": "A second project may mount this volume and the session could not list consumers.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "A consumer list from the tool that shows every current mount.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "open"
+      }
+    ],
+    "proposals": [],
+    "memory_events": []
+  }
+}

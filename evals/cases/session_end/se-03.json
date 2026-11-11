@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "id": "se-03",
+  "skill": "session_end",
+  "split": "test",
+  "title": "A secret beside a temp file is untouched",
+  "fixture": {
+    "project_id": "proj-se-03",
+    "files": {
+      "project/.env": "TOKEN=abc\n",
+      "project/.tmp-session": "temp\n"
+    },
+    "protected": [
+      "project/.env"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-03",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Try the API."
+        },
+        {
+          "role": "assistant",
+          "text": "I wrote .tmp-session. .env is a credential and stays."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "must_be_proposed": [
+      "project/.tmp-session"
+    ],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/.env",
+      "project/.tmp-session"
+    ],
+    "created_paths": [],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "proposals": [
+      "project/.tmp-session"
+    ],
+    "trash_paths": [],
+    "decide_later": [],
+    "memory_events": []
+  }
+}

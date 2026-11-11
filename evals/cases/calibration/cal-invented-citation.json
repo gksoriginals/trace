@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "id": "cal-invented-citation",
+  "skill": "ask_trace",
+  "split": "calibration",
+  "title": "Planted: citation id is not in memory",
+  "fixture": {
+    "project_id": "proj-cal-invented-citation",
+    "files": {
+      "trace-input/memory.jsonl": "{\"schema_version\": 1, \"event_id\": \"evt_real\", \"event_type\": \"artifact\", \"what\": {\"id\": \"readme\", \"kind\": \"source\", \"location\": \"project/README.md\", \"bytes\": null, \"completeness\": \"known\"}, \"why\": \"Project readme.\", \"claim\": \"observed\", \"agent\": {\"harness\": \"claude-code\", \"session_id\": \"sess-cal-a\"}, \"project\": {\"id\": \"proj-cal-ask\", \"consumers\": [\"proj-cal-ask\"]}, \"created\": {\"at\": \"2026-11-11T10:00:00+05:30\", \"timezone\": \"Asia/Kolkata\", \"source\": \"observed\", \"evidence_ids\": [\"turn-1\"]}, \"can_go_when\": \"While the readme exists.\", \"evidence_ids\": [\"turn-1\"], \"correction_of\": null}\n",
+      "project/README.md": "# project\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-cal-a",
+      "harness": "memory",
+      "turns": [
+        {
+          "role": "user",
+          "text": "What is the readme?"
+        },
+        {
+          "role": "assistant",
+          "text": "Answer from memory."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "answer_facts": [
+      "Project readme"
+    ],
+    "answer_citations": [],
+    "answer_unknown": false,
+    "answer_forbidden": [],
+    "filesystem_unchanged": true,
+    "must_remain": [
+      "trace-input/memory.jsonl",
+      "project/README.md"
+    ],
+    "must_be_trashed": []
+  },
+  "stub_result": {
+    "answer": {
+      "text": "Project readme.",
+      "citations": [
+        "evt_does_not_exist"
+      ],
+      "unknown": false
+    }
+  },
+  "expect_fail_checks": [
+    "answer_citations"
+  ]
+}

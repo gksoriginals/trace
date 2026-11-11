@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "id": "hs-dev-03",
+  "skill": "hygienic_setup",
+  "split": "dev",
+  "title": "Unknown installer is queued, not guessed",
+  "fixture": {
+    "project_id": "proj-hs-dev-03",
+    "files": {
+      "project/tool.toml": "name = \"custom-fetcher\"\n"
+    },
+    "protected": [
+      "project/tool.toml"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-hs-dev-03",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Install custom-fetcher."
+        },
+        {
+          "role": "assistant",
+          "text": "I cannot find a current official location."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "setup_locations": [],
+    "memory_covers": [
+      "custom_fetcher"
+    ],
+    "must_remain": [
+      "project/tool.toml"
+    ],
+    "must_not_exist": [
+      "project/opt/unknown-copy.bin"
+    ],
+    "created_paths": [],
+    "decide_later_ids": [
+      "dl_hs_dev_03"
+    ],
+    "memory_why_contains": {
+      "custom_fetcher": [
+        "nothing was copied"
+      ]
+    },
+    "memory_claim": {
+      "custom_fetcher": "inferred"
+    }
+  },
+  "stub_result": {
+    "create_files": {},
+    "setup": {
+      "locations": []
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_hsd3",
+        "event_type": "artifact",
+        "what": {
+          "id": "custom_fetcher",
+          "kind": "toolchain",
+          "location": "unconfirmed",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "No official install location was found for this tool version, so nothing was copied.",
+        "claim": "inferred",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-hs-dev-03"
+        },
+        "project": {
+          "id": "proj-hs-dev-03",
+          "consumers": [
+            "proj-hs-dev-03"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "inferred",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "After an official location is confirmed.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_hs_dev_03",
+        "project_id": "proj-hs-dev-03",
+        "agent": "claude-code",
+        "session_id": "sess-hs-dev-03",
+        "artifact_id": "custom_fetcher",
+        "action": "install custom-fetcher",
+        "why_doubtful": "The official install location for this version is unknown.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "A current official install path for this exact version.",
+        "first_observed": "2026-11-11T10:00:00+05:30",
+        "last_observed": "2026-11-11T10:00:00+05:30",
+        "status": "open"
+      }
+    ],
+    "proposals": []
+  }
+}

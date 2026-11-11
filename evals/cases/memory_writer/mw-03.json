@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "id": "mw-03",
+  "skill": "memory_writer",
+  "split": "test",
+  "title": "Unknown shared consumer stays inferred",
+  "fixture": {
+    "project_id": "proj-mw-03",
+    "files": {
+      "shared/cache/data.bin": "data\n"
+    },
+    "protected": [
+      "shared/cache/data.bin"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-mw-03",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Can we drop the shared cache?"
+        },
+        {
+          "role": "assistant",
+          "text": "I can see this project. I cannot see every other consumer."
+        }
+      ]
+    },
+    "notes": "shared/cache may have consumers outside this fixture."
+  },
+  "expected": {
+    "memory_covers": [
+      "shared_cache"
+    ],
+    "must_remain": [
+      "shared/cache/data.bin"
+    ],
+    "created_paths": [],
+    "must_be_trashed": [],
+    "memory_why_contains": {
+      "shared_cache": [
+        "unknown"
+      ]
+    },
+    "memory_why_forbids": {
+      "shared_cache": [
+        "unused"
+      ]
+    },
+    "memory_claim": {
+      "shared_cache": "inferred"
+    }
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_mw03",
+        "event_type": "artifact",
+        "what": {
+          "id": "shared_cache",
+          "kind": "cache",
+          "location": "shared/cache/data.bin",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Shared cache. At least one other consumer is unknown, so do not treat it as free of consumers.",
+        "claim": "inferred",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-mw-03"
+        },
+        "project": {
+          "id": "proj-mw-03",
+          "consumers": [
+            "proj-mw-03",
+            "unknown"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "inferred",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When every consumer is known and none remain.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

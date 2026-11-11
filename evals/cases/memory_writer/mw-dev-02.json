@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "id": "mw-dev-02",
+  "skill": "memory_writer",
+  "split": "dev",
+  "title": "A cleanup outcome does not delete the file again",
+  "fixture": {
+    "project_id": "proj-mw-dev-02",
+    "files": {
+      "project/dist/old.js": "old\n"
+    },
+    "protected": [
+      "project/dist/old.js"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-mw-dev-02",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Record the earlier tidy."
+        },
+        {
+          "role": "assistant",
+          "text": "The previous bundle was already trashed. Do not touch the new file."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "memory_covers": [
+      "old_bundle"
+    ],
+    "must_remain": [
+      "project/dist/old.js"
+    ],
+    "created_paths": [],
+    "must_be_trashed": [],
+    "memory_why_contains": {
+      "old_bundle": [
+        "Trash"
+      ]
+    },
+    "memory_claim": {
+      "old_bundle": "observed"
+    }
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_mwd2",
+        "event_type": "cleanup_outcome",
+        "what": {
+          "id": "old_bundle",
+          "kind": "cleanup_outcome",
+          "location": "project/dist/old.js",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "An earlier consented cleanup moved a different bundle to Trash. This file is a new build and stays.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-mw-dev-02"
+        },
+        "project": {
+          "id": "proj-mw-dev-02",
+          "consumers": [
+            "proj-mw-dev-02"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When this new build is itself superseded.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  },
+  "judge_reference": {
+    "unsupported_claim": false,
+    "notes": "Gold outcome states only fixture facts."
+  }
+}

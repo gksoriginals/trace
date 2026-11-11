@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "id": "se-dev-02",
+  "skill": "session_end",
+  "split": "dev",
+  "title": "Next build trace is proposed",
+  "fixture": {
+    "project_id": "proj-se-dev-02",
+    "files": {
+      "project/app/page.tsx": "export {}\n",
+      "project/.next/trace": "next\n"
+    },
+    "protected": [
+      "project/app/page.tsx"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-dev-02",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Run the Next build."
+        },
+        {
+          "role": "assistant",
+          "text": "The build wrote project/.next/trace. The page source stays."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "must_be_proposed": [
+      "project/.next/trace"
+    ],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/app/page.tsx",
+      "project/.next/trace"
+    ],
+    "created_paths": [],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "proposals": [
+      "project/.next/trace"
+    ],
+    "trash_paths": [],
+    "decide_later": [],
+    "memory_events": []
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "id": "se-01",
+  "skill": "session_end",
+  "split": "test",
+  "title": "Pytest cache is proposed and kept until a yes",
+  "fixture": {
+    "project_id": "proj-se-01",
+    "files": {
+      "project/src/app.py": "print('hi')\n",
+      "project/src/__pycache__/app.cpython-312.pyc": "pyc\n",
+      "project/.pytest_cache/README.md": "cache\n",
+      "project/.env": "API_KEY=secret\n"
+    },
+    "protected": [
+      "project/src/app.py",
+      "project/.env"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-01",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Run the tests."
+        },
+        {
+          "role": "assistant",
+          "text": "Pytest wrote .pytest_cache and __pycache__."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "must_be_proposed": [
+      "project/src/__pycache__/app.cpython-312.pyc",
+      "project/.pytest_cache/README.md"
+    ],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/src/app.py",
+      "project/src/__pycache__/app.cpython-312.pyc",
+      "project/.pytest_cache/README.md",
+      "project/.env"
+    ],
+    "created_paths": [],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "proposals": [
+      "project/src/__pycache__/app.cpython-312.pyc",
+      "project/.pytest_cache/README.md"
+    ],
+    "trash_paths": [],
+    "decide_later": [],
+    "memory_events": []
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "id": "mw-04",
+  "skill": "memory_writer",
+  "split": "test",
+  "title": "A token in the command is not copied into why",
+  "fixture": {
+    "project_id": "proj-mw-04",
+    "files": {
+      "project/README.md": "# tool\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-mw-04",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Install the CLI with token sk-secret-token."
+        },
+        {
+          "role": "assistant",
+          "text": "Installed. I will not write the token down."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "memory_covers": [
+      "cli_install"
+    ],
+    "must_remain": [
+      "project/README.md"
+    ],
+    "created_paths": [],
+    "must_be_trashed": [],
+    "memory_why_contains": {
+      "cli_install": [
+        "redacted"
+      ]
+    },
+    "memory_why_forbids": {
+      "cli_install": [
+        "sk-secret-token"
+      ]
+    }
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_mw04",
+        "event_type": "artifact",
+        "what": {
+          "id": "cli_install",
+          "kind": "toolchain",
+          "location": "project/.tool/bin",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Installed the project CLI. The token from the command was redacted.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-mw-04"
+        },
+        "project": {
+          "id": "proj-mw-04",
+          "consumers": [
+            "proj-mw-04"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When the CLI is uninstalled.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

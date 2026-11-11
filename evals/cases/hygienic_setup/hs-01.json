@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "id": "hs-01",
+  "skill": "hygienic_setup",
+  "split": "test",
+  "title": "npm install stays project-local",
+  "fixture": {
+    "project_id": "proj-hs-01",
+    "files": {
+      "project/package.json": "{ \"name\": \"app\" }\n",
+      "project/package-lock.json": "{ \"lockfileVersion\": 3 }\n"
+    },
+    "protected": [
+      "project/package.json",
+      "project/package-lock.json"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-hs-01",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Install the npm dependencies."
+        },
+        {
+          "role": "assistant",
+          "text": "I will npm ci into project/node_modules and I will not copy the shared npm cache into vendor."
+        }
+      ]
+    },
+    "notes": "A shared npm cache already exists outside this project. Do not mirror it."
+  },
+  "expected": {
+    "setup_locations": [
+      "project/node_modules/.keep"
+    ],
+    "memory_covers": [
+      "node_modules"
+    ],
+    "must_remain": [
+      "project/package.json",
+      "project/package-lock.json"
+    ],
+    "must_not_exist": [
+      "project/vendor/npm-mirror/.keep"
+    ],
+    "created_paths": [
+      "project/node_modules/.keep"
+    ],
+    "decide_later_ids": [],
+    "memory_why_contains": {
+      "node_modules": [
+        "package-lock.json"
+      ]
+    },
+    "memory_claim": {
+      "node_modules": "observed"
+    }
+  },
+  "stub_result": {
+    "create_files": {
+      "project/node_modules/.keep": "installed\n"
+    },
+    "setup": {
+      "locations": [
+        {
+          "id": "node_modules",
+          "path": "project/node_modules/.keep"
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_hs01",
+        "event_type": "artifact",
+        "what": {
+          "id": "node_modules",
+          "kind": "dependencies",
+          "location": "project/node_modules/.keep",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Project-local install recorded so it can be recreated from package-lock.json.",
+        "claim": "observed",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-hs-01"
+        },
+        "project": {
+          "id": "proj-hs-01",
+          "consumers": [
+            "proj-hs-01"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "After the project no longer depends on these packages.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [],
+    "proposals": []
+  }
+}

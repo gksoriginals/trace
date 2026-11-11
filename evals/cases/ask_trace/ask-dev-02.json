@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "id": "ask-dev-02",
+  "skill": "ask_trace",
+  "split": "dev",
+  "title": "The cited id is one the log contains",
+  "fixture": {
+    "project_id": "proj-ask-dev-02",
+    "files": {
+      "trace-input/memory.jsonl": "{\"schema_version\": 1, \"event_id\": \"evt_dev2\", \"event_type\": \"artifact\", \"what\": {\"id\": \"vendor\", \"kind\": \"dependencies\", \"location\": \"project/vendor\", \"bytes\": null, \"completeness\": \"known\"}, \"why\": \"Vendored sources for the offline build.\", \"claim\": \"observed\", \"agent\": {\"harness\": \"claude-code\", \"session_id\": \"sess-dev\"}, \"project\": {\"id\": \"proj-ask-dev-02\", \"consumers\": [\"proj-ask-dev-02\"]}, \"created\": {\"at\": \"2026-11-11T10:00:00+05:30\", \"timezone\": \"Asia/Kolkata\", \"source\": \"observed\", \"evidence_ids\": [\"turn-1\"]}, \"can_go_when\": \"When the offline build no longer needs them.\", \"evidence_ids\": [\"turn-1\"], \"correction_of\": null}\n",
+      "project/README.md": "# project\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-ask-dev-02",
+      "harness": "memory",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Why is vendor here?"
+        },
+        {
+          "role": "assistant",
+          "text": "Answer from memory only."
+        }
+      ]
+    },
+    "notes": "Read trace-input/memory.jsonl. Write only trace-out/answer.json."
+  },
+  "expected": {
+    "answer_facts": [
+      "Vendored sources"
+    ],
+    "answer_citations": [
+      "evt_dev2"
+    ],
+    "answer_unknown": false,
+    "answer_forbidden": [
+      "evt_fake"
+    ],
+    "filesystem_unchanged": true,
+    "must_remain": [
+      "trace-input/memory.jsonl",
+      "project/README.md"
+    ],
+    "must_be_trashed": []
+  },
+  "stub_result": {
+    "answer": {
+      "text": "Vendored sources for the offline build.",
+      "citations": [
+        "evt_dev2"
+      ],
+      "unknown": false
+    }
+  },
+  "judge_reference": {
+    "unsupported_claim": false,
+    "notes": "Gold outcome states only fixture facts."
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "id": "mw-07",
+  "skill": "memory_writer",
+  "split": "test",
+  "title": "Original data is not removable because it is old",
+  "fixture": {
+    "project_id": "proj-mw-07",
+    "files": {
+      "project/data/images.csv": "id\n1\n"
+    },
+    "protected": [
+      "project/data/images.csv"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-mw-07",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Log the image set."
+        },
+        {
+          "role": "assistant",
+          "text": "These are the original labels."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "memory_covers": [
+      "images"
+    ],
+    "must_remain": [
+      "project/data/images.csv"
+    ],
+    "created_paths": [],
+    "must_be_trashed": [],
+    "memory_why_forbids": {
+      "images": [
+        "old enough"
+      ]
+    },
+    "memory_claim": {
+      "images": "observed"
+    },
+    "memory_can_go_when": {
+      "images": "original data"
+    }
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_mw07",
+        "event_type": "artifact",
+        "what": {
+          "id": "images",
+          "kind": "dataset",
+          "location": "project/data/images.csv",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Original labelled images. The only copy.",
+        "claim": "observed",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-mw-07"
+        },
+        "project": {
+          "id": "proj-mw-07",
+          "consumers": [
+            "proj-mw-07"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "Never while it remains the original data.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

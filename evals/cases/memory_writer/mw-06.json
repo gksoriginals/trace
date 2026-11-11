@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "id": "mw-06",
+  "skill": "memory_writer",
+  "split": "test",
+  "title": "A coverage receipt names the session",
+  "fixture": {
+    "project_id": "proj-mw-06",
+    "files": {
+      "project/README.md": "# app\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-mw-06",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "We finished the tidy."
+        },
+        {
+          "role": "assistant",
+          "text": "Cleanup for this session completed."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "memory_covers": [
+      "coverage_session"
+    ],
+    "must_remain": [
+      "project/README.md"
+    ],
+    "created_paths": [],
+    "must_be_trashed": [],
+    "memory_why_contains": {
+      "coverage_session": [
+        "completed"
+      ]
+    },
+    "memory_can_go_when": {
+      "coverage_session": "receipt"
+    }
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_mw06",
+        "event_type": "coverage_receipt",
+        "what": {
+          "id": "coverage_session",
+          "kind": "receipt",
+          "location": "session:sess-mw-06",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Session-end cleanup completed for this session.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-mw-06"
+        },
+        "project": {
+          "id": "proj-mw-06",
+          "consumers": [
+            "proj-mw-06"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "This is a receipt only, not a storage artifact.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

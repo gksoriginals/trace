@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "id": "ask-dev-01",
+  "skill": "ask_trace",
+  "split": "dev",
+  "title": "A short fact from one event",
+  "fixture": {
+    "project_id": "proj-ask-dev-01",
+    "files": {
+      "trace-input/memory.jsonl": "{\"schema_version\": 1, \"event_id\": \"evt_dev1\", \"event_type\": \"artifact\", \"what\": {\"id\": \"target\", \"kind\": \"build\", \"location\": \"project/target\", \"bytes\": null, \"completeness\": \"known\"}, \"why\": \"Debug build output.\", \"claim\": \"observed\", \"agent\": {\"harness\": \"codex\", \"session_id\": \"sess-dev\"}, \"project\": {\"id\": \"proj-ask-dev-01\", \"consumers\": [\"proj-ask-dev-01\"]}, \"created\": {\"at\": \"2026-11-11T10:00:00+05:30\", \"timezone\": \"Asia/Kolkata\", \"source\": \"observed\", \"evidence_ids\": [\"turn-1\"]}, \"can_go_when\": \"After the next clean build.\", \"evidence_ids\": [\"turn-1\"], \"correction_of\": null}\n",
+      "project/README.md": "# project\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-ask-dev-01",
+      "harness": "memory",
+      "turns": [
+        {
+          "role": "user",
+          "text": "What is target?"
+        },
+        {
+          "role": "assistant",
+          "text": "Answer from memory only."
+        }
+      ]
+    },
+    "notes": "Read trace-input/memory.jsonl. Write only trace-out/answer.json."
+  },
+  "expected": {
+    "answer_facts": [
+      "Debug build"
+    ],
+    "answer_citations": [
+      "evt_dev1"
+    ],
+    "answer_unknown": false,
+    "answer_forbidden": [
+      "safe to remove"
+    ],
+    "filesystem_unchanged": true,
+    "must_remain": [
+      "trace-input/memory.jsonl",
+      "project/README.md"
+    ],
+    "must_be_trashed": []
+  },
+  "stub_result": {
+    "answer": {
+      "text": "Debug build output.",
+      "citations": [
+        "evt_dev1"
+      ],
+      "unknown": false
+    }
+  },
+  "judge_reference": {
+    "unsupported_claim": false,
+    "notes": "Gold outcome states only fixture facts."
+  }
+}

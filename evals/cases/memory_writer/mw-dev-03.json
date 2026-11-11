@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "id": "mw-dev-03",
+  "skill": "memory_writer",
+  "split": "dev",
+  "title": "A lesson points at its evidence",
+  "fixture": {
+    "project_id": "proj-mw-dev-03",
+    "files": {
+      "project/README.md": "# app\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-mw-dev-03",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Remember the venv choice."
+        },
+        {
+          "role": "assistant",
+          "text": "The local virtualenv was the smaller setup."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "memory_covers": [
+      "lesson_venv"
+    ],
+    "must_remain": [
+      "project/README.md"
+    ],
+    "created_paths": [],
+    "must_be_trashed": [],
+    "memory_why_contains": {
+      "lesson_venv": [
+        "Evidence"
+      ]
+    },
+    "memory_claim": {
+      "lesson_venv": "verified"
+    }
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_mwd3",
+        "event_type": "lesson",
+        "what": {
+          "id": "lesson_venv",
+          "kind": "lesson",
+          "location": "project/.venv",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "A project-local virtualenv avoided a second copy of site-packages. Evidence is the session note.",
+        "claim": "verified",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-mw-dev-03"
+        },
+        "project": {
+          "id": "proj-mw-dev-03",
+          "consumers": [
+            "proj-mw-dev-03"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "verified",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "While this project still uses a local virtualenv.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  },
+  "judge_reference": {
+    "unsupported_claim": false,
+    "notes": "Gold outcome states only fixture facts."
+  }
+}

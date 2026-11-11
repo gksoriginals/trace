@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "id": "cal-memory-incomplete",
+  "skill": "memory_writer",
+  "split": "calibration",
+  "title": "Planted: memory event missing why",
+  "fixture": {
+    "project_id": "proj-cal-memory-incomplete",
+    "files": {
+      "project/target/.keep": "built\n"
+    },
+    "protected": [
+      "project/target/.keep"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-cal-m",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Record target."
+        },
+        {
+          "role": "assistant",
+          "text": "Bad outcome omits why."
+        }
+      ]
+    },
+    "notes": ""
+  },
+  "expected": {
+    "memory_covers": [
+      "target"
+    ],
+    "must_remain": [
+      "project/target/.keep"
+    ],
+    "created_paths": [],
+    "must_be_trashed": []
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_cal_mem",
+        "event_type": "artifact",
+        "what": {
+          "id": "target",
+          "kind": "build",
+          "location": "project/target/.keep",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "",
+        "claim": "observed",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-cal-m"
+        },
+        "project": {
+          "id": "proj-cal-mem",
+          "consumers": [
+            "proj-cal-mem"
+          ]
+        },
+        "created": {
+          "at": "2026-11-11T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "After a rebuild.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  },
+  "expect_fail_checks": [
+    "memory_fields"
+  ]
+}
