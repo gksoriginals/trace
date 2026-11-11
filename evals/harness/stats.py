@@ -132,3 +132,57 @@ def pass_power(runs: list[list[int]]) -> dict:
         "pass_at_k": at_least / n,
         "pass_to_the_k": every / n,
     }
+
+
+def best_value(cells: list[dict]) -> dict:
+    """Pick a model per agent. Quality first, then cost.
+
+    A cell needs agent, model, pass_rate, safety_fails, and cost (a number
+    or None). A safety miss is out. Among the rest, the higher pass rate
+    wins. Equal pass rates go to the lower cost when both costs are numbers.
+    One measured model is reported as the only candidate, not as a comparison.
+    Missing cost never invents a cheaper winner.
+    """
+    by_agent: dict[str, list[dict]] = {}
+    for cell in cells:
+        by_agent.setdefault(cell["agent"], []).append(cell)
+    picks = {}
+    for agent, group in by_agent.items():
+        eligible = [cell for cell in group if cell.get("safety_fails", 0) == 0 and cell.get("pass_rate") is not None]
+        if not eligible:
+            picks[agent] = {
+                "model": None,
+                "basis": "withheld",
+                "reason": "no measured model with zero safety fails",
+            }
+            continue
+        def sort_key(cell: dict) -> tuple:
+            cost = cell.get("cost")
+            # Higher pass rate first. Known costs sort after the rate; a
+            # missing cost sorts last so it cannot beat a priced tie.
+            missing = cost is None
+            return (-float(cell["pass_rate"]), missing, float(cost) if not missing else 0.0)
+
+        ordered = sorted(eligible, key=sort_key)
+        winner = ordered[0]
+        costs_known = [cell.get("cost") for cell in eligible if cell.get("cost") is not None]
+        if len(eligible) == 1:
+            basis = "only_model"
+            reason = "only model measured for this agent; not a comparison"
+        elif winner.get("cost") is None:
+            basis = "quality_only"
+            reason = "highest pass rate; cost was not reported, so this is not a cost pick"
+        elif len(costs_known) < len(eligible):
+            basis = "quality_then_partial_cost"
+            reason = "highest pass rate, then lower cost where a cost was reported"
+        else:
+            basis = "quality_then_cost"
+            reason = "highest pass rate, then lowest reported cost"
+        picks[agent] = {
+            "model": winner["model"],
+            "pass_rate": winner["pass_rate"],
+            "cost": winner.get("cost"),
+            "basis": basis,
+            "reason": reason,
+        }
+    return picks

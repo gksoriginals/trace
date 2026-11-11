@@ -4,6 +4,8 @@
 - **Date:** 2026-11-11
 - **Deciders:** Gopi
 
+The product choices this record left open are locked in [ADR-0002](0002-locked-product-decisions.md). This record stays as the Shed split.
+
 ## Context
 
 Shed was a Mac cleaner that tried to understand a whole disk, then delete with an agent. Two lessons from using it shaped the next product. A full run was the only way to do the work, and it burned too many tokens. The app crashed in ways Gopi associated with having no two-way communication with the coding agent: a process was started and the UI was left guessing. Trace is a new product in a new repository, not a phase of Shed. This environment could not open `gksoriginals/shed` (the GitHub API returned 404), so this record uses the lessons PRD v0.2 kept after reading Shed's PRD, UX, implementation ledger, and README. It does not copy Shed's code, tests, or release gates.
@@ -20,7 +22,7 @@ Leave behind Shed's whole-disk second pass, whole-Mac categories, system-junk sc
 
 ## Consequences
 
-The first thing to build is the skills, their memory format, and the evals that score outcomes. The app comes after, and its agent path has to speak a real session protocol on day one. Architecture and numeric budgets stay provisional until dogfood, and each pivot gets its own ADR.
+The first thing to build is the skills, their memory format, and the evals that score outcomes. The app comes after, and its agent path has to speak a real session protocol on day one. Architecture that a later ADR has not locked stays a guess. ADR-0002 rejected Trace-side token caps.
 
 Token cost and crash recovery are design constraints, not slogans. Small scoped calls, a memory-first answer path, and a session that can be interrupted, resumed, and killed with its process group are part of the product.
 

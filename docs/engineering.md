@@ -2,7 +2,7 @@
 
 **Status:** directional. This is not a locked architecture. **Owner:** Gopi · **Date:** 11 November 2026
 
-Companion to [PRD v0.2](prd.md) and [Design & UX v0.2](design.md). The PRD owns scope and safety. The design owns presentation. This document names the pieces, the data they share, and the decisions that are still open. When a guess below changes, record it in [docs/adr/](adr/).
+Companion to [PRD v0.2](prd.md) and [Design & UX v0.2](design.md). The PRD owns scope and safety. The design owns presentation. This document names the pieces and the data they share. Gopi locked the product choices in [ADR-0002](adr/0002-locked-product-decisions.md). When a guess below changes, record it in [docs/adr/](adr/).
 
 Checked against official agent docs on 11 November 2026. Those capabilities are documented, not device-tested on Gopi's Mac. `gksoriginals/shed` returned 404 from this environment; Shed lessons below are the ones the PRD kept after reading that archive.
 
@@ -12,7 +12,7 @@ Two kinds of decision sit in this document.
 
 **Firm rules.** Changing one of these is a product decision, an ADR, and usually a safety or eval change. They are listed in the next section and repeated only where a module has to enforce them.
 
-**Current guess, change freely.** Names of modules, file paths, screen composition, timeouts, model choice, and the order of milestones inside a milestone are guesses. They exist so the first spike has something to build. They are not acceptance tests. If a spike shows a better shape, change it and write an ADR. Do not add tests that freeze a guess.
+**Current guess, change freely.** Names of modules, file paths (including the index path below), screen composition, timeout numbers, which specific model wins a comparison, and the order of work inside a milestone are guesses. They exist so the first spike has something to build. They are not acceptance tests. If a spike shows a better shape, change it and write an ADR. Do not add tests that freeze a guess. The rule for how a model is chosen is firm. The winning model id is not.
 
 ## Firm rules
 
@@ -25,7 +25,17 @@ Two kinds of decision sit in this document.
 7. **Evals first.** Skill-outcome evals and safety checks are the tests written up front. No UI tests and no tests of internal design until that part has stayed stable. See [Testing rule](#testing-rule) and [evals.md](evals.md).
 8. **Credentials stay in the agent.** Trace never reads, copies, or parses credential files, session tokens, or keychains to make an integration work. An adapter whose terms or login are not met stays unavailable. Skills and local Home keep working.
 9. **Local, and quiet.** The ledger, queue, registry, settings, and logs stay on the Mac. No telemetry by default. No cloud memory sync.
-10. **Memory before tokens.** Ask answers from project memory first. A hosted model runs only after the user accepts an agent, a scope, and a budget. Ask is read-only: it can propose an action card and cannot execute one.
+10. **Memory before a coding agent.** Ask answers from project memory first. A hosted model runs only after the user accepts an agent and a scope. Ask is read-only: it can propose an action card and cannot execute one.
+11. **Skill autonomy.** A skill runs inside the coding agent while it works. Before any cleanup or install, it nudges the user and asks. It looks up the healthiest, most efficient way and adds those steps to that agent's own task checklist. It records the decision in project memory and follows it next time. It may remove something without asking again only when the user approved that exact item before. Everything else is asked about, or goes to Decide-later.
+12. **Install scope.** Whole agent by default. A project can opt out. A project-only install is not the default, and it is not a broken setup when the user opted that project out.
+13. **No Trace caps for now.** Coding agents mostly run on subscription quota. Trace sets no token cap and no time cap on a Run or an Ask. It shows the usage the agent reported for that Run or Ask, or "unavailable." Memory-only answers spend none of that. Caps can be revisited later. This replaced the budget settings.
+14. **The 70% metric.** The share of bytes from agent-created artifacts that are removed within 30 days of creation. Shared caches count once. Measured free space is shown beside it and is never the percentage. Bytes whose creator is unknown stay out of both sides and are reported as unknown.
+15. **Local storage, split writers.** The ledger, queue, index, settings, and logs stay on the Mac. Skills append to a per-project log. The app is the only writer of its database. Skills keep the project index. No telemetry by default. No cloud memory sync.
+16. **Background only while the app is running.** A review the user opted into runs only while the menu bar app is running. Quit ends it. There is no helper process after quit, and no scheduled Execute.
+17. **Local dogfood only.** Auth, distribution, and the public name are decided at M2. Until then Trace is a local build on Gopi's Mac. Codex app-server auth is acceptable for that dogfood. Its ban on commercial or hosted use is an M2 question, not a reason to block the spike.
+18. **First agents.** Cursor over ACP, and Codex over app-server. Claude and Gemini are later adapters. The eval harness and the throwaway spikes follow that order.
+19. **Models.** Trace cannot always choose the model. For an app-triggered run the user picks the coding agent. The evals compare that agent's available models and name a best-value model per agent (quality, then cost). If only some models handle a skill well, the skill pins that model and tells the agent to run the skill in a subagent on it.
+20. **Minimum macOS is 14.**
 
 Conservative defaults are part of the safety rules: shared, unknown, protected, and prior-regret items are not preselected.
 
@@ -46,14 +56,14 @@ Skills do the everyday work inside the coding agent, while the user is still in 
 
 | Piece | Who runs it | What it does | What it refuses to be |
 | --- | --- | --- | --- |
-| **Hygienic setup** | Skill, in the coding agent | Before a build, install, environment, container, model, or dataset, look up the current official practice for that tool version. Do the approved setup. Avoid a needless copy. Record what changed, why, where, how to recreate or reverse it, and which project depends on it. | A blanket "containers are always smaller." |
-| **Session-end cleanup** | Skill, in the coding agent | At the end of the session, propose removal of short-lived files the session created, inside the scope the user already allowed. Ask before anything else. | A delete that happens because the session ended. |
+| **Hygienic setup** | Skill, in the coding agent | Before a build, install, environment, container, model, or dataset, nudge the user and ask. Look up the healthiest current practice for that tool version, and add the steps to the agent's own task checklist. Do the setup the user just approved, or the one they approved for this exact item before. Avoid a needless copy. Record the decision and what changed: why, where, how to recreate or reverse it, and which project depends on it. | A silent install, or a blanket "containers are always smaller." |
+| **Session-end cleanup** | Skill, in the coding agent | While the session is still the one that created the files, nudge the user before a removal. Propose short-lived files. Move something to Trash without asking again only when the user approved that exact item before. | A delete that happens because the session ended. |
 | **Memory writer** | Skill, in the coding agent | Append compact events: artifacts, setup changes, cleanup outcomes, coverage receipts, and a few evidence-backed lessons. | A second summary universe, or a dump of every command. |
 | **Decide-later** | Any skill writes it; Home shows it | A durable local queue item when a storage decision is doubtful. | A notification counter, or a timer that deletes when it expires. |
-| **Setup** | App | Agents and whether the CLI is installed, the version, and sign-in as verified or unknown. Opt-in skills. Whole-agent or selected-projects install. Project roots and categories. Guardrails, cost, lifecycle. | A whole-disk permission wizard, or setup again before every run. |
+| **Setup** | App | Agents and whether the CLI is installed, the version, and sign-in as verified or unknown. Opt-in skills. Whole-agent install, with a per-project opt-out. Project roots and categories. Guardrails and lifecycle. No budget fields. | A whole-disk permission wizard, a budget form, or setup again before every run. |
 | **Home** | App | Decide-later at the top. Then one insight card per project: what Trace did, setup changes that matter, storage outcomes, coverage. Read local records only. | A Run screen, a file inventory, or a transcript feed. |
-| **Ask Trace** | App | One question surface. Memory first. The coding agent only when memory is not enough, and only after a fresh budget. | A general chatbot, or a way to execute cleanup from chat. |
-| **Run** | App, on demand | Three stages: **Reviewing**, then **Actions** (cards), then **Execute**. Uses memory, then a targeted catch-up where coverage has a gap. Shows the agent, the model, and the token and time allowance before it starts. Costs more tokens than a skill. | The way everyday cleanup happens, or a refresh on every app open. |
+| **Ask Trace** | App | One question surface. Memory first. The coding agent only when memory is not enough, and only after the user accepts the agent and the scope. Show the usage that call reported. | A general chatbot, a budget gate, or a way to execute cleanup from chat. |
+| **Run** | App, on demand | Three stages: **Reviewing**, then **Actions** (cards), then **Execute**. The user picks the coding agent. Uses memory, then a targeted catch-up where coverage has a gap. Shows usage as the agent reports it. There is no token cap. Costs more of the subscription quota than a skill, which is why it stays on demand. | The way everyday cleanup happens, a capped job, or a refresh on every app open. |
 
 Skills work with the app closed. They share Trash, the never-delete list, and the journal through a small local action boundary, so a skill does not need a window open to move an already-approved path to Trash.
 
@@ -75,7 +85,7 @@ These names are the vocabulary for spikes and ADRs. The grouping is a current gu
 | Decide-later queue | Durable doubtful decisions. Writers: skills, and later Reviewing. Reader: Home. |
 | Memory log | Append-only provenance ledger. The app does not keep a parallel summary. |
 | Project registry | Stable project ids, roots, categories, shared-store notes. |
-| Settings | Opt-in skills, install scope, never-touch list, budgets, retention, notifications. |
+| Settings | Opt-in skills, whole-agent install with per-project opt-out, never-touch list, retention, notifications. No budget fields. |
 | Coverage receipts | Per project, per agent, per skill version: completed, partial, or failed, and which session range. |
 | Action journal | What was confirmed, the fingerprint at confirm time, what reached Trash, what was skipped. |
 | Session checkpoint | Ids needed to resume one Trace conversation. Not a filesystem snapshot. |
@@ -90,7 +100,15 @@ Design-doc card names (`TraceInsightCard`, `DecideLaterCard`, `TraceActionCard`)
 
 ## Data model
 
-Four stores are the product's memory. Receipts, the journal, and checkpoints sit beside them. All of them are local files. The directory is a guess: `~/Library/Application Support/Trace/` for the app, and a project-local `.trace/` so skills can write while the app is absent. The app imports the project-local log; it does not invent a second history. Concurrent writes are an open question; the first guess is one writer per file, with an atomic replace, and a conflict surfaced to the user rather than last-write-wins.
+The product's memory stays on the Mac. Skills and the app do not share a database.
+
+- **Per-project log.** Skills append. The app reads. It does not invent a second history.
+- **Project index.** Skills write it. The app reads it to find each project's log and to point a coding-agent session at that memory.
+- **App database.** The app is the only writer. Skills never open it. Settings, the action journal, session checkpoints, and Home's imported snapshot live here.
+
+Receipts can live in the per-project log. The directory names below are a guess. The split of writers is not.
+
+Concurrent skill sessions appending to one log are still a guess: open the file append-only, and surface a torn line instead of last-write-wins. Two skills do not take turns writing the app database, because they do not write it at all.
 
 Schema version lives on every record. A reader accepts the current version and the previous one. An unknown version is refused and shown, not guessed.
 
@@ -102,7 +120,7 @@ Version 1. One JSON object per line. Firm fields:
 | --- | --- |
 | `schema_version` | `1` |
 | `event_id` | Stable id. Never reused. |
-| `event_type` | `artifact`, `setup_change`, `cleanup_outcome`, `coverage_receipt`, `correction`, or `lesson` |
+| `event_type` | `artifact`, `setup_change`, `cleanup_outcome`, `coverage_receipt`, `correction`, `lesson`, or `decision` |
 | `what` | `id`, `kind`, `location` (canonical path or a tool-native id). `bytes` and `completeness` (`known`, `partial`, `unknown`) when the skill actually measured them. Unknown stays null, not zero. |
 | `why` | The task, and why it should stay or why it is temporary. |
 | `claim` | `observed`, `inferred`, or `verified`. |
@@ -114,6 +132,8 @@ Version 1. One JSON object per line. Firm fields:
 | `correction_of` | The earlier `event_id`, or null. The earlier event stays in the file. |
 
 A setup recipe is redacted. It explains how to recreate the change and does not contain a secret or a command the app is allowed to run. A lesson carries its evidence, the conditions, and the last time it was checked. A failed guess does not become a rule by being written down.
+
+A `decision` event is the user's answer for one exact item: approved this install, approved this removal, kept, or deferred. The next session follows it. An approval names the item. It is not a standing yes for a folder pattern the user never saw.
 
 Live size is remeasured when someone asks. It is not stored as a permanent belief.
 
@@ -142,11 +162,21 @@ Nothing is deleted because a row is old, stale, or deferred. `planned` routes in
 
 Version 1 is a guess in its extra fields. The stable `id` is the part Ask, memory, and Home join on. A renamed directory does not mint a new project; the user locates the root again.
 
-A project record holds display name, selected roots, which categories are in scope (caches, builds and environments, worktrees, containers, models, project data — all on means inspect, not delete), and notes for shared stores: known consumers, evidence date, recreation cost, and an explicit unknown. Shared bytes are counted once.
+A project record holds display name, selected roots, which categories are in scope (caches, builds and environments, worktrees, containers, models, project data — all on means inspect, not delete), opt-out from the whole-agent install, and notes for shared stores: known consumers, evidence date, recreation cost, and an explicit unknown. Shared bytes are counted once.
+
+### Project index
+
+Skills keep this file so the app can point a coding-agent session at each project's memory without opening the app database. Location and field names are a current guess:
+
+- Path: `~/.trace/index.json`. It is outside the app database on purpose, and it exists before the app is installed. The app reads it. Skills replace it atomically (write a temp file, then rename).
+- Shape: `schema_version` 1, and `projects`, a list of `{id, display_name, roots, memory_log, opt_out, updated_at}`. `memory_log` is the absolute path of that project's append-only log. The first guess for the log is `<project-root>/.trace/memory.jsonl`.
+- The app's database is the other guess: `~/Library/Application Support/Trace/trace.db`. Only the app process writes it.
+
+A skill that sees a project for the first time adds or updates that project's index row, then appends to the log. It does not create the database.
 
 ### Settings
 
-One local document. It holds opted-in skills, install scope per agent (whole agent or selected projects), the never-touch list, category scope, the Run budget and the Ask budget (tokens and time, separately), memory-retention preference, menu-bar and Decide-later notification opt-in, and the optional review schedule, which is off. Appearance and the Freed sound live here too.
+One local document, inside the app database. It holds opted-in skills, the whole-agent default, the per-project opt-out list, the never-touch list, category scope, memory-retention preference, menu-bar and Decide-later notification opt-in, and the optional review schedule, which is off and runs only while the app is running. Appearance and the Freed sound live here too. There is no Run budget and no Ask budget.
 
 A signed-in CLI is recorded as a status the adapter reports (`ready`, `unknown`, `unsupported`, `terms_unmet`). The status is not a copy of a token.
 
@@ -156,13 +186,13 @@ A signed-in CLI is recorded as a status the adapter reports (`ready`, `unknown`,
 
 **Action journal.** Selection id, each path or tool id, fingerprint at confirm time, fingerprint immediately before the move, Trash destination, outcome (`moved`, `skipped`, `failed`), and why. Execute is disabled when the journal cannot be written. Undo restores only journaled Trash items, and never overwrites a destination that now exists.
 
-**Session checkpoint.** Project, agent, protocol version, session or thread or turn ids, last handled event cursor, scope and policy hash, pending request ids, and which budget remains. Resume uses this. Resume does not replay Execute or a previous approval.
+**Session checkpoint.** Project, agent, the model the user or the skill pinned, protocol version, session or thread or turn ids, last handled event cursor, scope and policy hash, pending request ids, and the usage reported so far. Resume uses this. Resume does not replay Execute or a previous approval, and it does not consult a remaining allowance, because there is none.
 
 ## Main logic
 
 ### During a coding session
 
-Hygienic setup runs before the agent creates storage. It records the location it actually used. Session-end cleanup runs when the session is finishing. It writes proposals, queue items, and, only for an exact prior yes, a Trash move through the action boundary. The memory writer appends events for all of that. The app can be closed the whole time.
+Hygienic setup runs before the agent creates storage. It asks, looks up the current practice, and puts the steps on the agent's own checklist (Cursor, Codex, and Claude each keep one; the skill uses whichever list that session already has). It records the location it actually used and the decision the user made. Session-end cleanup runs while that session still has the context. It asks before a removal, writes proposals and queue items, and moves a path to Trash through the action boundary only when the user approved that exact item before. The memory writer appends events for all of that, including the decision. The app can be closed the whole time. The skill updates the project index if this project is new.
 
 ### Home
 
@@ -174,7 +204,7 @@ Described in [Ask Trace](#ask-trace). Memory retrieval is a local read. Agent es
 
 ### Run
 
-The user picks a project and sees the allowance. Reviewing streams factual milestones into a checkpointed session. Actions are built from memory plus what Reviewing just verified. Execute freezes the selection, re-checks fingerprints inside the Trash service, moves or skips, and writes the journal as it goes. A crash reads the journal back and does not continue the move.
+The user picks a project and a coding agent. Reviewing streams factual milestones into a checkpointed session and shows usage as it is reported. There is no allowance to accept first. Actions are built from memory plus what Reviewing just verified. Execute freezes the selection, re-checks fingerprints inside the Trash service, moves or skips, and writes the journal as it goes. A crash reads the journal back and does not continue the move. Stop is how a person ends a Run that is spending quota they no longer want to spend.
 
 ### Shared-store rule
 
@@ -184,11 +214,11 @@ If consumers are incomplete, the item is kept or queued. It is not proposed as s
 
 A current guess at the boundaries a spike is allowed to cross differently:
 
-- **Skill package, per agent.** The three skills plus a thin writer for the log and the queue. Installation is opt-in, whole-agent or per-project, and has to be verified per harness. Do not inherit Shed's hook contract.
-- **Local store.** Readers and writers for the four stores, receipts, journal, and checkpoints. Version check at the door.
-- **Action boundary.** The only path from "user said yes to this exact id" to the Trash service. Skills and Execute both call it. Ask does not.
+- **Skill package, per agent.** The three skills plus a thin writer for the log, the queue, and the index. Installation is opt-in, whole agent by default, per-project opt-out, and has to be verified per harness. Do not inherit Shed's hook contract. If the evals show that only some of an agent's models do a skill well, the skill names that model and asks the agent to run it in a subagent. The mechanism is that agent's own, and it is a guess until the spike sees it work.
+- **Local store.** Skills append the per-project log and replace the index. The app reads both and is the only writer of the database, the journal, and checkpoints. Version check at the door.
+- **Action boundary.** The only path from "the user approved this exact id" to the Trash service. Skills and Execute both call it. Ask does not.
 - **Retrieval.** Given a question and a project id, return memory events and notes with ids and timestamps. No generation.
-- **Adapters.** The interface below, one process model, four implementations.
+- **Adapters.** The interface below, one process model. Cursor and Codex are the first two implementations. Claude and Gemini come after those two hold the contract.
 - **App UI.** Setup, Home, Ask, Run. SwiftUI is the design doc's candidate. It is not chosen here as a firm rule, and there is no app code in this repository yet.
 
 Throwaway spike code does not graduate into these modules by being left in the tree. A spike is deleted or rewritten once the lesson is recorded.
@@ -199,7 +229,7 @@ Four ways in, one surface: global Ask (`⌘K` while Trace is focused), a project
 
 **Memory only.** Retrieve structured facts and quoted notes. The answer cites stable event ids and the time they were verified. A citation that does not resolve is rejected, not linked. Stale sources are labelled. Conflicting notes are shown together; there is no vote. If the log cannot answer, the reply says what is missing. This tier makes no hosted model call. A future on-device generative model would be a separate disclosed tier, not a silent upgrade of "memory."
 
-**Ask agent.** Offered when memory is missing, stale, conflicting, or not enough, and only in M2. Before the first outbound message, show the agent, the model, the project scope, which minimized evidence will leave the Mac, and the extra token and time allowance. The user accepts or stays on the partial memory answer. The same two-way session rules as Run apply. This is not a full Run unless the user starts one. The answer separates memory facts, newly observed facts, and inference. Usage is the observed count, or "unavailable." It is never a made-up token total.
+**Ask agent.** Offered when memory is missing, stale, conflicting, or not enough, and only in M2. Before the first outbound message, show the agent the user picked, the model if one is pinned, the project scope, and which minimized evidence will leave the Mac. There is no token allowance to accept. The user accepts the scope or stays on the partial memory answer. The same two-way session rules as Run apply. This is not a full Run unless the user starts one. The answer separates memory facts, newly observed facts, and inference. Usage is the observed count, or "unavailable." It is never a made-up token total.
 
 Ask can offer "Create action card." It cannot delete, change the never-touch list, install a skill, or run a shell command it just suggested. A follow-up "yes" in the panel is not Execute.
 
@@ -207,7 +237,7 @@ Ask can offer "Create action card." It cannot delete, change the never-touch lis
 
 Shed is archived at `gksoriginals/shed`. This environment could not read it (HTTP 404). PRD v0.2 did, and kept two product lessons plus a safety list. ADR-0001 records the split.
 
-**A full run as the only option burned too many tokens.** Gopi's lesson, not a measured benchmark. Everyday hygiene stays in the session, where the agent already has the context, and the call is a small skill prompt rather than a whole-disk investigation. Home reads disks that were already written. Run is explicit, budgeted, and scoped to gaps. Ask spends agent tokens only after memory fails. Cache a tool's official install guidance by tool name and version; do not pay to rediscover it every session.
+**A full run as the only option burned too many tokens.** Gopi's lesson, not a measured benchmark. Everyday hygiene stays in the session, where the agent already has the context, and the call is a small skill prompt rather than a whole-disk investigation. Home reads disks that were already written. Run is explicit, on demand, and scoped to gaps. It is not given a Trace-side token cap: the agents Gopi uses are mostly on subscription quota, and the screen shows what the Run used. Ask spends agent quota only after memory fails. Cache a tool's official install guidance by tool name and version; do not pay to rediscover it every session.
 
 **Crashes came from having no two-way communication with the agent.** Also Gopi's report; the PRD does not claim a separate root-cause study. The failure mode to design against is a child process started with a one-shot prompt, no channel for a permission question or a follow-up, no stream of life, and no clean way to stop the process group. The UI then either waits forever or shows a result the process never confirmed. Trace's app-agent work is a session that stays open for the turn, speaks in both directions, and can be resumed by id after the process itself is gone. Streaming is necessary and is not, by itself, a crash fix. Deadlines, bounded queues, an explicit terminal event, and cancellation that reaps owned children are the rest of the contract. A heartbeat means "the pipe is alive," not "the task moved."
 
@@ -219,15 +249,17 @@ Shed is archived at `gksoriginals/shed`. This environment could not read it (HTT
 
 The app keeps a Trace conversation per project and task. It does not attach to the user's unrelated coding session. The process may exit when the conversation is idle; the checkpoint is what makes it resumable. Home and memory-only Ask need no process.
 
-On cancel or timeout: send the protocol interrupt, answer or cancel pending permission requests, drain until a terminal event or a short drain deadline, close the pipes, then if the owned helper is still alive signal its process group. Spawn that helper in its own session (`setsid` or the platform equivalent) so the signal hits the helper and the children it started, and not the user's other agents. SIGTERM first, then SIGKILL if the group is still present after the drain deadline. Persist the checkpoint. Do not replay an approval or an Execute. Ask the user before spending more tokens.
+On cancel or timeout: send the protocol interrupt, answer or cancel pending permission requests, drain until a terminal event or a short drain deadline, close the pipes, then if the owned helper is still alive signal its process group. Spawn that helper in its own session (`setsid` or the platform equivalent) so the signal hits the helper and the children it started, and not the user's other agents. SIGTERM first, then SIGKILL if the group is still present after the drain deadline. Persist the checkpoint. Do not replay an approval or an Execute. Ask the user before resuming a session that will spend more quota.
 
 Claude's own headless behavior, as documented, already terminates the process tree of a Bash tool still running when the CLI receives SIGTERM, then runs `SessionEnd` hooks and exits. That is not a reason to skip the process-group kill: a stuck CLI may never handle the signal, and a provider cancel does not promise to undo files or stop a detached shell. ACP scope declarations are not an OS sandbox. An adapter that cannot keep app-driven work inside the read-only or consented boundary stays disabled.
 
-Concrete timeout numbers are a guess to be set in the two-way-session spike. The classes are firm: handshake, lost liveness, no useful work, overall allowance, and waiting on the user. A long tool call is not, by itself, a crash.
+Concrete timeout numbers are a guess to be set in the two-way-session spike. The classes are firm: handshake, lost liveness, no useful work, and waiting on the user. These are stuck-session bounds, not a token budget. There is no overall allowance. A long tool call is not, by itself, a crash.
 
 ### What the official docs support today
 
 Research date 11 November 2026. Prefer a primary path that can stream, accept a follow-up, answer a permission, interrupt, and resume by id. Fallbacks are for evals, for skills that already run inside the user's own session, or for a disclosed fresh session when resume is absent. They are not a quiet downgrade of Run.
+
+Cursor and Codex are the first two adapters. The sections on Claude and Gemini stay, because the protocols were checked and the later adapters will need them. They are not the spike order and they are not what `evals/run.py` selects on its own.
 
 #### Claude Code and the Claude Agent SDK
 
@@ -269,7 +301,7 @@ The [MCP-server removal note](https://developers.openai.com/codex/guides/agents-
 
 OpenAI's [platform note](https://developers.openai.com/blog/codex-as-a-platform) says the same split: exec for a bounded script, app-server when the agent is part of the product and needs a conversation, streaming, interrupt, and approvals.
 
-**Primary:** `codex app-server` on stdio, pinned to a version the spike actually ran, with `thread/resume` and `turn/interrupt`. Treat the vendor's "experimental, not for production" line as a risk Gopi accepts for local dogfood, not as a claim Trace can ship commercially on this auth.
+**Primary:** `codex app-server` on stdio, pinned to a version the spike actually ran, with `thread/resume` and `turn/interrupt`. This is a first adapter. Treat the vendor's "experimental, not for production" line as a risk Gopi accepts for local dogfood. Commercial and hosted use of this auth is an M2 question, not a block on the spike.
 
 **Fallback:** `codex exec --json` and `codex exec resume <id> --json` for the eval harness and for other scripted one-turn jobs. Interactive `codex resume` belongs to the user's terminal.
 
@@ -287,7 +319,7 @@ Project and user `.cursor/mcp.json` servers can be used. Team-level MCP from the
 
 The generic ACP spec's `session/resume` and `session/close` are capability-gated. Cursor's page documents `session/load` and `session/cancel`, not `session/resume` or `session/close`. Call only what `initialize` advertised.
 
-**Primary:** `agent acp` as above.
+**Primary:** `agent acp` as above. This is a first adapter, with Codex. Pin a model with `agent --model <id> acp` when the eval or the skill named one. Cursor's own forum notes that a mid-session model change is not reliable, and that a requested non-fast id can still run as a fast variant. Record the model the session actually reports. Do not treat the launch flag as proof.
 
 **Fallback:** none for the app. `agent resume` is the interactive CLI. If `initialize` lacks `session/load` or the permission channel, the adapter stays unavailable. Skills can still run inside the user's own Cursor session.
 
@@ -305,12 +337,12 @@ A Gemini CLI bug, [issue #28693](https://github.com/google-gemini/gemini-cli/iss
 
 ### Recommendation, per agent
 
-| Agent | Primary for Run and agent Ask | Fallback | Leave unavailable when |
-| --- | --- | --- | --- |
-| Claude | Agent SDK streaming client, resume by session id | CLI `-p` with `--resume` and JSON or stream-json output, for evals and scripts | SDK session cannot interrupt, stream, and resume. Do not drop to fire-and-forget. |
-| Codex | `codex app-server` on stdio, `thread/resume`, `turn/interrupt` | `codex exec --json` and `codex exec resume`, for evals and scripts | App-server schema from this install lacks interrupt or resume. Exec is not the substitute for Run. |
-| Cursor | `agent acp`: load, prompt, permission, cancel, and answers to `cursor/ask_question` and `cursor/create_plan` | None for the app | Those methods are missing, or a blocking Cursor method is ignored. |
-| Gemini | `gemini --acp`, load only if advertised, cancel | Disclosed fresh session when load is missing | Cancel is missing, or the capability handshake fails. |
+| Agent | When | Primary for Run and agent Ask | Fallback | Leave unavailable when |
+| --- | --- | --- | --- | --- |
+| Cursor | First | `agent acp`: load, prompt, permission, cancel, and answers to `cursor/ask_question` and `cursor/create_plan`. Pass `--model` at launch when a model is pinned. A later `session/set_config_option` is not proof the runtime model changed. | None for the app. The eval harness speaks ACP, not a one-shot print mode. | Those methods are missing, or a blocking Cursor method is ignored. |
+| Codex | First | `codex app-server` on stdio, `thread/resume`, `turn/interrupt`. Local dogfood may use app-server auth. | `codex exec --json` and `codex exec resume`, for a script that is not Run. The eval harness uses app-server. | App-server schema from this install lacks interrupt or resume. Exec is not the substitute for Run. |
+| Claude | Later | Agent SDK streaming client, resume by session id | CLI `-p` with `--resume` and JSON or stream-json output, for a script | SDK session cannot interrupt, stream, and resume. Do not drop to fire-and-forget. |
+| Gemini | Later | `gemini --acp`, load only if advertised, cancel | Disclosed fresh session when load is missing | Cancel is missing, or the capability handshake fails. |
 
 Skills do not need this table. They run inside the session the user already opened. The adapter is for the app.
 
@@ -327,7 +359,7 @@ Session.send(message) -> stream of Event
 Session.reply(request_id, decision)
 Session.interrupt()
 Session.cancel()          # interrupt, drain, then kill the owned process group
-Session.checkpoint() -> { protocol, session_id, cursor, scope_hash, pending, budget }
+Session.checkpoint() -> { protocol, session_id, cursor, scope_hash, pending, usage }
 ```
 
 Events: `status`, `assistant` (factual text, not chain-of-thought), `tool`, `permission`, `question`, `usage`, `completed`, `error`. Unknown events are ignored. A decode error does not tear down the UI.
@@ -340,17 +372,19 @@ The supervisor is the only code that spawns the process. Adapters do not start a
 
 ## Auth and distribution
 
-This is a product decision for Gopi. Protocol support is not permission to ship. Trace never reads `~/.claude`, `~/.codex/auth.json`, Cursor token files, Gemini credential files, or the keychain to discover a login. "Signed in" is whatever the official status or handshake says. If that is unknown, the UI says unknown.
+Gopi's decision for now is local dogfood only. Auth, the way a build is distributed, and the public name wait until M2. Protocol support is not permission to ship further than his Mac. Trace never reads `~/.claude`, `~/.codex/auth.json`, Cursor token files, Gemini credential files, or the keychain to discover a login. "Signed in" is whatever the official status or handshake says. If that is unknown, the UI says unknown.
+
+The options below stay on the page so M2 has them. The choice among them is deferred, except that local dogfood may use the login the user already completed in Cursor and in Codex. Codex app-server auth is fine for that. Its commercial and hosted limits are an M2 question.
 
 Options, which can be combined (skills on one path, the app on another):
 
-1. **Skills only, inside the user's own sessions.** The user signs in with the agent's own CLI. Trace never embeds that login. This matches M0 and needs no extra grant. It is the path that works today for Claude Code and Codex on Gopi's Mac.
+1. **Skills only, inside the user's own sessions.** The user signs in with the agent's own CLI. Trace never embeds that login. This matches M0 and needs no extra grant. The first sessions are Cursor and Codex on Gopi's Mac.
 2. **Local dogfood app, user already signed in, adapter spawns the CLI.** Cursor: user runs `agent login`, Trace spawns `agent acp`. Gemini: user authenticates in Gemini CLI, Trace spawns `gemini --acp`. Codex: OpenAI allows continued local and open-source use of app-server auth, and recommends moving to Sign in with ChatGPT. Claude: the SDK overview does **not** allow a third-party app to reuse the claude.ai subscription. A local Trace that drives Claude through the Agent SDK needs an approved API key or a supported cloud provider (the docs name this as the Quickstart's API-key methods), even on Gopi's machine, unless Anthropic has approved the subscription path. Detecting an installed `claude` binary is not that approval.
 3. **API key or cloud provider, typed or imported by the user into the agent's own login flow.** Claude API key, or Bedrock / Vertex where the SDK supports it. Codex `account/login/start` with an API key, or `CODEX_API_KEY` only in the environment of that process, which the [exec docs](https://learn.chatgpt.com/docs/non-interactive-mode) warn not to leak to untrusted code. The key is entered in the vendor's flow or passed through the environment the user set. Trace does not store a copy in the ledger and does not scrape one from disk.
 4. **Commercial or hosted Trace.** Not the current product (Trace is local). If that ever changes: Codex app-server auth is not permitted for commercial or hosted services; Sign in with ChatGPT exists for those use cases and has a partner waitlist. Claude needs Anthropic's approval before any claude.ai login. Cursor and Gemini need their own distribution terms read at that time. Brand rules already forbid presenting the embedded Claude surface as Claude Code.
 5. **Distribution of the Mac app.** Separate from auth. (a) Unsigned local build on Gopi's machine. (b) Developer ID signature, notarization, and a direct download, which is the usual path for a developer tool that spawns CLIs and moves files to Trash. (c) Mac App Store, which adds a sandbox that fights arbitrary project roots, Trash outside the container, and child agent processes. (d) No binary: skills only, until (a) or (b) is chosen.
 
-Recommendation, as an engineering input and not the decision: ship M0 as option 1. For M1 and M2 on Gopi's Mac, use option 2 for Codex, Cursor, and Gemini, and option 3 for Claude unless Anthropic approves subscription reuse. Keep option 5 at (a) until someone other than Gopi runs it, then (b). Revisit (c) and (4) only if the product stops being a local app.
+What is locked: M0 is option 1, on Cursor and Codex. Through M2 on Gopi's Mac, the app stays option 5 (a), an unsigned local build, and option 2 for Cursor and Codex. Claude, if a later adapter is turned on, still needs option 3 unless Anthropic has approved subscription reuse. Options 4, 5 (b), and 5 (c), and the public name, are the M2 decision. Do not start them now.
 
 Official marks, if a binary is distributed: use unmodified assets under each vendor's guidelines, or the plain name plus an original glyph. The design doc lists the Claude, OpenAI, Cursor, and Gemini pages. Clearance is part of the distribution decision, not something the adapter invents.
 
@@ -362,18 +396,18 @@ Calling a coding agent can send the minimized context of that call to the provid
 
 Agent events are untrusted data. They do not spawn arbitrary processes, widen scope, or choose Trash targets. Diagnostics shown to the user are redacted and bounded.
 
-## Cost controls
+## Usage, not caps
 
-Two budgets, both shown before any hosted call, both a firm requirement with numbers that dogfood will set:
+Trace does not set a token budget or a time budget. The coding agents in dogfood mostly draw on a subscription quota, and a cap Trace invented would fight that. Onboarding and Settings have no budget fields. Revisit caps only if dogfood shows an uncapped Run is a problem, and record that in a new ADR.
 
-- **Per Run.** Token allowance and time allowance for Reviewing through Execute. Exhaustion stops at the next safe boundary, keeps the partial checkpoint, and does not start Execute by itself.
-- **Per Ask.** The memory tier spends none of it. The agent tier has its own allowance, accepted per escalation, not borrowed silently from the Run budget.
+What replaces the caps:
 
-Memory-only answers are tried first, every time. A cache, keyed by tool name and version, holds official install notes Hygienic setup has already fetched. Skill prompts stay small: the session's own context plus the relevant memory events, not the full ledger. Run's catch-up is bounded to the coverage gap, not a second full history.
+- **Show usage.** After a Run and after an agent-tier Ask, show the input tokens, output tokens, and cost the agent reported for that call. If it reported nothing, show "unavailable." Do not invent a figure, and do not present a client-side flag such as Claude's `--max-budget-usd` as a bill. Cursor's ACP prompt result has been reported without a usage field; the screen says unavailable rather than guessing.
+- **Memory first.** Ask reads the project log before any hosted call. The memory tier spends no quota. A cache, keyed by tool name and version, holds official install notes Hygienic setup has already fetched.
+- **Small calls.** Skill prompts stay the session's own context plus the relevant memory events, not the full ledger. Run's catch-up is the coverage gap, not a second full history. Run stays on demand.
+- **Best value, per agent.** The evals run the same cases on each model that agent offers. The pick is the highest pass rate with no safety miss, then the lowest reported cost. A skill that only some models handle well pins that model and asks the agent to run the skill in a subagent on it. The user still picks the agent for an app-triggered run.
 
-Usage on screen is the count the agent reported, or "unavailable." A client-side cap, such as Claude's `--max-budget-usd`, is a best-effort stop and can be passed by the last turn. The UI says that. It does not present the cap as a bill.
-
-The eval harness reports tokens when the CLI reports them, and otherwise "unavailable," for the same reason. Cost per successful case is the comparison to use once live runs exist. A model's own estimate of its cost is not that number.
+The eval harness records usage per agent×model cell and withholds a best-value pick when cost is missing or only one model was measured. A model's own estimate of its cost is not that number.
 
 ## Safety carried from Shed
 
@@ -392,7 +426,7 @@ Three cases the supervisor and the Trash service have to survive. Behavior is fi
 
 ### A crash mid-run
 
-The process dies without a terminal event. On next open, Trace reads the session checkpoint and the action journal. It shows the last factual milestone and which moves completed. It does not resume Execute, and it does not launch the agent until the user asks. If the user resumes the conversation, the supervisor re-checks the scope hash and the remaining budget, reconciles the journal, and continues Reviewing or Ask from the cursor. Completed Trash moves stay completed. There is no automatic rollback.
+The process dies without a terminal event. On next open, Trace reads the session checkpoint and the action journal. It shows the last factual milestone, which moves completed, and the usage reported so far. It does not resume Execute, and it does not launch the agent until the user asks. If the user resumes the conversation, the supervisor re-checks the scope hash, reconciles the journal, and continues Reviewing or Ask from the cursor. Completed Trash moves stay completed. There is no automatic rollback.
 
 ### A partial Trash
 
@@ -420,7 +454,7 @@ A bounded, redacted session log the user can open from the run or from Ask: stag
 
 ### Signing and distribution
 
-No binary exists yet. When one does, the engineering default to propose is: sign with a Developer ID certificate, notarize, staple, and ship a disk image or a zip. Identifier, version, and the notarization ticket are part of the release, not a later polish pass. Automatic update waits until an update feed is a real decision; the app does not add a login item or a background helper to update itself. Entitlements stay as narrow as the chosen roots allow. Hardened runtime has to permit spawning the user-installed agent CLIs, which is a reason to test a signed build in the auth spike rather than assume a development signature behaves the same.
+No binary exists yet. Distribution is local dogfood until M2, so signing is not a task for this milestone. When a build leaves the machine, the proposal to take into that M2 decision is: sign with a Developer ID certificate, notarize, staple, and ship a disk image or a zip. Identifier, version, and the notarization ticket would be part of that release. Automatic update waits until an update feed is a real decision; the app does not add a login item or a background helper to update itself. Entitlements stay as narrow as the chosen roots allow. Hardened runtime has to permit spawning the user-installed agent CLIs, which is a reason to test a signed build before trusting a development signature. The minimum system is macOS 14.
 
 Mac App Store sandboxing is option (c) in [Auth and distribution](#auth-and-distribution), not the default assumption.
 
@@ -428,25 +462,21 @@ Mac App Store sandboxing is option (c) in [Auth and distribution](#auth-and-dist
 
 Three spikes come before any of this is treated as buildable. Each one is a short program in a branch or a directory that is deleted when the note lands in an ADR. They are not the app, and they are not wired into the eval harness as production drivers.
 
-1. **Two-way sessions, Claude and Codex first.** Open a session, stream, send a follow-up, answer a permission, interrupt and drain, kill the process group, resume by id, and show that a resumed session does not repeat a side effect. Then a thinner pass on `agent acp` and `gemini --acp` for the capability bits this document is unsure about: Cursor's blocking extension methods, Gemini's wire method names, and whether `session/load` on the installed Gemini survives a restart. Record versions.
-2. **Auth path.** For each agent, complete handshake using only the vendor's own login. Confirm Trace's process never opens a credential file (the spike can be watched with a file-access log the developer runs on their own machine; the product still does not read those files). Write down which of options 1–3 actually reached `ready` for Claude, Codex, Cursor, and Gemini.
-3. **Project discovery.** From permitted agent workspace history, IDE recents, and Git roots, suggest directories. Compare the list with Gopi's real projects. Count misses, nested duplicates, and anything outside the selected roots. No whole-disk crawl.
+1. **Two-way sessions, Cursor and Codex first.** Open a session, stream, send a follow-up, answer a permission, interrupt and drain, kill the process group, resume by id, and show that a resumed session does not repeat a side effect. Cursor is `agent acp`, including answers to `cursor/ask_question` and `cursor/create_plan`, and a check that a requested model id matches the model the session reports. Codex is `codex app-server` on stdio, with `thread/resume` and `turn/interrupt`. Claude's SDK and `gemini --acp` wait until those two are written up. Record versions.
+2. **Auth path.** For Cursor and Codex, complete the handshake using only that vendor's own login. Confirm Trace's process never opens a credential file (the spike can be watched with a file-access log the developer runs on their own machine; the product still does not read those files). Write down whether local dogfood reached `ready`. Claude and Gemini are the same check later, not part of this spike. Commercial Codex auth is out of scope until M2.
+3. **Project discovery.** From permitted agent workspace history, IDE recents, and Git roots, suggest directories. Compare the list with Gopi's real projects. Count misses, nested duplicates, and anything outside the selected roots. No whole-disk crawl. Confirm a skill can append a per-project log and update the index while the app database stays untouched.
 
 A spike that fails twice stops, per the testing rule, and the report is the result.
 
-## Open questions and product decisions
+## Open questions
 
-Engineering can frame these. Gopi decides them. The first four are the PRD's open questions, restated with the choice this document thinks is in front of him.
+The ten product decisions are locked in [ADR-0002](adr/0002-locked-product-decisions.md). These are the ones that record did not close.
 
-1. **What may a skill remove without asking again?** Exact paths the user already named, versus nothing until Home. "Automatic" is not a candidate. This blocks the session-end skill's consent line.
-2. **Whole-agent install or per-project install, per harness?** Which of Claude Code, Codex, Cursor, and Gemini actually support each scope without loading the skill twice. A project-only install is a valid setup.
-3. **Default budgets, and what happens at zero.** The token and time numbers for Run and for Ask, and whether exhaustion pauses for an extension or ends the session. Missing receipts are not evidence of a missed session, so the budget is not a reason to re-run cleanup "to be sure."
-4. **The 70% denominator.** Which bytes count as agent-created, the observation window, and how persistent storage, shared caches, and bytes sitting in Trash count. Shared consumers: what evidence is enough to say the list is complete, and which tool-native actions can be undone.
-5. **Where the files live, and how two writers coexist.** App support directory, project-local `.trace/`, or both with import. What retention keeps journal rows without keeping every transcript.
-6. **Background review.** Off by default is firm. Whether an opted-in review runs only while Trace is open or also after quit depends on a macOS mechanism the spike has not validated. No scheduled Execute.
-7. **Auth and distribution.** Options in [Auth and distribution](#auth-and-distribution). The engineering input is skills-only first, API-key or cloud auth for embedded Claude, CLI-owned login for Codex, Cursor, and Gemini, Developer ID when a binary leaves the machine. The decision is still Gopi's, including the public name, which the PRD already flags as crowded.
-8. **First app adapter after the spikes.** Claude SDK and Codex app-server are the two Gopi uses. The spike results pick the first one the app speaks. Cursor and Gemini wait on their capability notes.
-9. **Judge model for the evals.** The rubric is in [evals.md](evals.md). Which model, of a different family from the skill's model, and when a human labels the dev set, is open. Until kappa is measured, the judge does not gate anything.
-10. **Minimum macOS, and whether any third-party Swift package is worth it.** The design doc's candidate is macOS 13 for `MenuBarExtra`. Unvalidated. No third-party UI dependency until a gap shows up.
+1. **Which model is best value, per agent.** The rule is firm. The id is not known until the same cases have been run on the models Cursor and Codex actually offer, with usage reported. Cursor may not return usage on ACP, and a requested model id may not be the one that ran.
+2. **Auth, distribution, and the public name at M2.** Local dogfood is the decision until then. The options are written down under Auth and distribution. Codex's commercial auth limit is part of that M2 question.
+3. **Shared consumers and tool-native recovery.** The 70% metric is defined. What evidence is enough to call a consumer list complete, and which tool-native actions can be undone, are not.
+4. **Judge model for the evals.** The rubric is in [evals.md](evals.md). Which model, of a different family from the skill's model, and when a human labels the dev set, is open. Until kappa is measured, the judge does not gate anything.
+5. **Retention, timeout numbers, and checklist mechanics.** How long a journal row is kept, the stuck-session deadlines, and the exact task-list API in Cursor, Codex, and Claude are guesses. Whether any third-party Swift package is worth it is open. The minimum system is not: it is macOS 14.
+6. **Two skills appending one log.** The guess is append-only writes and a visible torn line. It is not proven.
 
-Numbers for timeouts, window size, and "preselect disposable output" stay guesses until the spikes and the first eval runs on real sessions.
+Numbers for timeouts, window size, and "preselect disposable output" stay guesses until the spikes and the first eval runs on real sessions. Missing receipts are still not evidence of a missed session, and they are not a reason to re-run cleanup.

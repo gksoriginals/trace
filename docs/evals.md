@@ -19,13 +19,13 @@ Public benchmarks (SWE-bench and the rest) measure engines. They are not this ev
 ## The loop
 
 1. A case is a fixture project, a short agent session, and a gold outcome file.
-2. The runner materializes the project in a temp directory and drives the skill: Claude Code CLI, else Codex CLI, else a stub that replays a scripted outcome.
+2. The runner materializes the project in a temp directory and drives one agent×model cell: Cursor ACP if `agent` is on `PATH`, else Codex app-server if `codex` is on `PATH`, else a stub that replays a scripted outcome. Claude and Gemini run only when named. Pass `--model` to pin the cell.
 3. Graders read the temp directory. Code graders run every time. A model judge runs only when someone passes `--judge` and a CLI exists.
 4. The report gives one pass rate per skill on the **test** split, with a Wilson interval and a bootstrap interval, plus a separate calibration catch rate for the graders.
 
 The dev split is for changing prompts and graders. The test split is for the number. Calibration cases are planted failures. They are not the product number. Tuning on the test split, or mixing calibration into it, flatters the result.
 
-The stub is not the product. A stub pass rate of 100% means the harness and the gold outcomes agree. The product number starts when `--agent claude` or `--agent codex` drives a real skill, or, until the skills exist, the eval task prompt. The report says which of those happened.
+The stub is not the product. A stub pass rate of 100% means the harness and the gold outcomes agree. The product number starts when `--agent cursor` or `--agent codex` drives a real skill, or, until the skills exist, the eval task prompt. The report says which of those happened, and which model.
 
 ## Failure taxonomy (hypothesis)
 
@@ -84,7 +84,23 @@ There is no partial credit in the headline. Per-check rates are printed so a mis
 
 For a live agent, which is stochastic, the runner can repeat each case (`--repeats k`, default 1). It then reports **pass^k**: the share of cases that passed on all k tries. That is the reliability number a Trash decision needs. pass@k (passed at least once) measures capability and is printed beside it, not instead of it. The article's τ-bench note is the source of that split. The stub is deterministic, so pass^k equals the pass rate and the report says so.
 
-A live run also records tokens when the CLI reports them, and "unavailable" otherwise. Once both passes and tokens exist, compare **tokens per passing case**, not accuracy alone (Bai et al., 2026, as cited in the article).
+A live run records input tokens, output tokens and cost when the agent reports them, and "unavailable" otherwise. Cursor's ACP prompt result has shipped without a usage field, so unavailable is an expected reading, not a harness bug. Once both passes and cost exist, compare quality against cost. Do not invent a cost.
+
+### Agent × model
+
+The case matrix is skill × agent × model. The rows are the fixtures in `evals/cases/`. They are shared: gold outcomes do not change with the model. The axes are declared in `evals/matrix.json`. One invocation of the runner is one cell.
+
+| Axis | First comparison | Later |
+| --- | --- | --- |
+| Agent | `cursor` (ACP), `codex` (app-server) | `claude`, `gemini`, only when passed explicitly |
+| Model | Each id that agent lists on the machine, via `--model` | Not in the first comparison |
+| Skill | The five skills, same 8 test cases | Same cases |
+
+**Best value, per agent.** Among that agent's measured models with zero safety fails, the highest test pass rate wins. Equal pass rates go to the lower reported cost. A safety miss is out. One measured model is reported as the only candidate, not as a comparison. A missing cost never invents a cheaper winner. The stub cell is not a product model, so a stub run names no Cursor or Codex pick.
+
+The same 8 cases are reused in every cell, so a model comparison is paired. The detection floor still applies inside a cell: at n = 8 a small quality gap is invisible. Say so next to the pick. Do not crown a winner from a gap the floor cannot see; a tie on pass rate can still break on cost when both costs were reported.
+
+Trace cannot always choose the model. For an app-triggered run the user picks the agent. This matrix is how a best-value model per agent gets chosen. If only some models handle a skill well, the skill pins that model and tells the agent to run the skill in a subagent on it. The harness grades the outcome either way. It does not grade the subagent mechanism.
 
 ## Variance
 
@@ -192,7 +208,7 @@ If the judge is later used to pick prompts, keep one check it never sees. Grader
 
 **Pass.** Every required fact is present, every citation resolves, unknown is set when required, no forbidden phrase, no file changed.
 
-This eval does not grade agent-tier Ask. That tier does not exist until M2, and grading it will add a second stage: did retrieval say "not enough" before any hosted call, and did the hosted call stay inside the budget. Grade those separately. A bad answer from a bad retrieval is a different fix from a bad answer from a bad writer (the article's Level 6).
+This eval does not grade agent-tier Ask. That tier does not exist until M2, and grading it will add a second stage: did retrieval say "not enough" before any hosted call, and did the answer separate memory facts from newly observed ones. There is no budget to grade. Grade the retrieval and the answer separately. A bad answer from a bad retrieval is a different fix from a bad answer from a bad writer (the article's Level 6).
 
 ## Grader calibration
 
@@ -221,12 +237,14 @@ From the repository root, with Python 3.12 or newer and no third-party packages:
 python3 evals/run.py
 ```
 
-That selects the driver itself: Claude Code if `claude` is on `PATH`, else Codex if `codex` is on `PATH`, else the stub. This environment has neither CLI, so the default path is the stub. Force it, or force a live attempt:
+That selects the driver itself: Cursor if `agent` is on `PATH`, else Codex if `codex` is on `PATH`, else the stub. Claude and Gemini are not selected automatically. This environment has neither first CLI, so the default path is the stub. Force a cell with `--agent` and, when comparing models, `--model`:
 
 ```bash
 python3 evals/run.py --agent stub
+python3 evals/run.py --agent cursor --model <id>
+python3 evals/run.py --agent codex --model <id>
 python3 evals/run.py --agent claude
-python3 evals/run.py --agent codex
+python3 evals/run.py --agent gemini
 python3 evals/run.py --skill ask_trace --split dev
 python3 evals/run.py --repeats 3
 python3 evals/run.py --judge
@@ -239,11 +257,13 @@ Calibration always replays its planted stub, including when `--agent` is a live 
 
 The process writes a human report to stdout and `evals/out/report.json`. `evals/out/` is gitignored. Exit status is 0 when every test case passed and every calibration case failed in the way it should. A live agent's product failures also exit non-zero. That is a local tool for the person running it. It is not a CI gate, and this repository does not add one.
 
-Live drivers copy the fixture to a temp directory, set the working directory there, and kill the process group on timeout. Claude is invoked as `claude -p` with JSON output and `--permission-mode acceptEdits`, not a permissions bypass. Codex is invoked as `codex exec --json --sandbox workspace-write`. The task prompt is `evals/tasks/<skill>.md` plus the fixture. It is an eval instruction, not the Trace skill. When a real skill is installed, point the driver at it and keep this prompt as the description of the job; do not grade the prompt's wording.
+Live drivers copy the fixture to a temp directory, set the working directory there, and kill the process group on timeout. Cursor is `agent acp` (with `--model` when one was passed). Codex is `codex app-server --listen stdio://`. Claude, only when named, is `claude -p` with JSON output and `--permission-mode acceptEdits`, not a permissions bypass. Gemini, only when named, is `gemini --acp`. The task prompt is `evals/tasks/<skill>.md` plus the fixture. It is an eval instruction, not the Trace skill. When a real skill is installed, point the driver at it and keep this prompt as the description of the job; do not grade the prompt's wording.
+
+The report prints the cell (`agent × model`), pass rate with a Wilson interval and a bootstrap interval, the detection floor, and usage (input tokens, output tokens, cost, or unavailable). It then prints a best-value line per first agent. A stub run leaves those picks unmeasured.
 
 ## What a later report should show
 
-Four numbers, from the article's close: the test pass rate with its interval, the grader's agreement with human labels (kappa or catch rate), the detection floor, and how many cases got worse against the last run. The stub report can show the first, the third, and the calibration catch rate. It cannot show kappa, and it cannot show a regression against a real skill. Say so in the same place as the number.
+Four numbers, from the article's close: the test pass rate with its interval, the grader's agreement with human labels (kappa or catch rate), the detection floor, and how many cases got worse against the last run. Add, per agent×model cell, the usage and the best-value pick. The stub report can show the pass rate, the floor, the calibration catch rate, and a withheld pick. It cannot show kappa, a real cost, or a regression against a real skill. Say so in the same place as the number.
 
 ## Cadence
 

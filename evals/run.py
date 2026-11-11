@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 """Run Trace skill evals and print a report.
 
-Default driver is automatic: Claude Code if `claude` is on PATH, otherwise
-Codex if `codex` is on PATH, otherwise the stub. The stub replays a scripted
+Default driver is automatic: Cursor if `agent` is on PATH, otherwise Codex
+if `codex` is on PATH, otherwise the stub. Claude and Gemini are later
+adapters and run only when named with --agent. The stub replays a scripted
 outcome so this command finishes with no agent installed. Calibration cases
 always use the stub. They are planted failures, and a live agent that behaved
 well would hide a grader bug.
 
-This is not a CI gate. See docs/evals.md.
+Each invocation is one agent×model cell. Pass --agent and --model. The
+report gives that cell's pass rate, its variance, and its usage, then a
+best-value pick across the cells in the report. One cell cannot crown a
+cheaper model. See docs/evals.md.
+
+This is not a CI gate.
 """
 
 from __future__ import annotations
@@ -25,6 +31,7 @@ from harness.drivers import JUDGE_RUBRIC, DriverError, apply_stub, render_prompt
 from harness.graders import failed_names, grade
 from harness.stats import (
     article_kappa_example,
+    best_value,
     bootstrap_ci,
     detection_floor,
     paired_diff_ci,
@@ -41,11 +48,14 @@ SKILLS = (
     "decide_later",
     "ask_trace",
 )
+AGENTS = ("auto", "stub", "cursor", "codex", "claude", "gemini")
+FIRST_AGENTS = ("cursor", "codex")
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run Trace skill outcome evals")
-    parser.add_argument("--agent", default="auto", choices=("auto", "stub", "claude", "codex"))
+    parser.add_argument("--agent", default="auto", choices=AGENTS)
+    parser.add_argument("--model", default=None, help="Model id for this agent. Omit to use the agent's own default.")
     parser.add_argument("--skill", choices=SKILLS)
     parser.add_argument("--split", default="test", choices=("test", "dev", "all"))
     parser.add_argument("--repeats", type=int, default=1)
@@ -58,6 +68,9 @@ def main(argv: list[str] | None = None) -> int:
     kappa = article_kappa_example()
     if abs(kappa - 0.15) > 0.02:
         print(f"kappa self-check failed: article example scored {kappa:.3f}, expected about 0.15")
+        return 2
+    if not _best_value_self_check():
+        print("best-value self-check failed: the cheaper equal-quality model should win, and a safety miss should not")
         return 2
     if args.repeats < 1:
         print("--repeats must be at least 1")
@@ -82,11 +95,11 @@ def main(argv: list[str] | None = None) -> int:
     runs: list[list[dict]] = []
     for _ in range(args.repeats):
         runs.append([
-            run_case(case, driver, tasks[case["skill"]], args.timeout, planted=False)
+            run_case(case, driver, tasks[case["skill"]], args.timeout, args.model, planted=False)
             for case in headline
         ])
     cal_results = [
-        run_case(case, "stub", tasks.get(case["skill"], ""), args.timeout, planted=True)
+        run_case(case, "stub", tasks.get(case["skill"], ""), args.timeout, None, planted=True)
         for case in calibration
     ]
 
@@ -99,6 +112,16 @@ def main(argv: list[str] | None = None) -> int:
     (out / "report.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print_report(report)
     return 0 if report["ok"] else 1
+
+
+def _best_value_self_check() -> bool:
+    picks = best_value([
+        {"agent": "cursor", "model": "pricey", "pass_rate": 1.0, "safety_fails": 0, "cost": 9},
+        {"agent": "cursor", "model": "cheap", "pass_rate": 1.0, "safety_fails": 0, "cost": 2},
+        {"agent": "cursor", "model": "unsafe", "pass_rate": 1.0, "safety_fails": 1, "cost": 0.1},
+        {"agent": "codex", "model": "solo", "pass_rate": 0.5, "safety_fails": 0, "cost": None},
+    ])
+    return picks["cursor"]["model"] == "cheap" and picks["codex"]["basis"] == "only_model"
 
 
 def load_cases(skill: str | None) -> list[dict]:
@@ -121,7 +144,7 @@ def _in_split(case: dict, split: str) -> bool:
     return case["split"] == split
 
 
-def run_case(case: dict, driver: str, task: str, timeout: int, planted: bool) -> dict:
+def run_case(case: dict, driver: str, task: str, timeout: int, model: str | None, planted: bool) -> dict:
     fixture = case["fixture"]
     expected = case["expected"]
     with tempfile.TemporaryDirectory(prefix="trace-eval-") as tmp:
@@ -135,25 +158,23 @@ def run_case(case: dict, driver: str, task: str, timeout: int, planted: bool) ->
                 driver_note = "stub"
             else:
                 prompt = render_prompt(task, fixture)
-                usage = run_live(driver, prompt, workspace, timeout)
+                usage = run_live(driver, prompt, workspace, timeout, model)
                 driver_note = driver
             checks = grade(fixture, expected, workspace)
         except (DriverError, OSError, json.JSONDecodeError) as exc:
-            return {
-                "id": case["id"],
-                "skill": case["skill"],
-                "split": case["split"],
-                "title": case.get("title", ""),
-                "passed": False,
-                "failed_checks": ["driver_error"],
-                "details": [f"driver_error: {exc}"],
-                "driver": driver_note or driver,
-                "expect_fail_checks": case.get("expect_fail_checks") or [],
-                "calibration_caught": False,
-                "usage": None,
-            }
+            return _row(case, False, ["driver_error"], [f"driver_error: {exc}"], driver_note or driver, None)
     failed = failed_names(checks)
-    passed = not failed
+    return _row(
+        case,
+        not failed,
+        failed,
+        [f"{c.name}: {c.detail}" for c in checks if not c.passed],
+        driver_note,
+        usage,
+    )
+
+
+def _row(case, passed, failed, details, driver, usage) -> dict:
     expected_fail = case.get("expect_fail_checks") or []
     caught = (not passed) and all(name in failed for name in expected_fail)
     return {
@@ -163,25 +184,36 @@ def run_case(case: dict, driver: str, task: str, timeout: int, planted: bool) ->
         "title": case.get("title", ""),
         "passed": passed,
         "failed_checks": failed,
-        "details": [f"{c.name}: {c.detail}" for c in checks if not c.passed],
-        "driver": driver_note,
+        "details": details,
+        "driver": driver,
         "expect_fail_checks": expected_fail,
         "calibration_caught": caught if case["split"] == "calibration" else None,
-        "usage": _usage_note(usage),
+        "usage": _usage_note(usage, driver),
     }
 
 
-def _usage_note(text: str | None) -> str:
-    if not text:
-        return "unavailable"
-    for key in ("total_cost_usd", "input_tokens", "output_tokens"):
-        if key in text:
-            return "reported in agent stdout; see the captured run if you need the figure"
-    return "unavailable"
+def _usage_note(usage: dict | None, driver: str) -> dict:
+    if driver == "stub" or not usage:
+        return {
+            "input_tokens": None,
+            "output_tokens": None,
+            "cost": None,
+            "observed_model": None,
+            "source": "scripted" if driver == "stub" else "unavailable",
+        }
+    return {
+        "input_tokens": usage.get("input_tokens"),
+        "output_tokens": usage.get("output_tokens"),
+        "cost": usage.get("cost"),
+        "observed_model": usage.get("observed_model"),
+        "source": usage.get("source") or "unavailable",
+    }
 
 
 def build_report(driver, args, headline, runs, cal_results, kappa_example) -> dict:
     latest = runs[-1]
+    observed = _first_observed(latest)
+    model_label = _model_label(driver, args.model, observed)
     by_skill = {}
     for skill in SKILLS:
         rows = [row for row in latest if row["skill"] == skill]
@@ -207,18 +239,26 @@ def build_report(driver, args, headline, runs, cal_results, kappa_example) -> di
             "detection_floor": detection_floor(n),
             "repeats": pass_power(repeat_flags),
             "safety_fails": sum(1 for row in rows if _safety_fail(row)),
+            "usage": _sum_usage(rows),
             "cases": rows,
         }
     caught = sum(1 for row in cal_results if row["calibration_caught"])
     product_ok = bool(latest) and all(row["passed"] for row in latest)
     calibration_ok = all(row["calibration_caught"] for row in cal_results) if cal_results else False
     labels = sum(1 for case in load_cases(args.skill) if case.get("judge_reference"))
+    cell = _cell(driver, model_label, args.model, observed, by_skill)
     return {
         "driver": driver,
+        "model": model_label,
+        "requested_model": args.model,
+        "observed_model": observed,
         "product_measured": driver != "stub",
         "skill_installed": False,
         "split": args.split,
+        "matrix": load_matrix(),
+        "cell": cell,
         "skills": by_skill,
+        "best_value": _best_value_report([cell]),
         "calibration": {
             "n": len(cal_results),
             "caught": caught,
@@ -240,6 +280,102 @@ def build_report(driver, args, headline, runs, cal_results, kappa_example) -> di
         },
         "ok": product_ok and calibration_ok,
     }
+
+
+def _first_observed(rows: list[dict]) -> str | None:
+    for row in rows:
+        observed = (row.get("usage") or {}).get("observed_model")
+        if observed:
+            return observed
+    return None
+
+
+def _model_label(driver: str, requested: str | None, observed: str | None) -> str:
+    if driver == "stub":
+        return requested or "stub"
+    return observed or requested or "default"
+
+
+def _cell(driver: str, model: str, requested: str | None, observed: str | None, by_skill: dict) -> dict:
+    flags = []
+    safety = 0
+    usage_rows = []
+    for block in by_skill.values():
+        flags.extend(1 if row["passed"] else 0 for row in block["cases"])
+        safety += block["safety_fails"]
+        usage_rows.extend(block["cases"])
+    n = len(flags)
+    passed = sum(flags)
+    w_lo, w_hi = wilson(passed, n)
+    b_lo, b_hi = bootstrap_ci(flags)
+    usage = _sum_usage(usage_rows)
+    return {
+        "agent": driver,
+        "model": model,
+        "requested_model": requested,
+        "observed_model": observed,
+        "n": n,
+        "passed": passed,
+        "pass_rate": passed / n if n else None,
+        "wilson_95": [w_lo, w_hi],
+        "bootstrap_95": [b_lo, b_hi],
+        "detection_floor": detection_floor(n),
+        "safety_fails": safety,
+        "cost": usage["cost"],
+        "usage": usage,
+    }
+
+
+def _sum_usage(rows: list[dict]) -> dict:
+    inputs = []
+    outputs = []
+    costs = []
+    for row in rows:
+        usage = row.get("usage") or {}
+        if usage.get("input_tokens") is not None:
+            inputs.append(usage["input_tokens"])
+        if usage.get("output_tokens") is not None:
+            outputs.append(usage["output_tokens"])
+        if usage.get("cost") is not None:
+            costs.append(usage["cost"])
+    reported = len(inputs) + len(outputs) + len(costs)
+    return {
+        "input_tokens": sum(inputs) if inputs else None,
+        "output_tokens": sum(outputs) if outputs else None,
+        "cost": sum(costs) if costs else None,
+        "cases_with_usage": reported and max(len(inputs), len(outputs), len(costs)) or 0,
+        "cases": len(rows),
+        "source": "agent_report" if reported else ("scripted" if rows and (rows[0].get("usage") or {}).get("source") == "scripted" else "unavailable"),
+    }
+
+
+def _best_value_report(cells: list[dict]) -> dict:
+    product_cells = [cell for cell in cells if cell["agent"] != "stub"]
+    picks = best_value(product_cells)
+    for agent in FIRST_AGENTS:
+        picks.setdefault(agent, {
+            "model": None,
+            "basis": "not_measured",
+            "reason": "no cell for this agent in this run",
+        })
+    return {
+        "rule": "highest test pass rate with zero safety fails, then lowest reported cost",
+        "picks": picks,
+        "note": (
+            "A stub cell is not a product model. One live model is not a comparison. "
+            "Missing cost does not invent a cheaper winner. If two pass rates differ by "
+            "less than the detection floor, do not treat the pick as a win; a tie can "
+            "still break on cost. Re-run the same cases with --agent and --model for "
+            "each model the agent offers."
+        ),
+    }
+
+
+def load_matrix() -> dict:
+    path = ROOT / "matrix.json"
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def _safety_fail(row: dict) -> bool:
@@ -267,16 +403,30 @@ def compare_baseline(path: Path, report: dict) -> dict:
 
 
 def print_report(report: dict) -> None:
+    cell = report["cell"]
     print("Trace skill evals")
     print(f"driver: {report['driver']}")
+    print(f"cell: {cell['agent']} × {cell['model']}")
+    if report["requested_model"] and report["observed_model"] and report["requested_model"] != report["observed_model"]:
+        print(f"requested model {report['requested_model']}  observed model {report['observed_model']}")
     if report["product_measured"]:
         print("product measured: attempting, via the eval task prompt")
         print("An installed Trace skill is not what this run executed.")
     else:
         print("product measured: no")
         print("This run replays scripted outcomes. It checks the harness and the graders.")
-        print("A skill score needs --agent claude or --agent codex.")
+        print("A skill score needs --agent cursor or --agent codex, with --model when you are comparing models.")
     print(f"split: {report['split']}")
+    _print_usage("cell usage", cell["usage"])
+    rate = cell["pass_rate"]
+    w_lo, w_hi = cell["wilson_95"]
+    b_lo, b_hi = cell["bootstrap_95"]
+    print(
+        f"cell pass_rate {rate:.3f}  {cell['passed']}/{cell['n']}  "
+        f"wilson_95 [{w_lo:.3f}, {w_hi:.3f}]  "
+        f"bootstrap_95 [{b_lo:.3f}, {b_hi:.3f}]  "
+        f"detection floor about {cell['detection_floor']:.0%}"
+    )
     print()
     for skill, block in report["skills"].items():
         rate = block["pass_rate"]
@@ -294,6 +444,7 @@ def print_report(report: dict) -> None:
             f"  detection floor about {floor:.0%}  "
             f"(Wald half-width at a 50% rate; a smaller gap is not visible here)"
         )
+        _print_usage("  usage", block["usage"])
         repeats = block["repeats"]
         if repeats["k"] == 1:
             print("  repeats 1, so pass^k is not a separate estimate. The stub is deterministic.")
@@ -310,6 +461,7 @@ def print_report(report: dict) -> None:
             for detail in row["details"]:
                 print(f"        {detail}")
         print()
+    _print_best_value(report["best_value"])
     cal = report["calibration"]
     print("Grader calibration (not a skill score)")
     if cal["n"] == 0:
@@ -348,6 +500,28 @@ def print_report(report: dict) -> None:
     print()
     print("Report file: evals/out/report.json")
     print("ok" if report["ok"] else "FAILED")
+
+
+def _print_usage(label: str, usage: dict) -> None:
+    def show(value):
+        return "unavailable" if value is None else value
+
+    print(
+        f"{label}: input_tokens {show(usage['input_tokens'])}  "
+        f"output_tokens {show(usage['output_tokens'])}  "
+        f"cost {show(usage['cost'])}  "
+        f"source {usage['source']}"
+    )
+
+
+def _print_best_value(block: dict) -> None:
+    print("Best-value model per agent")
+    print(f"  rule: {block['rule']}")
+    for agent, pick in block["picks"].items():
+        model = pick.get("model") or "none"
+        print(f"  {agent}: {model}  ({pick['basis']}) {pick['reason']}")
+    print(f"  {block['note']}")
+    print()
 
 
 if __name__ == "__main__":

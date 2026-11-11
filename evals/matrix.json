@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "axes": ["skill", "agent", "model"],
+  "skills": [
+    "hygienic_setup",
+    "session_end",
+    "memory_writer",
+    "decide_later",
+    "ask_trace"
+  ],
+  "agents": [
+    {
+      "id": "cursor",
+      "role": "first",
+      "transport": "acp",
+      "models": "whatever `agent models` lists on the machine. Pass each id with --model."
+    },
+    {
+      "id": "codex",
+      "role": "first",
+      "transport": "app-server",
+      "models": "whatever `model/list` returns on the installed app-server. Pass each id with --model."
+    },
+    {
+      "id": "claude",
+      "role": "later",
+      "transport": "agent-sdk",
+      "models": "not in the first comparison"
+    },
+    {
+      "id": "gemini",
+      "role": "later",
+      "transport": "acp",
+      "models": "not in the first comparison"
+    }
+  ],
+  "cases": "The same fixture set is the row for every agent×model cell. Gold outcomes do not change with the model. One run of evals/run.py is one cell.",
+  "best_value": "Per agent, the model with the highest test pass rate and zero safety fails, then the lowest reported cost. A missing cost does not invent a winner. The stub is not a product model."
+}

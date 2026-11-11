@@ -87,12 +87,12 @@ No all-caps micro-labels below 12 pt. Respect larger text/accessibility preferen
 - **Chrome:** native title bar/window controls, a quiet original Trace mark, Home as the default destination and a project/scope breadcrumb. Run is an explicit destination/action, never the default refresh. Memory/Learnings and Setup are contextual destinations. App menu contains Settings and Ask Trace (`⌘K`).
 - **Home:** a top **Decide later** lane followed by **project insight cards**: what skills did, local setup changes, what stayed and coverage/freshness. A compact original category illustration and permitted agent mark anchor each card. No model call or filesystem scan to render the screen. No raw ledger feed or huge inventory tree.
 - **Cards, not giant text lists:** a short title plus 1–3 clear sentences; identity and meaningful size/state are visible at rest. Use drawings/category marks for recognition, not stock photography. The clickable disclosure area opens evidence; the checkbox changes only selection; **Ask** opens the shared contextual question surface. These controls have separate hit regions and VoiceOver labels.
-- **Run Reviewing:** a restrained live activity canvas, stable project/agent identity, stage nodes, factual tool milestones, allowance/usage and a persistent Stop control. Do not animate invented agent thought or false percent-complete. Completed evidence cards remain stable as later events arrive.
+- **Run Reviewing:** a restrained live activity canvas, stable project/agent identity, stage nodes, factual tool milestones, reported usage and a persistent Stop control. There is no allowance to display. Do not animate invented agent thought or false percent-complete. Completed evidence cards remain stable as later events arrive.
 - **Run Actions:** selectable operation cards, not one row per file. Each has a title such as “Remove stale build output”, a short explanation, measured/estimated allocation, labelled safety state, recovery type and project/agent identity. Expand for the exact affected-resource manifest, consumers, recreation and evidence. A sticky footer names the exact selected effects and supplies the single explicit execution consent.
 - **Grouping boundary:** only group artifacts with the same lifecycle, safety and recovery properties. Separate shared/unknown/protected/prior-regret resources. Shared consumer count and incomplete coverage are visible; shared actions never start selected. A protected card has a lock, not a bypassable checkbox.
 - **Filtering:** one compact category/state/project filter strip, removable chips and search. Selection is stable and totals include filtered-out cards, with “N selected outside this filter”. Do not hide safety-relevant shared/unknown bytes in a filtered total.
 - **Expanded evidence:** adjacent 320 pt inspector when space permits; on narrow windows replace the content with a breadcrumb back, retaining scroll, question draft and selection. No nested modal stack for evidence. Full paths and source citations are copyable/revealable, never executed by clicking text.
-- **Ask Trace:** one shared bar/panel for global, project, action and Decide-later entry points. Scope chips, tier/cost and source links stay visible. It is not a fifth permanent chat navigation area and never a cleanup command launcher.
+- **Ask Trace:** one shared bar/panel for global, project, action and Decide-later entry points. Scope chips, tier and source links stay visible. Agent-tier usage is shown when the agent reported it. It is not a fifth permanent chat navigation area and never a cleanup command launcher.
 
 ### Iconography, motion, sound and copy
 
@@ -108,7 +108,7 @@ No all-caps micro-labels below 12 pt. Respect larger text/accessibility preferen
 flowchart TD
     A[First launch: local detection] --> B[Setup stepper: agents and skills]
     B --> C[Select project roots and category scope]
-    C --> D[Guardrails, access, cost and lifecycle]
+    C --> D[Guardrails, access and lifecycle]
     D --> E[Save summary and opted-in install]
     E --> F{Agent adapter ready?}
     F -- No / save only --> H[Home: Decide later above project insights]
@@ -119,7 +119,7 @@ flowchart TD
     L --> H
     H -- Resolve doubtful item --> Q[Item evidence: Keep / Defer / Ask / Plan action]
     Q -- Keep or defer --> L
-    H -- Explicit deep Run and disclosed budget --> R2[Reviewing: memory plus targeted gap refresh]
+    H -- Explicit deep Run, user picks the agent --> R2[Reviewing: memory plus targeted gap refresh]
     R2 --> X[Actions: selectable operation cards]
     Q -- Plan action --> X
     X -- One exact Move-to-Trash consent --> V[Execute: fresh checks and per-card journal]
@@ -135,7 +135,7 @@ flowchart TD
     M -- Yes --> N[Cited answer: Memory only, no hosted tokens]
     M -- No / stale / conflict --> O[Show known facts and gap; offer Ask agent]
     O -- Decline / M1 --> N2[Partial answer or no answer; memory sources remain usable]
-    O -- User approves scope and allowance, M2 --> T[Two-way agent session: stream, clarify, stop, resume]
+    O -- User approves scope, M2 --> T[Two-way agent session: stream, clarify, stop, resume]
     T --> N3[Cited answer: Agent tier with observed usage]
     N3 -- Propose cleanup, never execute in chat --> X
     N --> H
@@ -144,7 +144,7 @@ flowchart TD
     R -- Stop / timeout / disconnect --> P[Partial checkpoint; explicit resume or finish]
     R2 -- Stop / timeout / disconnect --> P
     T -- Stop / timeout / disconnect --> P
-    P -- Resume with scope and budget --> T2[Resume exact session; reconcile events, no action replay]
+    P -- Resume with the same scope --> T2[Resume exact session; reconcile events, no action replay]
     T2 --> Z{Originating activity?}
     Z -- Ask --> T
     Z -- First review --> R
@@ -161,18 +161,18 @@ At most one filled **commit/next-step** action per surface. Back/Skip/Stop/Ask/e
 | --- | --- | --- | --- | --- |
 | S1 Agents & skills | Detected CLI/version, supported session adapter and auth readiness separately; three skill checkboxes; install scope | Continue | Re-detect, official guidance, Back later in Setup | Detecting, absent, unsupported, sign-in/terms not ready, ready |
 | S2 Projects & scope | Suggested directories with evidence, selected roots, discovered projects and all-on category checkboxes | Continue | Add/select folder, deselect roots/categories, Back | Discovering within roots, no projects, denied, overlapping roots, ready |
-| S3 Guardrails & cost | Never-touch, narrow access, token/time allowance, recovery/memory retention, menu bar/notifications and optional schedule | Continue | Expand advanced controls, repair one permission, Back | Ready, denied/partial, invalid budget, unsupported schedule |
-| S4 Save & first run | Exact install/config scope summary and diff, roots/categories, provider boundary, cost; no cleanup consent | Save & first run | Save without running, Back | Saving/installing, conflict, trust/session restart needed, partially installed, saved |
+| S3 Guardrails | Never-touch, narrow access, which coding agent an app run uses, recovery/memory retention, menu bar/notifications and optional schedule. No budget fields. | Continue | Expand advanced controls, repair one permission, Back | Ready, denied/partial, unsupported schedule |
+| S4 Save & first run | Exact install/config scope summary and diff, roots/categories, per-project opt-outs, provider boundary; no cleanup consent and no run allowance | Save & first run | Save without running, Back | Saving/installing, conflict, trust/session restart needed, partially installed, saved |
 | S5 Home | Decide-later queue first; project insight cards, skill/app attribution, important setup changes, coverage and actual outcomes | Review next doubtful item when present; otherwise none | Project Ask, global Ask, project Run, Setup, memory | Local loading, empty, queue open, unknown/stale coverage, unavailable root, recovery attention |
-| S6 Decide-later detail | Why doubtful, known size/consumers, evidence and resolution criteria; stable status | Plan action when evidence supports it; otherwise Keep this time | Defer, Ask, refresh with disclosed allowance, evidence | Open, planned, deferred, kept, resolved, stale, conflicting |
-| S7 Run Reviewing | Scope, agent/session status, memory and skill coverage, factual live activity and budget | Stop while working; Continue to Actions when review completes | Reply to clarification/access request, install suggestion, diagnostics | Connecting, reviewing, waiting for user, budget reached, stopping, partial, reconnectable |
+| S6 Decide-later detail | Why doubtful, known size/consumers, evidence and resolution criteria; stable status | Plan action when evidence supports it; otherwise Keep this time | Defer, Ask, refresh, evidence | Open, planned, deferred, kept, resolved, stale, conflicting |
+| S7 Run Reviewing | Scope, the agent the user picked, session status, memory and skill coverage, factual live activity and reported usage | Stop while working; Continue to Actions when review completes | Reply to clarification/access request, install suggestion, diagnostics | Connecting, reviewing, waiting for user, stopping, partial, reconnectable |
 | S8 Run Actions | Short selectable cards, exact effects/recovery, evidence, safety, totals and coverage | Move N selected items to Trash, naming actual selection | Expand, Ask this action, Keep/defer, filter, Back | Checking, ready, none eligible, partial/stale, changed selection, journal unavailable |
 | S9 Execute | Per-card and per-artifact outcomes for a frozen set | Stop after current safe item boundary | Expand completed entries | Checking, moving, skipped/failed, stopping, interrupted, post-checks |
 | S10 Result | Selected allocation, moved bytes, measured free-space change and verification outcomes | Done; Review recovery when needed | Undo via Trash, report a problem, evidence, Ask project | Complete, partial, cancelled, measurement unavailable, failed/incomplete checks |
 | S11 Recovery | Exact journaled Trash items and destinations, selection and conflicts | Restore N selected items | Back, reveal conflict, select alternate destination | Ready, occupied destination, missing Trash source, partial, restored |
 | S12 Memory / Learnings | Index, facts versus inferred claims, sources/timestamps, setup history, preferences and corrections | Save changes only during editing | Edit/cancel, Ask with project context, inspect evidence, toggle rule | Read/edit, no memory, stale/broken source, conflict, write error |
-| S13 Ask Trace — unified | Scope chips, question and tier, concise answer/unknowns, inline citations and allowance | Ask memory; Ask agent replaces it only at an explicit gap/budget gate | Edit scope, source detail, follow-up, Stop during agent work, close | Empty, retrieving, cited local answer, insufficient/stale/conflict, awaiting escalation, streaming/waiting, stopped, partial, resumed, failed |
-| S14 Settings / Setup return | Agents/skills/scope, project access, cost, lifecycle, appearance and privacy controls | Apply only for staged config changes | Repair/re-detect, managed uninstall, local export/reset preview | Connected, denied, config drift, install conflict, capability changed |
+| S13 Ask Trace — unified | Scope chips, question and tier, concise answer/unknowns, inline citations and reported usage | Ask memory; Ask agent replaces it only after the user accepts the scope | Edit scope, source detail, follow-up, Stop during agent work, close | Empty, retrieving, cited local answer, insufficient/stale/conflict, awaiting escalation, streaming/waiting, stopped, partial, resumed, failed |
+| S14 Settings / Setup return | Agents/skills/scope, project opt-out, lifecycle, appearance and privacy controls. No budget settings. | Apply only for staged config changes | Repair/re-detect, managed uninstall, local export/reset preview | Connected, denied, config drift, install conflict, capability changed |
 | S15 Menu bar | Queue count, active stage/question, last measured outcome, attention and schedule state | Open Trace at relevant item/activity | Ask Trace opens S13, Stop if working, Settings, Quit | Idle, working, waiting for reply, queued decisions, partial, attention |
 
 Read-only M1 does not display an enabled Move-to-Trash button. A simple Settings surface or Home without pending decisions needs no invented primary button.
@@ -188,17 +188,17 @@ Use a clean visual stepper with tickboxes, radio choices and official-agent card
 | Agent config and opt-in skills | S1 |
 | Project directory selection | S2 |
 | Categories, all on by default | S2 |
-| Whole-agent versus per-project install | S1, with selected-project preview from S2 and final S4 verification |
-| Never-touch, FDA only if needed, budget, Trash/memory retention, menu/notifications and optional schedule | S3 |
+| Whole-agent install, with a per-project opt-out | S1, with the opt-out list checked against S2 and confirmed on S4 |
+| Never-touch, FDA only if needed, which agent an app run uses, Trash/memory retention, menu/notifications and optional schedule | S3 |
 | Save & first run | S4 |
 
-**S1:** show detected harness/CLI names, version, the three skills and a separate “App session ready / needs setup / unsupported” indicator. A signed-in CLI is not proof an SDK's embedded-auth terms are met. Prefer no silently selected skill install; user checks opt-in boxes. Scope is **Whole agent** or **Selected projects**, per compatible adapter. Whole-agent means applicable sessions in that harness, not blanket authority over personal files. Stage changes until S4. Selecting project-only is valid, not a broken/global-install warning. If an installation scope is unsupported, disable it with a reason rather than pretending to install.
+**S1:** show detected harness/CLI names, version, the three skills and a separate “App session ready / needs setup / unsupported” indicator. Cursor and Codex come first. A signed-in CLI is not proof a later adapter's terms are met. Prefer no silently selected skill install; user checks opt-in boxes. Install is **whole agent by default**, with a per-project opt-out. Whole-agent means applicable sessions in that harness, not blanket authority over personal files. Stage changes until S4. An opt-out is a choice, not a broken install. If a harness cannot take a whole-agent install, say so and leave that agent off.
 
 **S2:** suggest roots from permitted agent workspace history, IDE recents and Git evidence; user selects/deselects or chooses a folder. Discover only inside selected roots plus evidenced related stores, never the whole disk. Show which source produced a suggestion; nested/overlapping roots are deduplicated. Six illustrated category cards cover caches, builds/environments, worktrees, containers, models and project data. **All categories on by default means inspect/manage, not pre-authorized deletion.** Shared-store cards carry a Shared mark; future actions never start selected. A moved root offers Locate, preserving stable project history; exclusion changes scope, not disk.
 
-**S3:** show compact basic choices, then progressive advanced disclosure: never-touch folder list; access status; agent/model and token/time allowance; Trash/recovery history and memory-retention preferences; menu bar and Decide-later notifications; optional review-only schedule, off by default. “Trash retention” describes visibility/recoverability and the user's OS/tool policy: Trace does not auto-empty Trash or promise permanent recovery. Show oldest evidence still needed by an open decision/recovery before reducing memory retention. Request narrow folder access only as needed. FDA appears only for a specific blocked surface, with why and partial-mode escape. Do not silently grant OS notifications, login item or background execution permission. Budget labels distinguish a provider-enforced limit from a best-effort local stop threshold; usage can be delayed and the last turn can overshoot an estimate.
+**S3:** show compact basic choices, then progressive advanced disclosure: never-touch folder list; access status; which coding agent an app run uses (the user picks the agent; there is no model budget); Trash/recovery history and memory-retention preferences; menu bar and Decide-later notifications; optional review-only schedule, off by default, and only while the app is running. “Trash retention” describes visibility/recoverability and the user's OS/tool policy: Trace does not auto-empty Trash or promise permanent recovery. Show oldest evidence still needed by an open decision/recovery before reducing memory retention. Request narrow folder access only as needed. FDA appears only for a specific blocked surface, with why and partial-mode escape. Do not silently grant OS notifications, a login item, or a helper that keeps running after quit. There is no token field and no time-cap field. Usage from a later Run is reported on that Run, or shown as unavailable.
 
-**S4:** exact managed config diff, paths/scopes, selected roots/categories, disclosed provider boundary and first read-only allowance. **Save & first run** saves, installs only checked skills, verifies actual host activation/trust and starts Reviewing in read-only/proposal/memory mode. It never grants cleanup consent. Preserve user config; collisions show a diff, no overwrite. If one adapter fails, save successful independent choices, label the partial state and offer a scoped retry. Trust prompts and new-session requirements are explicit; writing files is not an “Installed and active” receipt. No agent: **Save without running** leads to a useful local Home. Official sign-in stays in the supported harness/provider flow; Trace never scrapes credentials.
+**S4:** exact managed config diff, paths/scopes, selected roots/categories, per-project opt-outs and the disclosed provider boundary. **Save & first run** saves, installs only checked skills for the whole agent except opted-out projects, verifies actual host activation/trust and starts Reviewing in read-only/proposal/memory mode. It never grants cleanup consent. Preserve user config; collisions show a diff, no overwrite. If one adapter fails, save successful independent choices, label the partial state and offer a scoped retry. Trust prompts and new-session requirements are explicit; writing files is not an “Installed and active” receipt. No agent: **Save without running** leads to a useful local Home. Official sign-in stays in the supported harness/provider flow; Trace never scrapes credentials.
 
 Back preserves form state; Save commits it. No tour slides, forcing FDA or mandatory “test agent” every launch. Returning to Setup edits just the relevant step.
 
@@ -216,27 +216,27 @@ Notifications are opt-in, quiet and deduplicated; point to the existing item. No
 
 First Reviewing creates a read-only baseline from the chosen projects/stores, explaining legacy ownership as “Discovered on first review”, not fake historical creation by an agent. Reuse/import notes with provenance and verify safety-relevant facts. M1 finishes with Home insights/memory, not cleanup.
 
-Steady-state Home still does not run a model. Explicit **Run** discloses project scope and allowance before starting a deeper fallback/catch-up: **Reviewing → Actions → Execute**. Reviewing automatically uses memory plus bounded current evidence, verifies consumers/recreation/source-of-truth and proposes cards. Show a compact stage rail with factual milestones (“Reading project memory”, “Checking build outputs”, “Verifying shared consumers”), not editable planning chores for the user or a streaming wall of text.
+Steady-state Home still does not run a model. Explicit **Run** names the project and the coding agent the user picked, then starts a deeper fallback/catch-up: **Reviewing → Actions → Execute**. There is no allowance screen. Usage appears as the agent reports it. Reviewing automatically uses memory plus bounded current evidence, verifies consumers/recreation/source-of-truth and proposes cards. Show a compact stage rail with factual milestones (“Reading project memory”, “Checking build outputs”, “Verifying shared consumers”), not editable planning chores for the user or a streaming wall of text.
 
-Missing skills prompt one in-context install suggestion with exact scope and opt-in. Respect a previous decline; project-only installs are valid. A demonstrated gap can replay the relevant skill in inspection/memory/proposal mode, not repeat setup mutations or cleanup. Deduplicate concurrent/session-journaled work.
+Missing skills prompt one in-context install suggestion with exact scope and opt-in. Respect a previous decline and a per-project opt-out. A demonstrated gap can replay the relevant skill in inspection/memory/proposal mode, not repeat setup mutations or cleanup. Deduplicate concurrent/session-journaled work.
 
-Budget and session state remain visible. Determinate counts appear only for a known set; exploration stays indeterminate with covered/unknown counts. Stable cards do not reorder under the pointer. Diagnostics are bounded/redacted and secondary; do not expose chain-of-thought.
+Reported usage and session state remain visible. Determinate counts appear only for a known set; exploration stays indeterminate with covered/unknown counts. Stable cards do not reorder under the pointer. Diagnostics are bounded/redacted and secondary; do not expose chain-of-thought.
 
 ### D. Persistent, resumable two-way interaction
 
-This is required for first-run inspection, deep Reviewing and M2 agent Ask—not an optional UI polish item. [PRD agent-session research](prd.md#required-two-way-agent-session-design) identifies Claude Agent SDK streaming input/client sessions, Codex app-server and Cursor/Gemini ACP, with direct official sources and auth/version limits. They are documented support, not an installed-version compatibility promise.
+This is required for first-run inspection, deep Reviewing and M2 agent Ask—not an optional UI polish item. The first two transports are Cursor ACP and Codex app-server. [PRD agent-session research](prd.md#required-two-way-agent-session-design) also records Claude's Agent SDK and Gemini ACP for later adapters. They are documented support, not an installed-version compatibility promise. Distribution is local dogfood until M2.
 
 Map the adapter lifecycle to explicit visual states:
 
 `Connecting → Ready → Working ↔ Waiting for input/permission → Completed/Partial`.
 
-From Working/Waiting, Stop goes to `Stopping → Stopped`; broken transport goes to `Disconnected → Resume available / Resume unavailable`; a budget/work deadline gives `Limit reached / Timed out`, preserving partial evidence. Resume returns to the exact project/session, revalidates scope/policy and remaining allowance, and never automatically repeats an old mutation or permission response. Explicit user confirmation is required for renewed paid work. If history is missing or capabilities changed, explain it and offer a disclosed fresh scoped review, not fake “Resumed”.
+From Working/Waiting, Stop goes to `Stopping → Stopped`; broken transport goes to `Disconnected → Resume available / Resume unavailable`; a stuck-session deadline gives `Timed out`, preserving partial evidence. There is no budget-reached state. Resume returns to the exact project/session, revalidates scope and policy, and never automatically repeats an old mutation or permission response. Explicit user confirmation is required before a resume spends more quota. If history is missing or capabilities changed, explain it and offer a disclosed fresh scoped review, not fake “Resumed”.
 
 Show a clarification as an inline **Needs your answer** card with the exact question and relevant options/free text. Requests that would broaden access show the exact effect and default to denial without a reply. Never hide blocking provider requests, auto-approve “always”, or confuse approving an agent read with approving Trash. A run waiting for permission must not look like a frozen spinner. Expired/cancelled requests become disabled records; reconnect cannot resubmit a stale Yes.
 
 Session checkpoint includes stable project/agent identity, protocol/version, conversation/thread/turn IDs, event cursor/handled IDs, allowed scope/policy and pending requests. All transport/output/event buffers are bounded. Keep reading stdout and stderr without blocking the UI; decode errors, out-of-order/late results and unknown notifications cannot crash the view. Redact credential-bearing payloads; an agent event is untrusted data, not authority to spawn an arbitrary local process or change scope.
 
-Timeout classes are separate: handshake, no liveness, no useful work, overall allowance and user-reply wait. Treat documented pings as liveness, not progress; a normal long tool must not be called a crash merely for a quiet interval. Concrete timings are proposed after actual-agent dogfood, not inherited Shed constants. Pause/timeout states say what is and is not still running.
+Timeout classes are separate: handshake, no liveness, no useful work, and user-reply wait. They are stuck-session bounds, not a token cap. Treat documented pings as liveness, not progress; a normal long tool must not be called a crash merely for a quiet interval. Concrete timings are proposed after actual-agent dogfood, not inherited Shed constants. Pause/timeout states say what is and is not still running.
 
 Stop sends the protocol interrupt/cancel, answers/cancels pending requests as required, drains terminal events and closes cleanly. If an owned helper fails to stop, terminate that owned process safely, preserve the checkpoint and report the limit. Never kill an unrelated terminal/coding session. Do not promise that a provider's cancel undoes filesystem changes or stops every detached shell; prevent unauthorized/background work through real tool/sandbox boundaries and account for owned children. ACP scope declarations alone are not an OS sandbox. An adapter that cannot enforce the required read-only/control boundary is not enabled for app-driven work.
 
@@ -274,13 +274,13 @@ Result appears directly, no success modal or confetti:
 
 **M1 memory-only:** bounded local retrieval over the ledger/index/notes. Return structured facts/quoted matches with short source-backed wording and stable citation IDs, project, author/type, observed/verified time and freshness. Do not invent free cloud generation. A local generative model is not a hidden dependency in M1; any future addition has a separately disclosed execution/resource tier. If exact memory cannot answer an open-ended question, say so and show related evidence. Source click opens the existing inspector with back/focus preservation. Conflicting notes are shown together with corrections/supersession; no made-up “majority vote”.
 
-**Escalation only for insufficiency (M2):** show what is known, the missing/stale/conflicting piece and **Ask agent**. Before any outbound prompt show agent/model, explicit project/path scope, which minimized evidence may leave the Mac and an additional token/time allowance; user approves or stays memory-only. “Already signed in” never overrides adapter auth/distribution limits. Do not launch a deep project Run or upload unrelated memories just to answer one card question. No uncapped escalation or silent provider/model switch after a limit.
+**Escalation only for insufficiency (M2):** show what is known, the missing/stale/conflicting piece and **Ask agent**. Before any outbound prompt show the coding agent the user picked, explicit project/path scope, and which minimized evidence may leave the Mac. There is no token allowance. The user approves the scope or stays memory-only. “Already signed in” never overrides adapter auth limits. Do not launch a deep project Run or upload unrelated memories just to answer one card question. Do not switch agent or model in silence. A skill may pin a model only by telling the agent to run that skill in a subagent, and the screen says so.
 
-**Agent answer:** use the same persistent, resumable two-way session contract as Reviewing. Live state shows **Agent · allowance / observed usage** (or unavailable), factual progress, follow-ups and Stop. A clarification/permission reply remains in the same conversation; no restart per question. Distinguish memory facts from newly inspected observations and qualified inference. Validate citations resolve to permitted IDs/evidence; an invented reference is rejected or marked unsupported, not a blue link that looks authoritative. A saved answer preserves tier, question scope, citations and evidence version; later correction marks it stale rather than silently rewriting what was said.
+**Agent answer:** use the same persistent, resumable two-way session contract as Reviewing. Live state shows **Agent · observed usage** (or unavailable), factual progress, follow-ups and Stop. A clarification/permission reply remains in the same conversation; no restart per question. Distinguish memory facts from newly inspected observations and qualified inference. Validate citations resolve to permitted IDs/evidence; an invented reference is rejected or marked unsupported, not a blue link that looks authoritative. A saved answer preserves tier, question scope, citations and evidence version; later correction marks it stale rather than silently rewriting what was said.
 
 **Read-only by design:** “Can I delete it?” returns evidence/uncertainty and may offer **Create action card**; it does not delete, alter global policy, install a skill or run an arbitrary suggested shell command. S8 still owns eligibility/selection/consent. Even a follow-up “yes” to a question is not hidden Execute. M1 can record a proposed decision but cannot enable execution.
 
-**Errors/partials:** no matching memories, ambiguous project, stale/conflicting evidence, source moved/removed, local index failure, unsupported adapter, signed out, budget exhausted, waiting for reply, disconnected/resumable, Stop pending, stopped with partial answer and citation validation failure. Keep source-backed partial facts usable; never convert them into a complete safety answer. No network/auth still permits memory-only Ask. Closing the panel preserves its draft/checkpoint but does not silently continue an agent turn: by default stop it cleanly or move it to an explicitly visible active-run surface. Concrete multi-question history/retention remains a dogfood choice, not a reason to add a chat sidebar.
+**Errors/partials:** no matching memories, ambiguous project, stale/conflicting evidence, source moved/removed, local index failure, unsupported adapter, signed out, waiting for reply, disconnected/resumable, Stop pending, stopped with partial answer and citation validation failure. There is no budget-exhausted state. Keep source-backed partial facts usable; never convert them into a complete safety answer. No network/auth still permits memory-only Ask. Closing the panel preserves its draft/checkpoint but does not silently continue an agent turn: by default stop it cleanly or move it to an explicitly visible active-run surface. Concrete multi-question history/retention remains a dogfood choice, not a reason to add a chat sidebar.
 
 ### H. Memory / Learnings and feedback
 
@@ -290,11 +290,11 @@ Edit beside evidence; Save commits a user-authored correction event, not erasure
 
 ### I. Settings, optional schedule and menu bar
 
-Settings reuse Setup components: Agents & skills (adapter readiness, scope/config and managed uninstall preserving user changes); Projects & categories/access/never-touch; Run/Ask costs and interruption policy; retention/privacy; appearance/sound; menu bar/Decide-later notifications and optional review-only schedule. Use native controls with designed grouping, not an endless generic form. Apply exists only for staged config, not immediately applied appearance choices.
+Settings reuse Setup components: Agents & skills (adapter readiness, whole-agent install, per-project opt-out and managed uninstall preserving user changes); Projects & categories/access/never-touch; retention/privacy; appearance/sound; menu bar/Decide-later notifications and optional review-only schedule. There is no Run or Ask cost setting. Usage is shown on the Run or the answer that produced it. Use native controls with designed grouping, not an endless generic form. Apply exists only for staged config, not immediately applied appearance choices.
 
-Schedule is off by default and only reviews selected projects with explicit agent/model/time/token allowance and quiet notification preference. Never scheduled Execute. Show next intended review, last actual outcome, paused/missed/blocked state, per-project scope and disable. Suspend at limits, agent unavailability or competing work. Whether review survives app quit requires a validated supported macOS mechanism; do not claim reliable post-quit execution or silently add a login item/daemon.
+Schedule is off by default and only reviews selected projects with the coding agent the user picked and a quiet notification preference. It runs only while the menu bar app is running. Quit stops it. There is no helper afterwards, and a missed slot is not replayed by a daemon. Never scheduled Execute. Show next intended review, last actual outcome, paused/missed/blocked state, per-project scope and disable. Suspend on agent unavailability or competing work. Do not add a login item.
 
-Menu popover: original monochrome glyph; compact queue count, current stage/needs-reply, last truthful moved/measured outcome and **Open Trace** at the exact context. Ask opens S13, not an immediate provider call. Stop matches the main window. Never one-click clean, install skills or start a fresh deep Run from the popover. Dismissal does not stop the main window's visible work. Proposed initial lifecycle: closing the main window safely stops foreground agent work and leaves an idle menu app when enabled; Quit stops owned work and checkpoints. An explicitly configured background review is separately disclosed/visible; there is no hidden default scan. Validate window/scheduler behavior before implementation.
+Menu popover: original monochrome glyph; compact queue count, current stage/needs-reply, last truthful moved/measured outcome and **Open Trace** at the exact context. Ask opens S13, not an immediate provider call. Stop matches the main window. Never one-click clean, install skills or start a fresh deep Run from the popover. Dismissal does not stop the main window's visible work. Proposed initial lifecycle: closing the main window leaves the menu bar app running and can keep an opted-in review going; Quit stops owned work, checkpoints, and ends that review. There is no helper after quit, and no hidden default scan. Validate window behavior before implementation.
 
 ## 6. State and repair matrix
 
@@ -309,9 +309,9 @@ Menu popover: original monochrome glyph; compact queue count, current stage/need
 | Journal/memory write failure or nearly full disk | Durable recording unavailable; Execute disabled | Bounded read-only view/repair. No broad auto-prune to make space. |
 | Candidate changed/in use | Skip reason and corrected selection outcome | Re-review exact target. Never substitute or retry-delete in a loop. |
 | Session connecting/waiting | Handshake state or exact question/access request | Reply/deny/Stop. Never a frozen spinner or auto-approve-always. |
-| Agent timeout/disconnect | Last factual activity, partial evidence, owned-process status and resume capability | Interrupt/drain; explicit resume by ID/budget after revalidation. No one-shot fallback or action replay. |
-| Budget/usage unavailable | Disclosed stop allowance; usage unavailable/estimated, never zero by assumption | Stop/finish partial or explicitly extend. No hard billing-cap promise without enforcement. |
-| Ask memory insufficient/stale/conflict | Known facts + missing part + usable citations | M1 remain local; M2 offer scope/budget-gated Ask agent. Never fabricate current safety. |
+| Agent timeout/disconnect | Last factual activity, partial evidence, owned-process status and resume capability | Interrupt/drain; explicit resume after revalidation. No one-shot fallback or action replay. |
+| Usage unavailable | The Run or Ask finished or stopped, and the agent reported no usage figure | Show unavailable. Do not substitute zero or an estimate. |
+| Ask memory insufficient/stale/conflict | Known facts + missing part + usable citations | M1 remain local; M2 offer scope-gated Ask agent. Never fabricate current safety. |
 | Ask citation unresolved | Unsupported/missing source labelled; grounded partial answer retained | Open valid evidence or narrow refresh. Never invent a citation link. |
 | Ask network/auth unavailable | Agent tier unavailable; memory-only still usable | Supported sign-in/adapter repair. No credential-file scraping or provider switch. |
 | Interrupted Execute/checks | Journaled completed/missing work and selected/moved/measured differences | Result/recovery, never auto-resume mutation or automatic rollback. |
@@ -327,7 +327,7 @@ Inline errors offer one specific repair action and selectable concise explanatio
 - Tab follows reading order; arrows move card/list focus; Space changes an eligible checkbox; Enter opens focused details. Escape closes a panel/popover or cancels a staged edit, not a hidden destructive action. Keep Stop explicit.
 - `⌘K` opens the unified Ask bar inside Trace; `⌘F` searches the current surface, `⌘,` opens Settings, `⌘C` copies selected text. No destructive/global default-Return shortcut. A system-wide Ask hotkey is optional future opt-in, not required in v0.
 - Source/Ask expansion returns focus to the exact invoking card; preserve scroll, scope and question draft. Do not announce/reorder each streamed token; announce meaningful stage changes, waiting input and final outcomes.
-- VoiceOver reads project/agent, kind/state, measured versus estimated/completeness, selection and evidence relationship. Controls never rely only on logo, colour, hover, motion or sound. Ask tier/budget changes and stale sources are accessible text.
+- VoiceOver reads project/agent, kind/state, measured versus estimated/completeness, selection and evidence relationship. Controls never rely only on logo, colour, hover, motion or sound. Ask tier changes, reported usage and stale sources are accessible text.
 - Respect Reduce Motion/Transparency, Increase Contrast and larger text. Wrap the essential explanation rather than clipping it. Maintain native text selection, contextual menus, OS window/menu behavior and full-path copy/reveal.
 
 ## 8. Laws of UX → concrete screen decisions
@@ -357,19 +357,19 @@ Inline errors offer one specific repair action and selectable concise explanatio
 | [Occam's Razor](https://lawsofux.com/occams-razor/) | S5/S8/S13/S15 | One Ask surface, one consent boundary, one queue; remove duplicate chat/confirmation screens, not essential safety information. |
 | [Paradox of the Active User](https://lawsofux.com/paradox-of-the-active-user/) | S1–S4/S6/S13 | Just-in-time install/gap/safety help instead of a long tutorial; optional question examples use the actual item. |
 | [Pareto Principle](https://lawsofux.com/pareto-principle/) | S5/S6/S8 | Prioritize doubtful queue and useful project insights/large eligible operations; it is not a claim that 20% always drives 80%, nor permission to hide rare serious risks. |
-| [Parkinson's Law](https://lawsofux.com/parkinsons-law/) | S3/S7/S13 | Explicit bounded work/allowance and finish-partial; no artificial user countdown or rushing consent. |
+| [Parkinson's Law](https://lawsofux.com/parkinsons-law/) | S7/S13 | Stop and finish-partial stay available; no artificial user countdown, no token cap, and no rushing consent. |
 | [Peak–End Rule](https://lawsofux.com/peak-end-rule/) | S9–S11/S13 | Clear, honest completion/partial answer and reachable recovery/sources; no celebratory false savings. |
 | [Postel's Law](https://lawsofux.com/postels-law/) | S2/S12/S13/session adapters | Tolerate harmless question/path formatting and compatible unknown event fields; be strict about scope, IDs, schema safety and citation provenance. Never liberally accept executable agent text. |
 | [Selective Attention](https://lawsofux.com/selective-attention/) | S5/S7/S8/S13 | One attention request at a time, quiet metadata, visible Stop/tier/unsafe state. No animated decoration competing with an approval. |
 | [Serial Position Effect](https://lawsofux.com/serial-position-effect/) | S4/S5/S8/S13 | Queue and scope early; exact effects/consent at footer; Ask opens with answer and ends with unknowns/sources, not buried cost. |
 | [Tesler's Law](https://lawsofux.com/teslers-law/) | S6–S8/S13 | Trace handles receipts, consumer evidence and retrieval complexity; it cannot eliminate real uncertainty by hiding it from the user. |
-| [Von Restorff Effect](https://lawsofux.com/von-restorff-effect/) | S6–S10/S13 | One salient needs-input/protected/changed/cost-escalation state, paired with text; no rainbow of equal-priority warning badges. |
+| [Von Restorff Effect](https://lawsofux.com/von-restorff-effect/) | S6–S10/S13 | One salient needs-input/protected/changed state, paired with text; no rainbow of equal-priority warning badges. |
 | [Working Memory](https://lawsofux.com/working-memory/) | S6/S8/S13 | Keep scope, selected effects and cited evidence adjacent; preserve draft/context between source inspection and follow-up. |
 | [Zeigarnik Effect](https://lawsofux.com/zeigarnik-effect/) | S5/S6/S7/S13/S15 | Durable deduplicated Decide-later and resumable partial work show what remains; no nagging streak, fabricated deadline or repetitive notification. |
 
 ## 9. Native-first macOS / SwiftUI component kit
 
-These are researched implementation candidates, not a mandate to install every library. Native controls preserve platform behavior; layout, card artwork and tokens provide Trace's identity. Deployment target remains to be chosen. `MenuBarExtra`, `Grid` and Swift Charts make macOS 13+ a practical baseline candidate, not a locked PRD decision. Gate newer APIs or supply a fallback rather than silently raising the minimum OS.
+These are researched implementation candidates, not a mandate to install every library. Native controls preserve platform behavior; layout, card artwork and tokens provide Trace's identity. The minimum system is macOS 14. `MenuBarExtra`, `Grid` and Swift Charts are available there. Gate any newer API or supply a fallback rather than silently raising the minimum above 14.
 
 | Screens / role | Recommended native components | Why / caution |
 | --- | --- | --- |
@@ -381,7 +381,7 @@ These are researched implementation candidates, not a mandate to install every l
 | S12 Memory | Native text selection, `TextEditor`, adjacent evidence, structured diff/merge choice | Markdown text optional; edit corrections preserve original events and source IDs. |
 | S13 Ask Trace | `.sheet`/popover or in-window panel selected after focus prototype, `TextField`/`TextEditor`, scope chips, tier `Label`, selectable `Text`/`AttributedString`, source Buttons and `ProgressView` | One shared surface, accessible citations, no `WKWebView` requirement. Render untrusted Markdown without active HTML/scripts/remote images; no hidden data fetch. |
 | S14 Settings | SwiftUI `Settings` scene, `Form` only for suitable native groups, `Toggle`/`Picker` and explicit config diff | Keep designed hierarchy; no extra Save for instant appearance changes. |
-| S15 menu bar | [`MenuBarExtra`](https://developer.apple.com/documentation/swiftui/menubarextra) with window-style content and bounded cards | Native status item/popover behavior, not a second mini-cleaner. No login item unless explicitly enabled. |
+| S15 menu bar | [`MenuBarExtra`](https://developer.apple.com/documentation/swiftui/menubarextra) with window-style content and bounded cards | Native status item/popover behavior, not a second mini-cleaner. Do not add a login item. Quit stops owned work. |
 | Icons and surfaces | [SF Symbols](https://developer.apple.com/sf-symbols/) and [`Material`](https://developer.apple.com/documentation/swiftui/material) | Symbols support native rendering/accessibility but are not agent logos; respect Apple's symbol restrictions. Use Material only for a restrained native chrome/popover if needed, not glass-on-glass evidence cards. |
 | Optional history visualization | [Swift Charts](https://developer.apple.com/documentation/charts) | Useful only after honest longitudinal data exists; not a pie chart or unsupported “reclaimable” prediction. Text quantities are enough for M1. |
 
@@ -416,10 +416,10 @@ Use approved **official**, unmodified assets with product names, adequate clear 
 - No giant artifact-list review as the core UI: short operation/insight cards, exact manifest on expansion.
 - No Run-as-home, provider call on app open or mandatory full run for skills to do everyday work.
 - No welcome carousel or compulsory FDA gate; one purposeful Setup stepper with selective roots and narrow permission repair.
-- No repeated “Test agent”, silent reinstall or global-scope nag after a valid project-only choice.
+- No repeated “Test agent”, silent reinstall, or a nag that treats a per-project opt-out as a broken install.
 - No separate cleanup confirmation sheet followed by “Are you sure?”; Actions owns the one exact consent.
 - No independent global chat, floating chatbot and separate per-card chat system: four entry points reuse Ask Trace with explicit context and tier.
-- No uncapped/silent agent escalation, universal ⌘K delete command, one-click menu-bar clean or destructive default Return shortcut.
+- No silent agent escalation, universal ⌘K delete command, one-click menu-bar clean or destructive default Return shortcut. Escalation waits for the user to accept the scope. Trace does not add a token cap on top of that.
 - No fire-and-forget app-agent job, hidden blocking permission, arbitrary agent-supplied shell deletion or blind action replay after reconnect.
 - No silent auto-prune, automatic Trash emptying/restore, scheduled Execute or deletion because a Decide-later item got old.
 - No mandatory keep-reason survey, confetti, looping sound, success interstitial or pressure to empty Trash.
@@ -431,7 +431,7 @@ Use approved **official**, unmodified assets with product names, adequate clear 
 | --- | --- |
 | M0 | Three in-session skills, portable evidence/receipt contract and durable deduplicated Decide-later queue without app dependency. Validate consent and denominator, not a pixel-perfect app. |
 | M1 | Setup, local Home/queue and insight cards, read-only first baseline, memory editing and **memory-only Ask Trace** with real source links/no hidden hosted generation. App cleanup stays disabled. Any app-driven first inspection already uses the required two-way session foundation; don't defer robustness to M2. |
-| M2 | Fully agentic Reviewing → Actions → Execute, guarded native Trash/journal/recovery, honest outcomes and **agent-escalated Ask Trace** through the same resumable two-way session. Optional review-only scheduling only after lifecycle/budget/permissions are proven. |
+| M2 | Fully agentic Reviewing → Actions → Execute on Cursor and Codex, guarded native Trash/journal/recovery, honest outcomes and **agent-escalated Ask Trace** through the same resumable two-way session. Show usage. Optional review only while the app is running. Auth, distribution and the public name are decided in this milestone. |
 
 Design assumptions to dogfood: card density and grouping, all four Ask entry points feeling like one surface, memory answer sufficiency, per-project versus global scoping, single-flight follow-ups, readable evidence on narrow screens, exact consent clarity and window/background lifecycle. Test real capability/auth drift, waiting/cancel/reconnect with partial evidence and citation corrections—not just a happy-path animation. Confirm current installed agent versions before claiming support.
 
