@@ -18,6 +18,7 @@ import os
 import shutil
 import signal
 import subprocess
+import sys
 import threading
 from pathlib import Path
 
@@ -37,14 +38,30 @@ def cursor_binary() -> str | None:
     return None
 
 
+SKILL_SCRIPTS = {
+    "memory_writer": "memory-writer/scripts/run_fixture.py",
+    "decide_later": "decide-later/scripts/run_fixture.py",
+    "session_end": "session-end-cleanup/scripts/run_fixture.py",
+    "hygienic_setup": "hygienic-setup/scripts/run_fixture.py",
+}
+
+
+def skills_root() -> Path:
+    return Path(__file__).resolve().parents[2] / "skills"
+
+
 def select_driver(requested: str) -> str:
     if requested == "stub":
         return "stub"
+    if requested == "skill":
+        return "skill"
     if requested == "auto":
         if cursor_binary():
             return "cursor"
         if available("codex"):
             return "codex"
+        if any((skills_root() / rel).is_file() for rel in SKILL_SCRIPTS.values()):
+            return "skill"
         return "stub"
     if requested == "cursor":
         if not cursor_binary():
@@ -63,6 +80,35 @@ def select_driver(requested: str) -> str:
             raise DriverError("gemini is not on PATH")
         return "gemini"
     raise DriverError(f"unknown driver {requested}")
+
+
+def run_skill(skill: str, fixture: dict, workspace: Path) -> dict:
+    """Drive an installed Trace skill script. Does not read gold or stub_result."""
+    rel = SKILL_SCRIPTS.get(skill)
+    if not rel:
+        raise DriverError(f"no skill script for {skill} (M0 skills only)")
+    script = skills_root() / rel
+    if not script.is_file():
+        raise DriverError(f"skill script missing: {script}")
+    fixture_path = workspace / "trace-out" / "fixture.json"
+    fixture_path.parent.mkdir(parents=True, exist_ok=True)
+    fixture_path.write_text(json.dumps(fixture, indent=2) + "\n", encoding="utf-8")
+    proc = subprocess.run(
+        [sys.executable, str(script), "--workspace", str(workspace), "--fixture", str(fixture_path)],
+        cwd=str(workspace),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        raise DriverError(proc.stderr.strip() or proc.stdout.strip() or f"skill exited {proc.returncode}")
+    return {
+        "input_tokens": None,
+        "output_tokens": None,
+        "cost": None,
+        "observed_model": "skill-script",
+        "source": "skill",
+    }
 
 
 def apply_stub(stub: dict, workspace: Path) -> None:

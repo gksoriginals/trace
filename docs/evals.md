@@ -1,6 +1,6 @@
 # Trace — skill evals
 
-**Status:** seed set, before any skill code exists · **Date:** 11 November 2026
+**Status:** seed set + M0 skill scripts (`--agent skill`) · **Date:** 11 November 2026
 
 This follows the method in the eval article Gopi asked to apply (the file shared with this work; the running example there is a bike-shop support assistant, and the citations below point at that article's references). An eval is an input, a system, a grader, and a number. The number without the grader's own check is not a result.
 

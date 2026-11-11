@@ -27,7 +27,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
-from harness.drivers import JUDGE_RUBRIC, DriverError, apply_stub, render_prompt, run_live, select_driver
+from harness.drivers import (
+    JUDGE_RUBRIC,
+    SKILL_SCRIPTS,
+    DriverError,
+    apply_stub,
+    render_prompt,
+    run_live,
+    run_skill,
+    select_driver,
+)
 from harness.graders import failed_names, grade
 from harness.stats import (
     article_kappa_example,
@@ -49,8 +58,9 @@ SKILLS = (
     "ask_trace",
     "attribution",
 )
-AGENTS = ("auto", "stub", "cursor", "codex", "claude", "gemini")
+AGENTS = ("auto", "stub", "skill", "cursor", "codex", "claude", "gemini")
 FIRST_AGENTS = ("cursor", "codex")
+M0_SKILLS = tuple(SKILL_SCRIPTS)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -93,7 +103,13 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     headline = [c for c in cases if c["split"] != "calibration" and _in_split(c, args.split)]
+    if driver == "skill":
+        headline = [c for c in headline if c["skill"] in M0_SKILLS]
     calibration = [c for c in cases if c["split"] == "calibration"]
+    if driver == "skill" and args.skill:
+        calibration = [c for c in calibration if c.get("skill") == args.skill]
+    elif driver == "skill":
+        calibration = [c for c in calibration if c.get("skill") in M0_SKILLS]
     tasks = {skill: (ROOT / "tasks" / f"{skill}.md").read_text(encoding="utf-8") for skill in SKILLS}
 
     runs: list[list[dict]] = []
@@ -177,6 +193,9 @@ def run_case(case: dict, driver: str, task: str, timeout: int, model: str | None
             if planted or driver == "stub":
                 apply_stub(case.get("stub_result") or {}, workspace)
                 driver_note = "stub"
+            elif driver == "skill":
+                usage = run_skill(case["skill"], fixture, workspace)
+                driver_note = "skill"
             else:
                 prompt = render_prompt(task, fixture)
                 usage = run_live(driver, prompt, workspace, timeout, model)
@@ -221,6 +240,14 @@ def _usage_note(usage: dict | None, driver: str) -> dict:
             "cost": None,
             "observed_model": None,
             "source": "scripted" if driver == "stub" else "unavailable",
+        }
+    if driver == "skill":
+        return {
+            "input_tokens": None,
+            "output_tokens": None,
+            "cost": None,
+            "observed_model": (usage or {}).get("observed_model") or "skill-script",
+            "source": "skill",
         }
     return {
         "input_tokens": usage.get("input_tokens"),
@@ -274,7 +301,7 @@ def build_report(driver, args, headline, runs, cal_results, kappa_example) -> di
         "requested_model": args.model,
         "observed_model": observed,
         "product_measured": driver != "stub",
-        "skill_installed": False,
+        "skill_installed": driver == "skill",
         "split": args.split,
         "matrix": load_matrix(),
         "cell": cell,
@@ -315,6 +342,8 @@ def _first_observed(rows: list[dict]) -> str | None:
 def _model_label(driver: str, requested: str | None, observed: str | None) -> str:
     if driver == "stub":
         return requested or "stub"
+    if driver == "skill":
+        return observed or "skill-script"
     # Cursor scores follow the model that actually ran. A requested pin is not
     # that model until the session reports it.
     if driver == "cursor":
@@ -438,13 +467,16 @@ def print_report(report: dict) -> None:
         print("model mismatch is not a failure. The pass rate is scored on the observed model.")
     flag = "yes" if report.get("best_effort_on_cursor") else "no"
     print(f"best_effort_on_cursor: {flag}")
-    if report["product_measured"]:
+    if report.get("skill_installed"):
+        print("product measured: yes, via Trace skill scripts (--agent skill)")
+        print("Live Cursor/Codex cells remain the agent×model comparison path.")
+    elif report["product_measured"]:
         print("product measured: attempting, via the eval task prompt")
         print("An installed Trace skill is not what this run executed.")
     else:
         print("product measured: no")
         print("This run replays scripted outcomes. It checks the harness and the graders.")
-        print("A skill score needs --agent cursor or --agent codex, with --model when you are comparing models.")
+        print("A skill score needs --agent skill, or --agent cursor/--agent codex with --model when comparing models.")
     print(f"split: {report['split']}")
     _print_usage("cell usage", cell["usage"])
     rate = cell["pass_rate"]

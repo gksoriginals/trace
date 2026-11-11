@@ -181,6 +181,8 @@ Supporting measures, initially baselines rather than invented targets:
 
 Dogfood the three working skills in Gopi's Cursor and Codex sessions, with a per-project log, the skill-maintained project index, setup-change and decision events, coverage receipts and a durable deduplicated Decide-later queue. Review queued choices through the harness before the app exists. Install is the host skills folder plus the one instruction line, whole agent by default, with a per-project opt-out. Hooks stay off unless Gopi opts in. Validate host installation, whether the instruction line is what makes the skill run, task friction and the 30-day metric. No app dependency for everyday hygiene. Claude is not an M0 harness.
 
+Ship dogfood as complete loops: M0 skills (Record, Doubt, Cleanup, Prevent), then the native macOS app shell (Home, Setup, memory-only Ask). [ADR-0005](adr/0005-m0-phases-complete-loops.md), [dogfood-plan.md](dogfood-plan.md).
+
 ### M1 — Setup + Home insights, cleanup read-only
 
 Build the visual onboarding/Setup, project-root/category controls, per-agent/per-project installation, Home's top queue and project insight cards, memory editing, **memory-only Ask Trace** and truthful coverage. First-run inspection can establish a legacy baseline and populate insights with disclosed tokens; its app-agent path already needs the required two-way session foundation, not fire-and-forget plumbing deferred to M2. App action/recovery history can explain skill outcomes, but the app does not execute cleanup yet. Home itself reads locally and stays useful offline. Verify official-logo permissions and accessible card prototypes before broader distribution.

@@ -83,6 +83,8 @@ Run's three stages, in order:
 
 M0 is skills and the queue, reviewed in the coding agent. M1 adds Setup, Home, and memory-only Ask; the first inspection is already a two-way session, and the app does not execute cleanup yet. M2 adds the full Run and agent-tier Ask.
 
+Dogfood ships as complete loops: M0 **Record / Doubt / Cleanup / Prevent** skills, then the native SwiftUI app **Home / Setup / memory-only Ask**. Execute stays M2. [ADR-0005](adr/0005-m0-phases-complete-loops.md), [dogfood-plan.md](dogfood-plan.md).
+
 ## Components
 
 These names are the vocabulary for spikes and ADRs. The grouping is a current guess.
