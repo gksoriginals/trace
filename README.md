@@ -1,55 +1,27 @@
 # Trace
 
-Trace is a **native macOS app** for storage hygiene around coding agents. Skills do everyday cleanup inside Cursor and Codex; the app shows what happened, Decide-later doubts, and (later) deeper runs.
+Trace is a **native macOS 14+ app** for storage hygiene around coding agents. Skills do everyday work inside Cursor and Codex; the app installs those skills, shows Decide-later and insights, and answers from local memory. Cleanup **Execute** is M2.
 
-Nothing else on your Mac is in scope — project work storage and shared caches only.
-
-## Try on your Mac (dogfood)
-
-**Requires macOS 14+.**
+## Try on your Mac
 
 ```bash
-git clone <this-repo> && cd trace
-
-# 1) Install skills into Cursor/Codex skill folders
-./skills/install.sh --project ~/path/to/a/coding-project
-
-# 2) Build the native app
-cd app
-brew install xcodegen   # once
-xcodegen generate
-open Trace.xcodeproj    # Run (⌘R) on My Mac
+git clone <repo> && cd trace
+cd app && brew install xcodegen && xcodegen generate && open Trace.xcodeproj
+# Run ⌘R — complete Setup (points at this repo’s skills/ folder)
 ```
 
-Use Cursor or Codex in that project (skills nudge before installs / at session end / when recording memory). Open **Trace** Home — Decide-later and project insights read `~/.trace/index.json` and each project’s `.trace/` files. No model call on open. **Execute is not in this build** (M2).
-
-Prove skills locally without the app:
+Use Cursor or Codex in a selected project. Open Trace Home (Refresh) to see local outcomes. Ask Trace with ⌘K (memory only).
 
 ```bash
-python3 evals/run.py --agent skill          # M0 skills, 32/32 test cases
+python3 evals/run.py --agent skill    # M0 skills + Ask memory-only
 ```
-
-## How it works
-
-1. **Hygienic setup** — before an install, ask, prefer healthy practice, avoid needless copies, record the decision.
-2. **Session-end cleanup** — propose leftovers; Trash only exact consented paths; queue doubts.
-3. **Memory writer** — append version-1 events to `<project>/.trace/memory.jsonl` and update `~/.trace/index.json`.
-4. **Decide later** — durable queue when a decision is unclear.
-5. **Trace.app** — Setup, Home, memory-only Ask (⌘K). Run/Execute later.
 
 ## Docs
 
-- [Dogfood plan (phases)](docs/dogfood-plan.md)
-- [Product requirements](docs/prd.md)
-- [Design & UX](docs/design.md)
-- [Engineering](docs/engineering.md)
-- [Evals](docs/evals.md)
-- [App build](app/README.md)
-- [Skills](skills/README.md)
+- [Dogfood plan](docs/dogfood-plan.md) · [ADR-0006 M1 app](docs/adr/0006-m1-app-end-to-end.md)
+- [PRD](docs/prd.md) · [Design](docs/design.md) · [Engineering](docs/engineering.md) · [Evals](docs/evals.md)
+- [App](app/README.md) · [Skills](skills/README.md)
 
-## Safety defaults
+## Safety
 
-- Trash only — never permanent delete from Trace.
-- Never-delete list respected.
-- Fingerprint re-check at confirm time (Execute / M2).
-- Conservative defaults; ask before cleanup/install unless that exact item was already approved.
+Trash only (when Execute exists). Never-delete list. Ask before cleanup/install unless that exact item was already approved. Conservative defaults.

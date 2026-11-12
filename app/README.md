@@ -1,8 +1,8 @@
-# Trace.app (native macOS)
+# Trace.app — native macOS (M1 end-to-end)
 
-SwiftUI menu-bar app for dogfood. **macOS 14+**. Home reads skill-owned local files only — no model call on open, no Execute yet.
+SwiftUI menu-bar app for **macOS 14+**. Completes Setup → Home → memory-only Ask. **No Execute** (M2).
 
-## Build on your Mac
+## Build
 
 ```bash
 cd app
@@ -11,27 +11,36 @@ xcodegen generate
 open Trace.xcodeproj
 ```
 
-In Xcode: select the **Trace** scheme → **My Mac** → Run (⌘R).
+Scheme **Trace** → **My Mac** → Run (⌘R). Unsigned local dogfood is expected.
 
-Unsigned local build is expected until M2.
+On first launch, complete Setup:
 
-## What works in this dogfood
+1. **Agents & skills** — detect Cursor/Codex; opt in; choose the repo `skills/` folder  
+2. **Projects** — add project roots; categories (inspect, not delete)  
+3. **Guardrails** — preferred agent, never-touch, notifications off by default  
+4. **Save & first run** — writes app prefs and runs `skills/install.sh` (never grants Trash)
+
+Then use Cursor/Codex in those projects. Refresh Home to see Decide-later and insights from `~/.trace/`.
+
+## Surfaces (M1)
 
 | Surface | Behavior |
 | --- | --- |
-| Setup | Opt-in skills, points at `./skills/install.sh`, Save opens Home |
-| Home | Decide-later lane + project insight cards from `~/.trace/index.json` and per-project logs |
-| Ask Trace (⌘K) | Memory-only search over loaded events/queue |
-| Menu bar | Open / Quit |
+| Setup S1–S4 | Real skill install + preferences |
+| Home | Decide-later + project insights; no model call |
+| Decide-later detail | Keep / Defer (app-store overrides) / Ask |
+| Ask Trace (⌘K) | Memory-only cited answers |
+| Memory | Read skill logs |
+| Menu bar | Open / Ask / Setup / Quit |
 
-## What does not
+## Data
 
-Run → Actions → Execute, agent-tier Ask, Claude/Gemini adapters.
+- **Skills write:** `~/.trace/index.json`, `<project>/.trace/memory.jsonl`, `decide-later.json`  
+- **App writes:** `~/Library/Application Support/Trace/preferences.json` (settings + Keep/Defer overrides)
 
-## Data it reads
+## Evals
 
-- `~/.trace/index.json` (or `$TRACE_HOME/index.json`)
-- `<project>/.trace/memory.jsonl`
-- `<project>/.trace/decide-later.json`
-
-Install skills first: `../skills/install.sh --project /path/to/project`
+```bash
+python3 evals/run.py --agent skill --skill ask_trace
+python3 evals/run.py --agent skill
+```

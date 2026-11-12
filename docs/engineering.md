@@ -231,7 +231,7 @@ A current guess at the boundaries a spike is allowed to cross differently:
 - **Action boundary.** The only path from "the user approved this exact id" to the Trash service. Skills and Execute both call it. Ask does not.
 - **Retrieval.** Given a question and a project id, return memory events and notes with ids and timestamps. No generation.
 - **Adapters.** The interface below, one process model. Cursor and Codex are the first two implementations. Claude and Gemini come after those two hold the contract.
-- **App UI.** Setup, Home, Ask, Run. SwiftUI is the design doc's candidate. It is not chosen here as a firm rule, and there is no app code in this repository yet.
+- **App UI.** Setup, Home, Ask, Run. SwiftUI M1 code lives in [`app/`](../app/) (Setup → Home → memory-only Ask). Run/Execute remain M2. [ADR-0006](adr/0006-m1-app-end-to-end.md).
 
 Throwaway spike code does not graduate into these modules by being left in the tree. A spike is deleted or rewritten once the lesson is recorded.
 

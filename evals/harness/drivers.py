@@ -43,6 +43,7 @@ SKILL_SCRIPTS = {
     "decide_later": "decide-later/scripts/run_fixture.py",
     "session_end": "session-end-cleanup/scripts/run_fixture.py",
     "hygienic_setup": "hygienic-setup/scripts/run_fixture.py",
+    "ask_trace": "ask-trace/scripts/run_fixture.py",
 }
 
 

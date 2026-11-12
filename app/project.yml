@@ -13,7 +13,9 @@ targets:
     type: application
     platform: macOS
     sources:
-      - Trace
+      - path: Trace
+        excludes:
+          - "**/.DS_Store"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: local.trace.Trace
@@ -24,9 +26,7 @@ targets:
         INFOPLIST_FILE: Trace/Info.plist
         LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
         CODE_SIGN_IDENTITY: "-"
-        CODE_SIGNING_ALLOWED: YES
         ENABLE_HARDENED_RUNTIME: NO
+        INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.developer-tools"
     info:
       path: Trace/Info.plist
-      properties:
-        LSMinimumSystemVersion: "14.0"
