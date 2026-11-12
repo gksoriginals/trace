@@ -1,55 +1,30 @@
 # Trace
 
-Trace is a **native macOS app** for storage hygiene around coding agents. Skills do everyday cleanup inside Cursor and Codex; the app shows what happened, Decide-later doubts, and (later) deeper runs.
+Native macOS storage hygiene for coding agents. **Skills** do everyday work inside Cursor/Codex (or via app-composed prompts). The **app** shows Decide-later + insights, Ask Trace, and on-demand Run → Actions → Execute.
 
-Nothing else on your Mac is in scope — project work storage and shared caches only.
-
-## Try on your Mac (dogfood)
-
-**Requires macOS 14+.**
+## Try it
 
 ```bash
-git clone <this-repo> && cd trace
+./skills/install.sh --project ~/path/to/a-project
 
-# 1) Install skills into Cursor/Codex skill folders
-./skills/install.sh --project ~/path/to/a/coding-project
-
-# 2) Build the native app
-cd app
-brew install xcodegen   # once
-xcodegen generate
-open Trace.xcodeproj    # Run (⌘R) on My Mac
+cd app && brew install xcodegen && xcodegen generate && open Trace.xcodeproj
 ```
 
-Use Cursor or Codex in that project (skills nudge before installs / at session end / when recording memory). Open **Trace** Home — Decide-later and project insights read `~/.trace/index.json` and each project’s `.trace/` files. No model call on open. **Execute is not in this build** (M2).
-
-Prove skills locally without the app:
+Prove skills:
 
 ```bash
-python3 evals/run.py --agent skill          # M0 skills, 32/32 test cases
+python3 evals/run.py --agent skill   # 48/48 test cases + calibration
 ```
 
-## How it works
+## Two skill modes ([ADR-0007](docs/adr/0007-markdown-memory-and-skill-invocation.md))
 
-1. **Hygienic setup** — before an install, ask, prefer healthy practice, avoid needless copies, record the decision.
-2. **Session-end cleanup** — propose leftovers; Trash only exact consented paths; queue doubts.
-3. **Memory writer** — append version-1 events to `<project>/.trace/memory.jsonl` and update `~/.trace/index.json`.
-4. **Decide later** — durable queue when a decision is unclear.
-5. **Trace.app** — Setup, Home, memory-only Ask (⌘K). Run/Execute later.
+1. **In-session** — installed skills while you code  
+2. **Composed prompt** — app sends skill + params + inputs to a Cursor/Codex instance  
 
 ## Docs
 
-- [Dogfood plan (phases)](docs/dogfood-plan.md)
-- [Product requirements](docs/prd.md)
-- [Design & UX](docs/design.md)
-- [Engineering](docs/engineering.md)
-- [Evals](docs/evals.md)
-- [App build](app/README.md)
-- [Skills](skills/README.md)
+[PRD](docs/prd.md) · [Design](docs/design.md) · [Engineering](docs/engineering.md) · [Evals](docs/evals.md) · [Dogfood plan](docs/dogfood-plan.md) · [Skills](skills/README.md) · [App](app/README.md)
 
-## Safety defaults
+## Safety
 
-- Trash only — never permanent delete from Trace.
-- Never-delete list respected.
-- Fingerprint re-check at confirm time (Execute / M2).
-- Conservative defaults; ask before cleanup/install unless that exact item was already approved.
+Trash only · never-delete list · fingerprint re-check · conservative defaults · no Trace token caps  

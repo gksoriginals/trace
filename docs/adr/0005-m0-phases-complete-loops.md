@@ -1,6 +1,6 @@
 # ADR-0005: Dogfood ships complete loops — skills then native app
 
-- **Status:** accepted
+- **Status:** accepted (Execute / agent-Ask deferral superseded by [ADR-0006](0006-full-m0-m2-cut.md))
 - **Date:** 2026-11-11
 - **Deciders:** Gopi
 

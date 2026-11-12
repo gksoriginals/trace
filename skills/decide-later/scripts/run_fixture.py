@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write Decide-later queue from a fixture (eval + product paths)."""
+"""Eval helper: write Decide-later queue via shared queue + plan (not a marketed skill)."""
 
 from __future__ import annotations
 
@@ -11,9 +11,8 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parent
 SKILLS_ROOT = SCRIPTS.parents[1]
 sys.path.insert(0, str(SKILLS_ROOT))
-sys.path.insert(0, str(SCRIPTS))
 
-from plan import plan_items  # noqa: E402
+from shared.decide_later_plan import plan_items  # noqa: E402
 from shared.queue import write_queue  # noqa: E402
 
 

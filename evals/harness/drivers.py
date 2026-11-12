@@ -43,6 +43,9 @@ SKILL_SCRIPTS = {
     "decide_later": "decide-later/scripts/run_fixture.py",
     "session_end": "session-end-cleanup/scripts/run_fixture.py",
     "hygienic_setup": "hygienic-setup/scripts/run_fixture.py",
+    # Eval suites / helpers — not marketed Agent Skills (ADR-0004 / ADR-0006)
+    "ask_trace": "ask-trace/scripts/run_fixture.py",
+    "attribution": "attribution/scripts/run_fixture.py",
 }
 
 

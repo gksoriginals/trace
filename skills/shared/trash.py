@@ -1,11 +1,11 @@
-"""Eval/dogfood Trash boundary: move only exact consented paths; never permanent delete."""
+"""Trash boundary: move only exact consented paths; never permanent delete."""
 
 from __future__ import annotations
 
 import shutil
 from pathlib import Path
 
-from .safety import is_never_delete
+from .safety import fingerprint, is_never_delete
 
 
 class TrashError(ValueError):
@@ -19,8 +19,12 @@ def move_to_trash(
     consent: list[str],
     protected: list[str] | None = None,
     trash_root: Path | None = None,
+    expected_fingerprint: str | None = None,
 ) -> Path:
-    """Move one relative path into trash_root if it is exactly consented and not protected."""
+    """Move one relative path into trash_root if it is exactly consented and not protected.
+
+    When expected_fingerprint is set, re-check identity immediately before the move.
+    """
     if relative_path not in consent:
         raise TrashError(f"not consented: {relative_path}")
     if relative_path in (protected or []):
@@ -30,6 +34,8 @@ def move_to_trash(
         raise TrashError(f"missing: {relative_path}")
     if is_never_delete(source):
         raise TrashError(f"never-delete: {relative_path}")
+    if expected_fingerprint is not None and fingerprint(source) != expected_fingerprint:
+        raise TrashError(f"fingerprint-mismatch: {relative_path}")
     dest_root = trash_root or (workspace / "trace-out" / "trash")
     dest = dest_root / relative_path
     dest.parent.mkdir(parents=True, exist_ok=True)

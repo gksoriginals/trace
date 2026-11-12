@@ -1,10 +1,12 @@
 # Trace — skill evals
 
-**Status:** seed set + M0 skill scripts (`--agent skill`) · **Date:** 11 November 2026
+**Status:** seed set + M0 skill scripts (`--agent skill`) · **Date:** 12 November 2026
 
 This follows the method in the eval article Gopi asked to apply (the file shared with this work; the running example there is a bike-shop support assistant, and the citations below point at that article's references). An eval is an input, a system, a grader, and a number. The number without the grader's own check is not a result.
 
-Trace's evals measure the skills and memory-only Ask Trace. They measure outcomes on fixture projects: storage the session created is either proposed for cleanup, moved to Trash when the fixture already contains an exact yes, or recorded in memory; protected paths are untouched; nothing disappears without a yes; memory entries are complete and accurate. They do not measure how a skill is implemented. There is no app code and no skill code in this repository yet, so a live number does not exist. The harness runs anyway.
+Trace's evals measure skill outcomes, the Decide-later queue helper, memory-only Ask Trace, and attribution. They measure outcomes on fixture projects: storage the session created is either proposed for cleanup, moved to Trash when the fixture already contains an exact yes, or recorded in memory; protected paths are untouched; nothing disappears without a yes; memory entries are complete and accurate. They do not measure how a skill is implemented.
+
+**Packaging:** the product installs **three** Agent Skills (hygienic setup, session-end cleanup, memory writer) per [ADR-0004](adr/0004-skills-not-a-plugin.md). Matrix rows `decide_later`, `ask_trace`, and `attribution` are **eval suites** (shared queue helper, app Ask surface, deep attribution pass) — not fourth/fifth/sixth marketed skills. Skill scripts live under [`skills/`](../skills/). The product number for M0 skills is `--agent skill` (or a live Cursor/Codex cell).
 
 The harness is [`evals/`](../evals/). It is not a CI gate. [docs/agent-policy.md](agent-policy.md) is the testing policy, loaded from [AGENTS.md](../AGENTS.md). It forbids weakening a test to get green, and it says when to stop patching the same failure.
 
@@ -19,7 +21,7 @@ Public benchmarks (SWE-bench and the rest) measure engines. They are not this ev
 ## The loop
 
 1. A case is a fixture project, a short agent session, and a gold outcome file.
-2. The runner materializes the project in a temp directory and drives one agent×model cell: Cursor ACP if `agent` is on `PATH`, else Codex app-server if `codex` is on `PATH`, else a stub that replays a scripted outcome. Claude and Gemini run only when named. Pass `--model` to pin the cell.
+2. The runner materializes the project in a temp directory and drives one agent×model cell. Auto selects Cursor ACP if `agent` is on `PATH`, else Codex app-server if `codex` is on `PATH`, else Trace skill scripts when present (`--agent skill`), else a stub that replays a scripted outcome. Claude and Gemini run only when named. Pass `--model` to pin the cell.
 3. Graders read the temp directory. Code graders run every time. A model judge runs only when someone passes `--judge` and a CLI exists.
 4. The report gives one pass rate per skill on the **test** split, with a Wilson interval and a bootstrap interval, plus a separate calibration catch rate for the graders.
 
@@ -98,7 +100,7 @@ The case matrix is skill × agent × model. The rows are the fixtures in `evals/
 | --- | --- | --- |
 | Agent | `cursor` (ACP), `codex` (app-server) | `claude`, `gemini`, only when passed explicitly |
 | Model | Each id that agent lists on the machine, via `--model` | Not in the first comparison |
-| Skill | The five skills, same 8 test cases | Same cases |
+| Suite | Six eval suites (three product skills + decide_later / ask_trace / attribution), same 8 test cases each | Same cases |
 
 **Best value, per agent.** Among that agent's measured models with zero safety fails, the highest test pass rate wins. Equal pass rates go to the lower reported cost. A safety miss is out. One measured model is reported as the only candidate, not as a comparison. A missing cost never invents a cheaper winner. The stub cell is not a product model, so a stub run names no Cursor or Codex pick.
 
@@ -253,7 +255,7 @@ From the repository root, with Python 3.12 or newer and no third-party packages:
 python3 evals/run.py
 ```
 
-That selects the driver itself: Cursor if `agent` is on `PATH`, else Codex if `codex` is on `PATH`, else the stub. Claude and Gemini are not selected automatically. This environment has neither first CLI, so the default path is the stub. Force a cell with `--agent` and, when comparing models, `--model`:
+That selects the driver itself: Cursor if `agent` is on `PATH`, else Codex if `codex` is on `PATH`, else `--agent skill` when skill scripts exist, else the stub. Claude and Gemini are not selected automatically. Force a cell with `--agent` and, when comparing models, `--model`:
 
 ```bash
 python3 evals/run.py --agent stub

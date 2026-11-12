@@ -16,7 +16,9 @@ from shared.index import upsert_project
 from shared.memory import append_events, read_events
 from shared.queue import upsert_items, write_queue
 from shared.redact import redact_text
+from shared.safety import fingerprint, is_never_delete
 from shared.schemas import SchemaError
+from shared.trash import TrashError, move_to_trash
 
 
 class SharedCoreTests(unittest.TestCase):
@@ -46,7 +48,8 @@ class SharedCoreTests(unittest.TestCase):
             written = append_events(log, [event])
             self.assertNotIn("sk-secret-token", written[0]["why"])
             upsert_project(index, project_id="p1", memory_log=log, roots=[str(tmp_path)])
-            doc = json.loads(index.read_text())
+            from shared.index import load_index
+            doc = load_index(index.with_suffix(".md"))
             self.assertEqual(doc["projects"][0]["id"], "p1")
             self.assertEqual(len(read_events(log)), 1)
 
@@ -84,6 +87,27 @@ class SharedCoreTests(unittest.TestCase):
             log = Path(tmp) / "m.jsonl"
             with self.assertRaises(SchemaError):
                 append_events(log, [{"schema_version": 1}])
+
+    def test_fingerprint_and_trash_consent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = Path(tmp)
+            target = workspace / "scratch.txt"
+            target.write_text("hello", encoding="utf-8")
+            fp = fingerprint(target)
+            self.assertTrue(fp.startswith("file:"))
+            dest = move_to_trash(
+                workspace,
+                "scratch.txt",
+                consent=["scratch.txt"],
+                expected_fingerprint=fp,
+            )
+            self.assertTrue(dest.exists())
+            self.assertFalse(target.exists())
+            with self.assertRaises(TrashError):
+                move_to_trash(workspace, "missing.txt", consent=["missing.txt"])
+
+    def test_never_delete_env(self):
+        self.assertTrue(is_never_delete(Path.home() / "Documents" / "note.txt"))
 
 
 if __name__ == "__main__":

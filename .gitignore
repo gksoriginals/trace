@@ -3,4 +3,5 @@ evals/out/
 *.pyc
 app/*.xcodeproj/
 app/DerivedData/
+build/
 *.xcuserstate

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Install Trace skills into host skill folders (whole-agent default).
+# Product skills only (ADR-0004): hygienic-setup, session-end-cleanup, memory-writer.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -10,7 +11,7 @@ usage() {
   cat <<EOF
 Usage: ./skills/install.sh [--project DIR] [--dry-run]
 
-Copies Trace skills into:
+Copies the three Trace Agent Skills into:
   ~/.agents/skills/   (Cursor + Codex)
   ~/.cursor/skills/   (Cursor)
 
@@ -28,9 +29,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-SKILLS=(memory-writer decide-later session-end-cleanup hygienic-setup)
+# Product skills + prepare-home (Home cards). Decide-later is shared queue, not marketed separately.
+SKILLS=(hygienic-setup session-end-cleanup memory-writer prepare-home)
 DESTS=("$HOME/.agents/skills" "$HOME/.cursor/skills")
-LINE='Use Trace skills when creating storage (trace-hygienic-setup), when finishing a session that left leftovers (trace-session-end), when a cleanup is doubtful (trace-decide-later), and when recording what the session created (trace-memory-writer).'
+LINE='Use Trace skills before an install or environment setup (trace-hygienic-setup), when finishing a session that left leftovers (trace-session-end), when recording what the session created (trace-memory-writer), and when preparing Home insight cards (trace-prepare-home). Doubtful storage decisions go to the Decide-later queue via those skills — do not guess.'
 
 copy_skill() {
   local name="$1" dest_root="$2"
@@ -48,7 +50,7 @@ copy_skill() {
   rm -rf "$dest"
   mkdir -p "$dest"
   cp -R "$src/." "$dest/"
-  # Shared core next to each install root once
+  # Shared core once per install root
   mkdir -p "$dest_root/trace-shared"
   rm -rf "$dest_root/trace-shared"
   cp -R "$ROOT/shared" "$dest_root/trace-shared"
@@ -61,7 +63,6 @@ for dest in "${DESTS[@]}"; do
   done
 done
 
-# Point record scripts at shared package via TRACE_SKILLS
 if [[ "$DRY" -eq 0 ]]; then
   mkdir -p "$HOME/.trace"
   echo "$ROOT" > "$HOME/.trace/skills_source.txt"

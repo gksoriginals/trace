@@ -1,33 +1,46 @@
-import AppKit
 import SwiftUI
+import AppKit
 
 @main
 struct TraceApp: App {
-    @StateObject private var store = TraceStore()
+    @StateObject private var model = AppModel()
 
     var body: some Scene {
-        WindowGroup("Trace") {
-            RootView()
-                .environmentObject(store)
-                .frame(minWidth: 840, minHeight: 600)
+        WindowGroup {
+            RootView(model: model)
+                .onAppear {
+                    NSApp.setActivationPolicy(.regular)
+                }
         }
         .defaultSize(width: 1080, height: 740)
-
-        Settings {
-            SetupView()
-                .environmentObject(store)
-                .frame(width: 520, height: 480)
-        }
-
-        MenuBarExtra("Trace", systemImage: "point.topleft.down.to.point.bottomright.curvepath") {
-            Button("Open Trace") {
-                NSApp.activate(ignoringOtherApps: true)
-                for window in NSApp.windows where window.title == "Trace" {
-                    window.makeKeyAndOrderFront(nil)
+        .commands {
+            CommandGroup(replacing: .newItem) {}
+            CommandMenu("Trace") {
+                Button("Ask Trace") {
+                    model.openAsk(projectId: nil, itemId: nil)
+                }
+                .keyboardShortcut("k", modifiers: .command)
+                Button("Home") {
+                    model.openMain(to: .home)
+                }
+                Button("Settings…") {
+                    model.openMain(to: .settings)
+                }
+                Divider()
+                Button("Stop agent") {
+                    Task { await model.supervisor.cancel() }
                 }
             }
-            Divider()
-            Button("Quit Trace") { NSApp.terminate(nil) }
+        }
+
+        MenuBarExtra("Trace", systemImage: TraceSymbol.menuMark) {
+            MenuBarView(model: model)
+        }
+        .menuBarExtraStyle(.window)
+
+        Settings {
+            SettingsView(model: model)
+                .frame(minWidth: 480, minHeight: 420)
         }
     }
 }

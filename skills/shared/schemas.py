@@ -100,7 +100,9 @@ def validate_index(document: dict) -> dict:
     for i, project in enumerate(projects):
         project = require_mapping(project, f"projects[{i}]")
         require_nonempty_str(project.get("id"), f"projects[{i}].id")
-        require_nonempty_str(project.get("memory_log"), f"projects[{i}].memory_log")
+        # ADR-0007: memory_dir preferred; memory_log kept for older rows
+        mem = project.get("memory_dir") or project.get("memory_log")
+        require_nonempty_str(mem, f"projects[{i}].memory_dir")
         if "roots" in project:
             require_list(project.get("roots"), f"projects[{i}].roots")
         if "opt_out" in project and not isinstance(project["opt_out"], bool):

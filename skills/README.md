@@ -1,26 +1,37 @@
-# Trace skills (M0)
+# Trace skills
 
-Portable Agent Skills shared by Cursor and Codex. The native Mac app reads what they write; it is not required for them to run.
+Portable Agent Skills for Cursor and Codex. The Mac app reads what they write.
 
-| Skill | Folder | Writes |
-| --- | --- | --- |
-| Memory writer | `memory-writer/` | `<project>/.trace/memory.jsonl`, `~/.trace/index.json` |
-| Decide later | `decide-later/` | `<project>/.trace/decide-later.json` |
-| Session-end cleanup | `session-end-cleanup/` | proposals + Trash (exact consent) |
-| Hygienic setup | `hygienic-setup/` | setup locations + memory/queue |
+## Invocation (ADR-0007)
 
-Shared schemas and IO: `shared/`.
+1. **In-session** — installed in the host skills folder; used while you code.
+2. **Composed prompt** — Trace.app sends skill `SKILL.md` + params + inputs to a Cursor ACP / Codex instance (Refresh, Run Reviewing, agent Ask).
 
-## Install
+## Product install
+
+| Skill | Folder |
+| --- | --- |
+| Hygienic setup | `hygienic-setup/` |
+| Session-end cleanup | `session-end-cleanup/` |
+| Memory writer | `memory-writer/` |
+| Prepare Home | `prepare-home/` |
+
+Shared core: `shared/` (schemas, markdown frontmatter, safety, Trash, compose).
 
 ```bash
 ./skills/install.sh
 ./skills/install.sh --project ~/code/my-project
 ```
 
-## Prove on this machine
+## On-disk layout
+
+- `~/.trace/index.md`
+- `<project>/.trace/memory/*.md`
+- `<project>/.trace/decide-later.md`
+- `<project>/.trace/insights.md`
+
+## Prove
 
 ```bash
-python3 evals/run.py --agent skill --skill memory_writer
-python3 evals/run.py --agent skill   # all M0 skills
+python3 evals/run.py --agent skill
 ```

@@ -180,9 +180,10 @@ A project record holds display name, selected roots, which categories are in sco
 
 Skills keep this file so the app can point a coding-agent session at each project's memory without opening the app database. Location and field names are a current guess:
 
-- Path: `~/.trace/index.json`. It is outside the app database on purpose, and it exists before the app is installed. The app reads it. Skills replace it atomically (write a temp file, then rename).
-- Shape: `schema_version` 1, and `projects`, a list of `{id, display_name, roots, memory_log, opt_out, updated_at}`. `memory_log` is the absolute path of that project's append-only log. The first guess for the log is `<project-root>/.trace/memory.jsonl`.
-- The app's database is the other guess: `~/Library/Application Support/Trace/trace.db`. Only the app process writes it.
+- Path: `~/.trace/index.md` ([ADR-0007](adr/0007-markdown-memory-and-skill-invocation.md)). Outside the app database on purpose; exists before the app is installed. Skills replace it atomically.
+- Shape: schema_version 1 in frontmatter/body; projects list with `{id, display_name, roots, memory_dir, opt_out, updated_at}`. Memory notes live under `<project-root>/.trace/memory/*.md` (YAML frontmatter = firm v1 fields). Decide-later: `<project>/.trace/decide-later.md`. Insights: `<project>/.trace/insights.md`.
+- The app's database remains `~/Library/Application Support/Trace/` (settings, journal, checkpoints). Only the app process writes it.
+- Skills run in-session or via app-composed prompts to a Cursor/Codex instance (ADR-0007).
 
 A skill that sees a project for the first time adds or updates that project's index row, then appends to the log. It does not create the database.
 
