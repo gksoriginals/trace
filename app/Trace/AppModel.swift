@@ -11,11 +11,24 @@ final class AppModel: ObservableObject {
         case home
         case decideLater(String)
         case ask(projectId: String?, itemId: String?)
-        case run(ProjectIndexRow)
+        case run(RunScope)
         case result
         case recovery
         case memory(String?)
         case settings
+    }
+
+    /// Deep Run scope. "All permitted" is every indexed Trace project under selected roots — never whole-disk.
+    enum RunScope: Hashable {
+        case project(ProjectIndexRow)
+        case allPermitted
+
+        var title: String {
+            switch self {
+            case .project(let p): return p.displayName
+            case .allPermitted: return "All permitted projects"
+            }
+        }
     }
 
     @Published var destination: Destination = .home

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Mode 2: compose skill SKILL.md + params + inputs for a harness agent instance.
+/// Mode 2: compose skill id(s) + optional SKILL.md + params + inputs for a harness agent instance.
 @MainActor
 enum SkillComposer {
     struct Payload {
@@ -8,6 +8,8 @@ enum SkillComposer {
         var params: [String: Any]
         var inputs: [String: Any]
         var task: String
+        /// When false, name skills but do not paste full SKILL.md (Ask path — host tools + installed skills).
+        var inlineSkillBodies: Bool = true
     }
 
     static func skillsRoot() -> URL? {
@@ -41,8 +43,8 @@ enum SkillComposer {
             "prepare-home": "prepare-home",
         ]
         var parts: [String] = [
-            "You are running Trace skills inside this coding-agent session.",
-            "Follow the named skill instructions. Write only the paths listed in inputs.",
+            "You are running Trace work inside this coding-agent session.",
+            "Use your normal tools. Follow the task and inputs. Write only the paths listed in inputs when writing.",
             "Do not permanently delete files. Trash only exact consented paths.",
             "Do not invent Execute targets for the Trace app.",
             "",
@@ -53,9 +55,15 @@ enum SkillComposer {
             "## Inputs\n```json\n\(jsonString(payload.inputs))\n```",
             "",
         ]
-        for id in payload.skillIds {
-            let folder = folders[id] ?? id
-            parts.append("## Skill: \(id)\n\(skillMarkdown(folder: folder))\n")
+        if payload.skillIds.isEmpty {
+            parts.append("## Skills\nUse installed Trace Agent Skills if the host already loaded them. Do not paste or invent skill files.")
+        } else if payload.inlineSkillBodies {
+            for id in payload.skillIds {
+                let folder = folders[id] ?? id
+                parts.append("## Skill: \(id)\n\(skillMarkdown(folder: folder))\n")
+            }
+        } else {
+            parts.append("## Skills\nPrefer these installed skill ids (do not reinstall): \(payload.skillIds.joined(separator: ", "))")
         }
         return parts.joined(separator: "\n")
     }
@@ -82,27 +90,77 @@ enum SkillComposer {
     }
 
     static func reviewingPayload(project: ProjectIndexRow, store: TraceStore) -> Payload {
+        reviewingPayload(projects: [project], store: store)
+    }
+
+    static func reviewingPayload(projects: [ProjectIndexRow], store: TraceStore) -> Payload {
+        let roots = projects.flatMap { $0.roots ?? [store.projectRoot(for: $0)] }
+        let memoryDirs = projects.map {
+            URL(fileURLWithPath: store.projectRoot(for: $0)).appendingPathComponent(".trace/memory").path
+        }
+        let queues = projects.map {
+            URL(fileURLWithPath: store.projectRoot(for: $0)).appendingPathComponent(".trace/decide-later.md").path
+        }
+        let insights = projects.map {
+            URL(fileURLWithPath: store.projectRoot(for: $0)).appendingPathComponent(".trace/insights.md").path
+        }
+        return Payload(
+            skillIds: ["prepare-home", "memory-writer"],
+            params: [
+                "project_ids": projects.map(\.id),
+                "roots": roots,
+                "never_touch": store.settings.neverTouch,
+                "mode": "proposal",
+                "scope": projects.count > 1 ? "all_permitted" : "project",
+            ],
+            inputs: [
+                "index_path": store.indexURL.path,
+                "memory_dirs": memoryDirs,
+                "decide_later_paths": queues,
+                "insights_paths": insights,
+            ],
+            task: """
+            Trace Reviewing (read-only / proposal mode). Scope is the listed project roots only — never whole disk. \
+            Inspect coverage gaps using memory. Update insights and Decide-later. \
+            Propose disposable leftovers as suggestions only. Do not Trash or permanently delete. \
+            Do not repeat installs already recorded.
+            """
+        )
+    }
+
+    /// Ask agent: task + params + inputs. No prepare-home / memory-writer paste.
+    static func askPayload(
+        project: ProjectIndexRow,
+        store: TraceStore,
+        question: String,
+        priorMemoryAnswer: String?,
+        itemId: String?
+    ) -> Payload {
         let root = store.projectRoot(for: project)
         let trace = URL(fileURLWithPath: root).appendingPathComponent(".trace")
         return Payload(
-            skillIds: ["prepare-home", "memory-writer"],
+            skillIds: ["memory-writer"],
             params: [
                 "project_id": project.id,
                 "roots": project.roots ?? [root],
                 "never_touch": store.settings.neverTouch,
-                "mode": "proposal",
+                "mode": "ask_readonly",
             ],
             inputs: [
+                "question": question,
+                "item_id": itemId ?? "",
+                "prior_memory_answer": priorMemoryAnswer ?? "",
                 "index_path": store.indexURL.path,
                 "memory_dir": trace.appendingPathComponent("memory").path,
                 "decide_later_path": trace.appendingPathComponent("decide-later.md").path,
                 "insights_path": trace.appendingPathComponent("insights.md").path,
             ],
             task: """
-            Trace Reviewing (read-only / proposal mode). Inspect coverage gaps using memory. \
-            Update insights and Decide-later. Propose disposable leftovers as suggestions only. \
-            Do not Trash or permanently delete. Do not repeat installs already recorded.
-            """
+            Trace Ask (read-only). Use harness tools to read the memory/decide-later/insights paths. \
+            Answer the question. Separate memory facts from new observations. Cite real event ids only. \
+            Do not delete, move, Trash, or invent Execute targets. You may propose an action card in prose only.
+            """,
+            inlineSkillBodies: false
         )
     }
 

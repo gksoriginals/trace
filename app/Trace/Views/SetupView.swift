@@ -10,13 +10,13 @@ struct SetupView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: TraceSpace.xl) {
                 header
                 stepRail
                 stepBody
                 navButtons
             }
-            .padding(32)
+            .padding(TraceSpace.xxl)
             .frame(maxWidth: 860, alignment: .leading)
         }
         .background(TraceColor.canvas)
@@ -24,16 +24,12 @@ struct SetupView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 12) {
-                TraceMark(size: 40)
-                Text("Setup")
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(TraceColor.textPrimary)
-            }
-            Text("Skills do everyday hygiene inside Cursor and Codex. Trace configures them, shows outcomes, and runs a deeper pass when you ask.")
-                .font(.system(size: 14))
-                .foregroundStyle(TraceColor.textSecondary)
+        HStack(alignment: .top, spacing: TraceSpace.md) {
+            TraceMark(size: 36)
+            TraceScreenHeader(
+                title: "Setup",
+                subtitle: "Skills do everyday hygiene inside Cursor and Codex. Trace configures them, shows outcomes, and runs a deeper pass when you ask."
+            )
         }
     }
 

@@ -1,10 +1,10 @@
 import SwiftUI
 import AppKit
 
-/// S7–S9 Run — Reviewing → Actions → Execute. Selection is consent.
+/// S7–S9 Run — Reviewing → Actions → Execute. Per-project or all permitted projects.
 struct RunView: View {
     @ObservedObject var model: AppModel
-    let project: ProjectIndexRow
+    let scope: AppModel.RunScope
 
     @State private var agent: AgentKind = .cursor
     @State private var useAgent = true
@@ -15,22 +15,35 @@ struct RunView: View {
     private var supervisor: SessionSupervisor { model.supervisor }
     private var conductor: RunConductor { model.conductor }
 
+    private var projects: [ProjectIndexRow] {
+        switch scope {
+        case .project(let p): return [p]
+        case .allPermitted: return store.projects
+        }
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                header
-                stageRail
-                switch conductor.stage {
-                case .reviewing: reviewingBody
-                case .actions: actionsBody
-                case .execute, .done: resultsBody
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: TraceSpace.xl) {
+                    header
+                    scopeBanner
+                    stageRail
+                    switch conductor.stage {
+                    case .reviewing: reviewingBody
+                    case .actions: actionsList
+                    case .execute, .done: ResultPanel(model: model, freeBefore: freeBefore, freeAfter: freeAfter)
+                    }
+                    Text("Usage: \(conductor.usage.display) · session \(supervisor.usage.display)")
+                        .font(TraceType.caption)
+                        .foregroundStyle(TraceColor.textSecondary)
                 }
-                Text("Usage: \(conductor.usage.display) · session \(supervisor.usage.display)")
-                    .font(.caption)
-                    .foregroundStyle(TraceColor.textSecondary)
+                .padding(TraceSpace.xxl)
+                .frame(maxWidth: 880, alignment: .leading)
             }
-            .padding(32)
-            .frame(maxWidth: 880, alignment: .leading)
+            if conductor.stage == .actions {
+                executeFooter
+            }
         }
         .background(TraceColor.canvas)
         .onAppear {
@@ -43,14 +56,8 @@ struct RunView: View {
     }
 
     private var header: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Run")
-                    .font(.system(size: 28, weight: .semibold))
-                Text(project.displayName)
-                    .font(.system(size: 14))
-                    .foregroundStyle(TraceColor.textSecondary)
-            }
+        HStack(alignment: .top) {
+            TraceScreenHeader(title: "Run", subtitle: scope.title)
             Spacer()
             AgentBadge(kind: agent, compact: true)
             Picker("Agent", selection: $agent) {
@@ -58,7 +65,25 @@ struct RunView: View {
             }
             .labelsHidden()
             .frame(width: 120)
+            .accessibilityLabel("Coding agent")
             Button("Close") { model.destination = .home }
+                .buttonStyle(.bordered)
+        }
+    }
+
+    private var scopeBanner: some View {
+        Text(scopeBannerText)
+            .font(TraceType.meta)
+            .foregroundStyle(TraceColor.textSecondary)
+            .traceCard(elevated: true)
+    }
+
+    private var scopeBannerText: String {
+        switch scope {
+        case .project:
+            return "Project Run: Reviewing → Actions → Execute for this project only."
+        case .allPermitted:
+            return "All permitted projects (\(projects.count)): same stages across every indexed Trace project under your selected roots. Never whole-disk."
         }
     }
 
@@ -92,20 +117,17 @@ struct RunView: View {
     }
 
     private var reviewingBody: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Reviewing")
-                .font(.system(size: 18, weight: .semibold))
-            Text("Composed skills propose candidates. Nothing moves until you select cards and Execute.")
-                .foregroundStyle(TraceColor.textSecondary)
+        VStack(alignment: .leading, spacing: TraceSpace.md) {
+            TraceSectionLabel(title: "Reviewing")
             Toggle("Use coding agent (composed skills)", isOn: $useAgent)
+                .font(TraceType.body)
             ForEach(conductor.milestones, id: \.self) { milestone in
                 Label(milestone, systemImage: "checkmark")
-                    .font(.caption)
+                    .font(TraceType.meta)
                     .foregroundStyle(TraceColor.textSecondary)
             }
             if supervisor.isBusy {
-                ProgressView()
-                    .controlSize(.small)
+                ProgressView().controlSize(.small)
                 Text(supervisor.log.suffix(8).joined(separator: "\n"))
                     .font(.system(.caption, design: .monospaced))
                 if supervisor.pendingPermission != nil {
@@ -129,63 +151,52 @@ struct RunView: View {
         .traceCard()
     }
 
-    private var actionsBody: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Actions")
-                .font(.system(size: 18, weight: .semibold))
-            Text("Select action cards. Shared, unknown, and protected stay unselected by default. Selection is consent — no second sheet.")
-                .font(.system(size: 13))
+    private var actionsList: some View {
+        VStack(alignment: .leading, spacing: TraceSpace.md) {
+            TraceSectionLabel(title: "Actions")
+            Text("Select action cards. Shared, unknown, and protected stay unselected. Selection is the consent — no second sheet.")
+                .font(TraceType.body)
                 .foregroundStyle(TraceColor.textSecondary)
 
             if conductor.cards.isEmpty {
                 Text("No conservative proposals from memory. Re-run Reviewing or Ask Trace for context.")
+                    .font(TraceType.body)
                     .foregroundStyle(TraceColor.textSecondary)
+                    .traceCard(elevated: true)
             }
 
             ForEach(conductor.cards) { card in
-                HStack(alignment: .top, spacing: 12) {
-                    Toggle("", isOn: Binding(
-                        get: { card.selected },
-                        set: { _ in conductor.toggle(id: card.id) }
-                    ))
-                    .disabled(card.safety == .protected)
-                    .labelsHidden()
-
-                    categoryGlyph(for: card)
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(card.title)
-                                .font(.system(size: 14, weight: .semibold))
-                            Spacer()
-                            SafetyBadge(state: card.safety)
-                        }
-                        Text(card.summary)
-                            .font(.system(size: 12))
-                            .foregroundStyle(TraceColor.textSecondary)
-                        Text(card.paths.joined(separator: "\n"))
-                            .font(.caption2.monospaced())
-                            .foregroundStyle(TraceColor.textSecondary)
-                            .lineLimit(3)
-                        if let bytes = card.bytes {
-                            Text(ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file))
-                                .font(.caption)
-                                .foregroundStyle(TraceColor.freed)
-                        }
-                        HStack {
-                            OriginBadge(origin: .app)
-                            if card.reversible {
-                                Label("Trash-reversible", systemImage: TraceSymbol.trash)
-                                    .font(.caption2)
-                                    .foregroundStyle(TraceColor.textSecondary)
-                            }
-                        }
-                    }
+                ActionCardRow(card: card) {
+                    conductor.toggle(id: card.id)
                 }
-                .traceCard(selected: card.selected)
             }
+        }
+    }
 
-            HStack {
-                let selected = conductor.cards.filter(\.selected)
+    private var executeFooter: some View {
+        let selected = conductor.cards.filter(\.selected)
+        let bytes = selected.compactMap(\.bytes).reduce(0, +)
+        return VStack(spacing: 0) {
+            Divider().overlay(TraceColor.line.opacity(0.35))
+            HStack(alignment: .center, spacing: TraceSpace.lg) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(selected.isEmpty
+                          ? "Nothing selected"
+                          : "Move \(selected.count) \(selected.count == 1 ? "item" : "items") to Trash")
+                        .font(TraceType.bodyMedium)
+                        .foregroundStyle(TraceColor.textPrimary)
+                    Text(bytes > 0
+                          ? "\(ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)) selected · reversible via Trash"
+                          : "Exact selection is consent. Protected cards stay locked.")
+                        .font(TraceType.meta)
+                        .foregroundStyle(TraceColor.textSecondary)
+                }
+                Spacer()
+                Button("Back to Reviewing") {
+                    conductor.stage = .reviewing
+                    conductor.cards = []
+                }
+                .buttonStyle(.bordered)
                 Button {
                     freeBefore = volumeFreeBytes()
                     conductor.execute(store: store)
@@ -195,77 +206,113 @@ struct RunView: View {
                     }
                     model.destination = .result
                 } label: {
-                    Label("Execute \(selected.count) selected", systemImage: TraceSymbol.trash)
+                    Label("Move \(selected.count) to Trash", systemImage: TraceSymbol.trash)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(TraceColor.brand)
                 .disabled(selected.isEmpty)
                 .keyboardShortcut(.defaultAction)
-
-                Button("Back to Reviewing") {
-                    conductor.stage = .reviewing
-                    conductor.cards = []
-                }
+                .help("Single execution consent for the exact selection")
             }
-        }
-    }
-
-    private var resultsBody: some View {
-        ResultPanel(
-            model: model,
-            freeBefore: freeBefore,
-            freeAfter: freeAfter
-        )
-    }
-
-    private func categoryGlyph(for card: ActionCard) -> some View {
-        let lower = card.title.lowercased() + card.summary.lowercased()
-        let cat: StorageCategory =
-            lower.contains("cache") ? .caches :
-            lower.contains("build") || lower.contains("dist") ? .builds :
-            lower.contains("worktree") ? .worktrees :
-            lower.contains("container") || lower.contains("docker") ? .containers :
-            lower.contains("model") ? .models : .data
-        return ZStack {
-            RoundedRectangle(cornerRadius: 6)
-                .fill(cat.accent.opacity(0.2))
-                .frame(width: 28, height: 28)
-            Image(systemName: cat.symbol)
-                .font(.system(size: 12))
-                .foregroundStyle(cat.accent)
+            .padding(.horizontal, TraceSpace.xxl)
+            .padding(.vertical, TraceSpace.lg)
+            .background(TraceColor.surface)
         }
     }
 
     private func startReview() async {
         if useAgent {
-            let payload = SkillComposer.reviewingPayload(project: project, store: store)
+            let payload = SkillComposer.reviewingPayload(projects: projects, store: store)
             let prompt = SkillComposer.compose(payload)
-            let root = store.projectRoot(for: project)
-            conductor.milestones = ["Composing skills for Reviewing…"]
+            let root = projects.first.map { store.projectRoot(for: $0) } ?? FileManager.default.homeDirectoryForCurrentUser.path
+            conductor.milestones = ["Composing skills for Reviewing (\(projects.count) project(s))…"]
             await supervisor.start(kind: agent, projectRoot: root, resumeId: nil, prompt: prompt)
             conductor.usage = supervisor.usage
-            conductor.buildLocalOnly(store: store, project: project, agent: agent)
+            conductor.buildLocalOnly(store: store, projects: projects, agent: agent)
             conductor.milestones.append("Agent finished: \(supervisor.status)")
         } else {
-            conductor.buildLocalOnly(store: store, project: project, agent: agent)
+            conductor.buildLocalOnly(store: store, projects: projects, agent: agent)
         }
     }
 
     private func volumeFreeBytes() -> Int64? {
-        let root = store.projectRoot(for: project)
+        guard let first = projects.first else { return nil }
+        let root = store.projectRoot(for: first)
         let values = try? URL(fileURLWithPath: root).resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         return values?.volumeAvailableCapacityForImportantUsage
     }
 }
 
-/// S10 Result — selected / moved / measured free-space delta.
+private struct ActionCardRow: View {
+    let card: ActionCard
+    let onToggle: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: TraceSpace.md) {
+            Toggle("Select \(card.title)", isOn: Binding(
+                get: { card.selected },
+                set: { _ in onToggle() }
+            ))
+            .disabled(card.safety == .protected)
+            .labelsHidden()
+            .frame(width: TraceSpace.hit, height: TraceSpace.hit)
+            .accessibilityHint(card.safety == .protected ? "Protected — cannot select" : "Toggles selection only")
+
+            CategoryLeadingMark(category: category(for: card))
+
+            VStack(alignment: .leading, spacing: TraceSpace.sm) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(card.title)
+                        .font(TraceType.bodyMedium)
+                        .foregroundStyle(TraceColor.textPrimary)
+                    Spacer()
+                    SafetyBadge(state: card.safety)
+                }
+                Text(card.summary)
+                    .font(TraceType.body)
+                    .foregroundStyle(TraceColor.textSecondary)
+                ForEach(card.paths.prefix(3), id: \.self) { path in
+                    PathLabel(path: path)
+                }
+                HStack(spacing: TraceSpace.sm) {
+                    Text(card.projectId)
+                        .font(TraceType.path)
+                        .foregroundStyle(TraceColor.textSecondary)
+                    OriginBadge(origin: .app)
+                    if let bytes = card.bytes {
+                        Text(ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file))
+                            .font(TraceType.path)
+                            .foregroundStyle(TraceColor.freed)
+                            .monospacedDigit()
+                    }
+                    if card.reversible {
+                        Label("Trash-reversible", systemImage: TraceSymbol.trash)
+                            .font(TraceType.caption)
+                            .foregroundStyle(TraceColor.textSecondary)
+                    }
+                }
+            }
+        }
+        .traceCard(selected: card.selected)
+    }
+
+    private func category(for card: ActionCard) -> StorageCategory {
+        let lower = (card.title + card.summary).lowercased()
+        if lower.contains("cache") { return .caches }
+        if lower.contains("build") || lower.contains("dist") { return .builds }
+        if lower.contains("worktree") { return .worktrees }
+        if lower.contains("container") || lower.contains("docker") { return .containers }
+        if lower.contains("model") { return .models }
+        return .data
+    }
+}
+
 struct ResultPanel: View {
     @ObservedObject var model: AppModel
     var freeBefore: Int64?
     var freeAfter: Int64?
 
     private var conductor: RunConductor { model.conductor }
-    private var store: TraceStore { model.store }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -291,8 +338,7 @@ struct ResultPanel: View {
                     Image(systemName: result.outcome == .moved ? TraceSymbol.safe : TraceSymbol.review)
                         .foregroundStyle(result.outcome == .moved ? TraceColor.safe : TraceColor.review)
                     VStack(alignment: .leading) {
-                        Text(result.path)
-                            .font(.caption.monospaced())
+                        Text(result.path).font(.caption.monospaced())
                         Text("\(result.outcome.rawValue)\(result.reason.map { " · \($0)" } ?? "")")
                             .font(.caption2)
                             .foregroundStyle(TraceColor.textSecondary)

@@ -16,6 +16,8 @@ The firm memory **fields** (engineering v1) were stored as JSONL; the index path
    - **Composed prompt:** the app opens a Cursor ACP / Codex app-server instance and sends skill id(s) + `SKILL.md` + params + inputs. Domain work stays in the skill.
 3. **prepare-home** is an operational skill that writes insight cards and applies retention/`status` on memory notes. Decide-later rows are not deleted for age.
 4. Home open remains file-only. Refresh/Run/agent Ask use mode 2.
+5. **Ask agent composition:** task + params + inputs (paths + question). Prefer installed host skills / harness tools; do not inline prepare-home or memory-writer bodies for Ask. Memory-only Ask uses the full scoped corpus and structured fields — not bag-of-words keyword search.
+6. **Run scope:** per project, or all permitted Trace projects (index / selected roots). Never whole-disk.
 
 ## Consequences
 

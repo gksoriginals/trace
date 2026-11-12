@@ -30,8 +30,8 @@ struct RootView: View {
             DecideLaterView(model: model, itemId: id)
         case .ask(let projectId, let itemId):
             AskTraceView(model: model, initialProjectId: projectId, initialItemId: itemId)
-        case .run(let project):
-            RunView(model: model, project: project)
+        case .run(let scope):
+            RunView(model: model, scope: scope)
         case .result:
             ResultView(model: model)
         case .recovery:

@@ -5,31 +5,34 @@ struct MenuBarView: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                TraceMark(size: 20)
+        VStack(alignment: .leading, spacing: TraceSpace.md) {
+            HStack(spacing: TraceSpace.sm) {
+                TraceMark(size: 18)
                 Text("Trace")
-                    .font(.system(size: 14, weight: .semibold))
-                Spacer()
+                    .font(TraceType.bodyMedium)
+                    .foregroundStyle(TraceColor.textPrimary)
+                Spacer(minLength: 0)
             }
 
             Text(model.menuStatusLine)
-                .font(.system(size: 12))
+                .font(TraceType.meta)
                 .foregroundStyle(TraceColor.textSecondary)
                 .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
 
             if model.menuQueueCount > 0 {
                 Label("\(model.menuQueueCount) Decide later", systemImage: TraceSymbol.decideLater)
-                    .font(.caption)
+                    .font(TraceType.caption)
                     .foregroundStyle(TraceColor.review)
             }
 
             if model.supervisor.isBusy {
-                HStack {
+                HStack(spacing: TraceSpace.sm) {
                     ProgressView().controlSize(.small)
                     Text(model.supervisor.status)
-                        .font(.caption)
+                        .font(TraceType.caption)
                         .foregroundStyle(TraceColor.textSecondary)
+                        .lineLimit(1)
                 }
             }
 
@@ -44,6 +47,8 @@ struct MenuBarView: View {
                 model.openAsk(projectId: nil, itemId: nil)
             }
             .keyboardShortcut("k")
+
+            // Run (per project / all permitted) only from the main window — never from this popover.
 
             if model.supervisor.isBusy {
                 Button("Stop") {
@@ -62,7 +67,8 @@ struct MenuBarView: View {
             }
             .keyboardShortcut("q")
         }
-        .padding(12)
+        .padding(TraceSpace.md)
         .frame(width: 280)
+        .background(TraceColor.surface)
     }
 }

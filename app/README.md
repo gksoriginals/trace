@@ -27,7 +27,7 @@ open Trace.xcodeproj    # Run (⌘R) on My Mac
 | Home S5 | Main window | Decide-later lane + project insights; local only on open |
 | Decide later S6 | Main window | Why doubtful, Keep/Defer (local), Ask, Plan action ≠ Execute |
 | Ask Trace S13 | Main window / ⌘K | Memory-first; optional agent escalation; read-only |
-| Run S7–S9 | Main window | Reviewing → Actions → Execute (Trash + journal); selection is consent |
+| Run S7–S9 | Main window | Per-project or **Run all projects**; Reviewing → Actions → Execute; selection is consent |
 | Result S10 | Main window | Selected / moved / measured free-space Δ |
 | Recovery S11 | Main window | Exact journaled Trash restore; no overwrite |
 | Memory S12 | Main window | Facts vs inferred claims, sources |

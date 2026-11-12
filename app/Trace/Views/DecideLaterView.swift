@@ -89,7 +89,7 @@ struct DecideLaterView: View {
                     Button("Plan action…") {
                         model.conductor.stage = .reviewing
                         model.conductor.cards = []
-                        model.destination = .run(project)
+                        model.destination = .run(.project(project))
                     }
                 }
             }

@@ -23,6 +23,32 @@ enum TraceColor {
     static let models = Color(light: "A24178", dark: "F3A0CC")
 }
 
+/// Design.md type scale — SF Pro + SF Mono.
+enum TraceType {
+    static let outcome = Font.system(size: 28, weight: .semibold).monospacedDigit()
+    static let screen = Font.system(size: 20, weight: .semibold)
+    static let section = Font.system(size: 15, weight: .semibold)
+    static let body = Font.system(size: 13, weight: .regular)
+    static let bodyMedium = Font.system(size: 13, weight: .medium)
+    static let path = Font.system(size: 12, weight: .regular, design: .monospaced)
+    static let meta = Font.system(size: 12, weight: .regular)
+    static let caption = Font.system(size: 11, weight: .medium)
+}
+
+enum TraceSpace {
+    static let xs: CGFloat = 4
+    static let sm: CGFloat = 8
+    static let md: CGFloat = 12
+    static let lg: CGFloat = 16
+    static let xl: CGFloat = 24
+    static let xxl: CGFloat = 32
+    static let windowPad: CGFloat = 24
+    static let contentMax: CGFloat = 960
+    static let hit: CGFloat = 28
+    static let radius: CGFloat = 8
+    static let inspector: CGFloat = 320
+}
+
 private extension Color {
     init(light: String, dark: String) {
         self.init(nsColor: NSColor(name: nil, dynamicProvider: { appearance in
@@ -50,24 +76,32 @@ private extension NSColor {
 struct TraceCardModifier: ViewModifier {
     var elevated = false
     var selected = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func body(content: Content) -> some View {
         content
-            .padding(16)
+            .padding(TraceSpace.lg)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
                     .fill(elevated ? TraceColor.elevated : TraceColor.surface)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
                     .stroke(selected ? TraceColor.brand : TraceColor.line.opacity(0.35), lineWidth: selected ? 2 : 1)
             )
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.14), value: selected)
     }
 }
 
 extension View {
     func traceCard(elevated: Bool = false, selected: Bool = false) -> some View {
         modifier(TraceCardModifier(elevated: elevated, selected: selected))
+    }
+
+    func traceFocusRing() -> some View {
+        self.focusable()
+            .focusEffectDisabled(false)
     }
 }
 
@@ -81,7 +115,7 @@ enum TraceSymbol {
     static let decideLater = "diamond"
     static let protected = "lock.fill"
     static let safe = "checkmark.circle"
-    static let review = "exclamationmark.triangle"
+    static let review = "diamond"
     static let caches = "square.stack.3d.up"
     static let builds = "hammer"
     static let worktrees = "arrow.triangle.branch"
@@ -94,7 +128,85 @@ enum TraceSymbol {
     static let menuMark = "point.topleft.down.to.point.bottomright.curvepath"
 }
 
-/// Original Trace mark (asset catalog). Used in chrome / Setup / menu bar.
+struct TraceScreenHeader: View {
+    let title: String
+    var subtitle: String? = nil
+    var body: some View {
+        VStack(alignment: .leading, spacing: TraceSpace.sm) {
+            Text(title)
+                .font(TraceType.screen)
+                .foregroundStyle(TraceColor.textPrimary)
+            if let subtitle {
+                Text(subtitle)
+                    .font(TraceType.meta)
+                    .foregroundStyle(TraceColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityAddTraits(.isHeader)
+    }
+}
+
+struct TraceSectionLabel: View {
+    let title: String
+    var symbol: String? = nil
+    var body: some View {
+        HStack(spacing: TraceSpace.sm) {
+            if let symbol {
+                Image(systemName: symbol)
+                    .foregroundStyle(TraceColor.brand)
+                    .frame(width: 16, height: 16)
+            }
+            Text(title)
+                .font(TraceType.section)
+                .foregroundStyle(TraceColor.textPrimary)
+        }
+        .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// Middle-elide long paths; full string remains for accessibility / copy.
+struct PathLabel: View {
+    let path: String
+    var lineLimit: Int = 1
+    var body: some View {
+        Text(elided)
+            .font(TraceType.path)
+            .foregroundStyle(TraceColor.textSecondary)
+            .lineLimit(lineLimit)
+            .truncationMode(.middle)
+            .textSelection(.enabled)
+            .help(path)
+            .accessibilityLabel(path)
+    }
+
+    private var elided: String {
+        guard path.count > 64 else { return path }
+        let url = URL(fileURLWithPath: path)
+        let tail = url.lastPathComponent
+        let parent = url.deletingLastPathComponent().lastPathComponent
+        if parent.isEmpty { return "…/\(tail)" }
+        return "…/\(parent)/\(tail)"
+    }
+}
+
+/// 3 pt category leading mark per design.md — recognition, not safety.
+struct CategoryLeadingMark: View {
+    let category: StorageCategory
+    var body: some View {
+        HStack(spacing: TraceSpace.sm) {
+            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                .fill(category.accent)
+                .frame(width: 3, height: 28)
+            Image(systemName: category.symbol)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(category.accent)
+                .frame(width: 18, height: 18)
+        }
+        .accessibilityLabel(category.title)
+    }
+}
+
 struct TraceMark: View {
     var size: CGFloat = 28
     var body: some View {
@@ -107,35 +219,35 @@ struct TraceMark: View {
     }
 }
 
-/// Official marks: text name + neutral glyph until vendor assets are cleared (design.md §9).
 struct AgentBadge: View {
     let kind: AgentKind
     var compact = false
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: TraceSpace.sm) {
             ZStack {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(TraceColor.elevated)
-                    .frame(width: compact ? 24 : 36, height: compact ? 24 : 36)
+                    .frame(width: compact ? 22 : 32, height: compact ? 22 : 32)
                 Image(systemName: glyph)
-                    .font(.system(size: compact ? 11 : 14, weight: .semibold))
+                    .font(.system(size: compact ? 10 : 13, weight: .semibold))
                     .foregroundStyle(TraceColor.brand)
             }
             if !compact {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(kind.title)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(TraceType.bodyMedium)
                         .foregroundStyle(TraceColor.textPrimary)
                     Text(kind.subtitle)
-                        .font(.system(size: 11))
+                        .font(TraceType.caption)
                         .foregroundStyle(TraceColor.textSecondary)
                 }
             } else {
                 Text(kind.title)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(TraceType.meta)
                     .foregroundStyle(TraceColor.textPrimary)
             }
         }
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(kind.title) agent")
     }
 
@@ -161,12 +273,13 @@ struct OriginBadge: View {
     let origin: Origin
     var body: some View {
         Text(origin.rawValue)
-            .font(.system(size: 10, weight: .semibold))
+            .font(TraceType.caption)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(TraceColor.elevated)
             .foregroundStyle(TraceColor.textSecondary)
             .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            .accessibilityLabel("Origin \(origin.rawValue)")
     }
 }
 
@@ -174,8 +287,9 @@ struct SafetyBadge: View {
     let state: ActionCard.SafetyState
     var body: some View {
         Label(label, systemImage: icon)
-            .font(.system(size: 11, weight: .medium))
+            .font(TraceType.caption)
             .foregroundStyle(color)
+            .accessibilityLabel(label)
     }
     private var label: String {
         switch state {
@@ -203,5 +317,24 @@ struct SafetyBadge: View {
         case .shared: return TraceColor.review
         case .unknown: return TraceColor.textSecondary
         }
+    }
+}
+
+/// Quiet secondary control; primary stays `.borderedProminent` + brand tint at call site.
+struct TraceToolbarButton: View {
+    let title: String
+    var symbol: String? = nil
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            if let symbol {
+                Label(title, systemImage: symbol)
+            } else {
+                Text(title)
+            }
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.regular)
+        .frame(minHeight: TraceSpace.hit)
     }
 }

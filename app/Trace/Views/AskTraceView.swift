@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// S13 Ask Trace — memory-first, optional agent escalation, read-only.
+/// S13 Ask Trace — full local memory corpus first; agent = Mode 2 skills+context+input.
 struct AskTraceView: View {
     @ObservedObject var model: AppModel
     var initialProjectId: String?
@@ -11,6 +11,7 @@ struct AskTraceView: View {
     @State private var itemId: String?
     @State private var answer: AskAnswer?
     @State private var offerAgent = false
+    @State private var showAgentConfirm = false
     @State private var selectedAgent: AgentKind = .cursor
     @State private var phase: Phase = .idle
 
@@ -21,18 +22,19 @@ struct AskTraceView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: TraceSpace.xl) {
                 header
                 scopeChips
                 questionField
                 actions
+                if showAgentConfirm { agentConfirm }
                 if let answer { answerCard(answer) }
                 if supervisor.isBusy || phase == .escalating { agentPanel }
-                Text("Ask is read-only. It can propose an action card; it cannot Execute.")
-                    .font(.caption)
+                Text("Ask is read-only. Memory uses the full local corpus for the scope. Agent escalation uses harness tools with composed inputs — it cannot Execute.")
+                    .font(TraceType.meta)
                     .foregroundStyle(TraceColor.textSecondary)
             }
-            .padding(32)
+            .padding(TraceSpace.xxl)
             .frame(maxWidth: 720, alignment: .leading)
         }
         .background(TraceColor.canvas)
@@ -47,16 +49,14 @@ struct AskTraceView: View {
     }
 
     private var header: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Ask Trace")
-                    .font(.system(size: 28, weight: .semibold))
-                Text("Memory only · local · no hosted tokens — until you escalate.")
-                    .font(.caption)
-                    .foregroundStyle(TraceColor.textSecondary)
-            }
+        HStack(alignment: .top) {
+            TraceScreenHeader(
+                title: "Ask Trace",
+                subtitle: "Memory only · local · full corpus for scope · no hosted tokens — until you escalate."
+            )
             Spacer()
             Button("Close") { model.destination = .home }
+                .buttonStyle(.bordered)
         }
     }
 
@@ -78,13 +78,6 @@ struct AskTraceView: View {
                         .padding(.vertical, 4)
                         .background(TraceColor.elevated)
                         .clipShape(RoundedRectangle(cornerRadius: 6))
-                }
-            }
-            HStack(spacing: 8) {
-                ForEach(["Why was this kept?", "What shares this cache?", "Is coverage fresh?"], id: \.self) { example in
-                    Button(example) { question = example }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
                 }
             }
         }
@@ -111,12 +104,10 @@ struct AskTraceView: View {
             .disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || phase == .retrieving)
 
             if offerAgent {
-                Picker("Agent", selection: $selectedAgent) {
-                    ForEach(AgentKind.allCases) { Text($0.title).tag($0) }
+                Button("Ask agent…") {
+                    showAgentConfirm = true
                 }
-                .frame(width: 140)
-                Button("Ask agent") { Task { await runAgent() } }
-                    .buttonStyle(.bordered)
+                .buttonStyle(.bordered)
             }
             if supervisor.isBusy {
                 Button {
@@ -131,10 +122,49 @@ struct AskTraceView: View {
         }
     }
 
+    private var agentConfirm: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Accept agent scope")
+                .font(.system(size: 15, weight: .semibold))
+            Text("Before the first outbound message: agent, project scope, and minimized evidence that may leave this Mac. There is no token allowance to accept.")
+                .font(.caption)
+                .foregroundStyle(TraceColor.textSecondary)
+            Picker("Agent", selection: $selectedAgent) {
+                ForEach(AgentKind.allCases) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            labeled("Project", projectId.isEmpty ? (store.projects.first?.displayName ?? "Pick a project") : projectId)
+            labeled("Evidence leaving Mac", "Question + paths to local memory/decide-later/insights (harness tools read them). Prior memory answer summary if any.")
+            HStack {
+                Button("Stay on memory answer") { showAgentConfirm = false }
+                Button("Accept & ask agent") {
+                    showAgentConfirm = false
+                    Task { await runAgent() }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(TraceColor.brand)
+            }
+        }
+        .traceCard(elevated: true)
+    }
+
+    private func labeled(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title).font(.caption).foregroundStyle(TraceColor.textSecondary)
+            Text(value).font(.system(size: 12, design: .monospaced))
+        }
+    }
+
     private func answerCard(_ answer: AskAnswer) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                tierLabel(answer.tier)
+                Text(answer.tier.uppercased())
+                    .font(.system(size: 10, weight: .bold))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(TraceColor.elevated)
+                    .foregroundStyle(TraceColor.brand)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
                 Spacer()
                 Text("Usage: \(answer.usage?.display ?? "unavailable")")
                     .font(.caption)
@@ -142,26 +172,11 @@ struct AskTraceView: View {
             }
             Text(answer.text)
                 .textSelection(.enabled)
-                .foregroundStyle(TraceColor.textPrimary)
-
             if !answer.citations.isEmpty {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Sources")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(TraceColor.textSecondary)
-                    ForEach(answer.citations, id: \.self) { cite in
-                        Text(cite)
-                            .font(.caption.monospaced())
-                            .foregroundStyle(TraceColor.brand)
-                            .onTapGesture {
-                                if !projectId.isEmpty {
-                                    model.destination = .memory(projectId)
-                                }
-                            }
-                    }
-                }
+                Text("Sources: \(answer.citations.joined(separator: ", "))")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(TraceColor.brand)
             }
-
             if answer.unknown {
                 Text("Memory is insufficient or stale for a confident answer. Escalate only if you accept provider scope.")
                     .font(.caption)
@@ -169,16 +184,6 @@ struct AskTraceView: View {
             }
         }
         .traceCard()
-    }
-
-    private func tierLabel(_ tier: String) -> some View {
-        Text(tier.uppercased())
-            .font(.system(size: 10, weight: .bold))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(TraceColor.elevated)
-            .foregroundStyle(TraceColor.brand)
-            .clipShape(RoundedRectangle(cornerRadius: 4))
     }
 
     private var agentPanel: some View {
@@ -216,6 +221,7 @@ struct AskTraceView: View {
         )
         answer = result
         offerAgent = result.unknown || result.citations.isEmpty
+        showAgentConfirm = false
         phase = .answered
     }
 
@@ -233,24 +239,12 @@ struct AskTraceView: View {
         }
         phase = .escalating
         let root = store.projectRoot(for: project)
-        let memoryBits = String((answer?.text ?? "").prefix(800))
-        let payload = SkillComposer.Payload(
-            skillIds: ["prepare-home", "memory-writer"],
-            params: [
-                "project_id": project.id,
-                "roots": project.roots ?? [root],
-                "never_touch": store.settings.neverTouch,
-            ],
-            inputs: [
-                "question": question,
-                "memory_summary": memoryBits,
-                "item_id": itemId ?? "",
-                "index_path": store.indexURL.path,
-            ],
-            task: """
-            Trace Ask (read-only). Answer the question using project memory. \
-            Separate memory facts from new observations. Cite event ids. Do not delete or move files.
-            """
+        let payload = SkillComposer.askPayload(
+            project: project,
+            store: store,
+            question: question,
+            priorMemoryAnswer: answer?.text,
+            itemId: itemId
         )
         await supervisor.start(
             kind: selectedAgent,

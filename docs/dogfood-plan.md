@@ -17,8 +17,8 @@ Markdown: `~/.trace/index.md`, `<project>/.trace/memory/*.md`, `decide-later.md`
 | --- | --- |
 | Setup | 4-step stepper; install skills; no budgets |
 | Home | File-only Decide-later + insights; Refresh = compose prepare-home |
-| Ask | Memory-first; agent tier composes skills |
-| Run | Reviewing (composed skills) → Actions → Execute (Trash + journal) |
+| Ask | Full-corpus memory-first; agent tier = task+params+inputs (harness tools) |
+| Run | Per-project or all permitted; Reviewing → Actions → Execute (Trash + journal) |
 | Background | Optional; only while menu bar app running; never Execute |
 
 ## Try

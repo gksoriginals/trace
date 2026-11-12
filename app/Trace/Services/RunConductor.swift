@@ -14,20 +14,23 @@ final class RunConductor: ObservableObject {
     @Published var usage: UsageReport = .unavailable
     @Published var selectionId: String = UUID().uuidString
 
-    func startReviewing(store: TraceStore, project: ProjectIndexRow, agent: AgentKind, supervisor: SessionSupervisor) async {
+    func startReviewing(store: TraceStore, projects: [ProjectIndexRow], agent: AgentKind, supervisor: SessionSupervisor) async {
         stage = .reviewing
         milestones = ["Loading local memory", "Checking Decide-later", "Preparing proposals"]
-        let events = store.events(for: project.id)
-        milestones.append("\(events.count) memory events")
-        let queue = store.decideLater.filter { $0.project_id == project.id }
-        milestones.append("\(queue.count) open Decide-later items")
-
-        // Local proposal mode: disposable-looking artifacts from memory, never shared/protected preselected
-        cards = buildCards(from: events, project: project, agent: agent)
+        var built: [ActionCard] = []
+        for project in projects {
+            let events = store.events(for: project.id)
+            milestones.append("\(project.displayName): \(events.count) memory events")
+            built.append(contentsOf: buildCards(from: events, project: project, agent: agent))
+        }
+        let projectIds = Set(projects.map(\.id))
+        let queue = store.decideLater.filter { projectIds.contains($0.project_id ?? "") }
+        milestones.append("\(queue.count) open Decide-later items in scope")
+        cards = built
         milestones.append("Built \(cards.count) action cards (conservative defaults unselected for shared/unknown)")
 
-        let root = store.projectRoot(for: project)
-        let payload = SkillComposer.reviewingPayload(project: project, store: store)
+        let root = projects.first.map { store.projectRoot(for: $0) } ?? FileManager.default.homeDirectoryForCurrentUser.path
+        let payload = SkillComposer.reviewingPayload(projects: projects, store: store)
         let prompt = SkillComposer.compose(payload)
         await supervisor.start(kind: agent, projectRoot: root, resumeId: nil, prompt: prompt)
         usage = supervisor.usage
@@ -36,10 +39,18 @@ final class RunConductor: ObservableObject {
     }
 
     func buildLocalOnly(store: TraceStore, project: ProjectIndexRow, agent: AgentKind) {
+        buildLocalOnly(store: store, projects: [project], agent: agent)
+    }
+
+    func buildLocalOnly(store: TraceStore, projects: [ProjectIndexRow], agent: AgentKind) {
         stage = .reviewing
-        milestones = ["Offline reviewing from memory (no agent)"]
-        let events = store.events(for: project.id)
-        cards = buildCards(from: events, project: project, agent: agent)
+        milestones = ["Offline reviewing from memory (no agent)", "\(projects.count) project(s) in scope"]
+        var built: [ActionCard] = []
+        for project in projects {
+            let events = store.events(for: project.id)
+            built.append(contentsOf: buildCards(from: events, project: project, agent: agent))
+        }
+        cards = built
         milestones.append("Built \(cards.count) action cards")
         stage = .actions
     }
