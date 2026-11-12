@@ -1,39 +1,55 @@
 # Trace
 
-Trace cleans up the storage that project work and coding agents leave behind, including shared caches. Nothing else on your Mac is in scope.
+Trace is a **native macOS app** for storage hygiene around coding agents. Skills do everyday cleanup inside Cursor and Codex; the app shows what happened, Decide-later doubts, and (later) deeper runs.
+
+Nothing else on your Mac is in scope — project work storage and shared caches only.
+
+## Try on your Mac (dogfood)
+
+**Requires macOS 14+.**
+
+```bash
+git clone <this-repo> && cd trace
+
+# 1) Install skills into Cursor/Codex skill folders
+./skills/install.sh --project ~/path/to/a/coding-project
+
+# 2) Build the native app
+cd app
+brew install xcodegen   # once
+xcodegen generate
+open Trace.xcodeproj    # Run (⌘R) on My Mac
+```
+
+Use Cursor or Codex in that project (skills nudge before installs / at session end / when recording memory). Open **Trace** Home — Decide-later and project insights read `~/.trace/index.json` and each project’s `.trace/` files. No model call on open. **Execute is not in this build** (M2).
+
+Prove skills locally without the app:
+
+```bash
+python3 evals/run.py --agent skill          # M0 skills, 32/32 test cases
+```
 
 ## How it works
 
-Trace starts with three skills for coding agents. Each one does a single job.
-
-- **Hygienic setup.** Before an install it asks, looks up the healthiest way to do it, adds the steps to the agent's own checklist, then records where everything went and what you decided.
-- **Session-end cleanup.** It asks before removing short-lived files. It skips the question only for an exact item you already approved.
-- **Memory writer.** It logs each thing that was created: what it is, why it was made, which agent made it, for which project, when it can be removed, and the decisions you made.
-
-The three skills are portable Agent Skills. They share one set of schemas, scripts, and safety rules, and they install into the agent's own skills folder. Each project gets one line saying when to use them. A hook is optional. There is no plugin and no MCP server. Skills install for the whole agent by default. A project can opt out. The first agents are Cursor and Codex. The app reads each project's local memory. On demand it can run a deeper pass with the agent you pick. It shows what that pass used. It does not set a token cap.
-
-## Goal
-
-Remove 70% of the bytes in artifacts an agent created, within 30 days of creation, and delete nothing you later regret. Shared caches count once. Free space is shown separately and is not this number. Bytes with no creator are searched for in git, timestamps, session logs, transcripts, lockfiles, and tool manifests before they are left out of that percentage.
-
-## Safety defaults
-
-These are carried over from Shed:
-- Items go to the Trash. Nothing is deleted permanently.
-- Paths on the never-delete list are never touched.
-- Before deleting, Trace checks each item's fingerprint again when you confirm.
-- Defaults are conservative.
-
-## Status
-
-Early.
+1. **Hygienic setup** — before an install, ask, prefer healthy practice, avoid needless copies, record the decision.
+2. **Session-end cleanup** — propose leftovers; Trash only exact consented paths; queue doubts.
+3. **Memory writer** — append version-1 events to `<project>/.trace/memory.jsonl` and update `~/.trace/index.json`.
+4. **Decide later** — durable queue when a decision is unclear.
+5. **Trace.app** — Setup, Home, memory-only Ask (⌘K). Run/Execute later.
 
 ## Docs
 
+- [Dogfood plan (phases)](docs/dogfood-plan.md)
 - [Product requirements](docs/prd.md)
-- [Design & UX specification](docs/design.md)
-- [Engineering direction](docs/engineering.md)
+- [Design & UX](docs/design.md)
+- [Engineering](docs/engineering.md)
 - [Evals](docs/evals.md)
-- [Decision records](docs/adr/)
-- [Instructions for coding agents](AGENTS.md)
-- [Testing policy](docs/agent-policy.md)
+- [App build](app/README.md)
+- [Skills](skills/README.md)
+
+## Safety defaults
+
+- Trash only — never permanent delete from Trace.
+- Never-delete list respected.
+- Fingerprint re-check at confirm time (Execute / M2).
+- Conservative defaults; ask before cleanup/install unless that exact item was already approved.

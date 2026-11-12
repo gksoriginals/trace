@@ -1,0 +1,32 @@
+name: Trace
+options:
+  bundleIdPrefix: local.trace
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+targets:
+  Trace:
+    type: application
+    platform: macOS
+    sources:
+      - Trace
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: local.trace.Trace
+        PRODUCT_NAME: Trace
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: Trace/Info.plist
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGNING_ALLOWED: YES
+        ENABLE_HARDENED_RUNTIME: NO
+    info:
+      path: Trace/Info.plist
+      properties:
+        LSMinimumSystemVersion: "14.0"
