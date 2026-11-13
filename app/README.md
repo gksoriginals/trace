@@ -2,12 +2,20 @@
 
 Full PRD surfaces in the main window ([ADR-0012](../docs/adr/0012-no-menu-bar-companion.md): no menu bar companion). **macOS 14+**. Prism/Ink theme, original Trace mark, agent badges (text + neutral glyphs until vendor logos are cleared).
 
-## Install (dogfood DMG)
+## Install (dogfood)
+
+Replace `/Applications/Trace.app` from a Release build (preferred while iterating):
+
+```bash
+./scripts/install-app.sh
+```
+
+Or build a DMG:
 
 ```bash
 ./scripts/package-dmg.sh
 open build/dmg/Trace-dogfood.dmg
-# Drag Trace → Applications, launch. Use the main window for Setup → Run.
+# Drag Trace → Applications, launch.
 ```
 
 ## Build from source

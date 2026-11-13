@@ -9,12 +9,16 @@ final class AppModel: ObservableObject {
     enum Destination: Hashable {
         case setup
         case home
-        case decideLater(String)
+        /// Queue of open Decide-later items (rail destination).
+        case decideLaterQueue
+        /// One Decide-later item detail.
+        case decideLaterItem(String)
         case ask(projectId: String?, itemId: String?)
         case run(RunScope)
         case result
         case recovery
         case memory(String?)
+        case history
         case settings
     }
 
@@ -33,7 +37,15 @@ final class AppModel: ObservableObject {
 
     @Published var destination: Destination = .home
     @Published var setupDraft = SetupDraft()
+    /// Floating Ask mini-chat (not a full-page destination).
     @Published var showAskPanel = false
+    @Published var askProjectId: String?
+    @Published var askItemId: String?
+    /// In-place Home run: which project id is active (nil = all permitted / unknown).
+    @Published var activeRunProjectId: String?
+    @Published var activeRunLabel: String?
+    /// Filled after a finished in-place run so Home can show proposal / empty outcome.
+    @Published var lastRunOutcome: String?
 
     let store: TraceStore
     let supervisor: SessionSupervisor
@@ -102,7 +114,121 @@ final class AppModel: ObservableObject {
     }
 
     func openAsk(projectId: String?, itemId: String?) {
-        openMain(to: .ask(projectId: projectId, itemId: itemId))
+        askProjectId = projectId
+        askItemId = itemId
+        showAskPanel = true
+        // Keep the current surface; Ask floats over it.
+        if case .ask = destination {
+            destination = .home
+        }
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        for window in NSApp.windows {
+            window.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    func closeAskPanel() {
+        showAskPanel = false
+        askProjectId = nil
+        askItemId = nil
+    }
+
+    /// Start a read-only Reviewing pass on Home — progress stays in the status banner, no Run screen.
+    func runInPlace(_ scope: RunScope) async {
+        guard !supervisor.isBusy else { return }
+        destination = .home
+        lastRunOutcome = nil
+        let projects: [ProjectIndexRow]
+        switch scope {
+        case .project(let p):
+            projects = [p]
+            activeRunProjectId = p.id
+            activeRunLabel = p.displayName
+        case .allPermitted:
+            projects = store.projects
+            activeRunProjectId = nil
+            activeRunLabel = "All permitted projects"
+        }
+        guard !projects.isEmpty else {
+            activeRunLabel = nil
+            lastRunOutcome = "Add at least one project folder, then Run."
+            return
+        }
+        let agent = AgentKind(rawValue: store.settings.preferredAgent) ?? .cursor
+        // Prefer the shallowest selected root as cwd so nested roots stay in scope.
+        let rootProject = projects.min(by: {
+            store.projectRoot(for: $0).count < store.projectRoot(for: $1).count
+        }) ?? projects[0]
+        let root = store.projectRoot(for: rootProject)
+        let scopeLabel = activeRunLabel ?? scope.title
+        let startedAt = ISO8601DateFormatter().string(from: Date())
+        let payload = SkillComposer.reviewingPayload(projects: projects, store: store)
+        await supervisor.start(
+            kind: agent,
+            projectRoot: root,
+            resumeId: nil,
+            prompt: SkillComposer.compose(payload)
+        )
+        store.refresh()
+        let open = store.decideLater.count
+        let agentTitle = agent.title
+        let status: String
+        if supervisor.isFailed {
+            status = "failed"
+            lastRunOutcome = supervisor.lastMessage ?? "\(agentTitle) failed."
+        } else if supervisor.isCancelled {
+            status = "cancelled"
+            lastRunOutcome = "Stopped before proposals were ready."
+        } else {
+            status = "completed"
+            lastRunOutcome = open == 0
+                ? "\(agentTitle) finished. No disposable proposals in this pass."
+                : "\(agentTitle) finished. \(open) item\(open == 1 ? "" : "s") ready in Decide later."
+        }
+        let logTail = CodexSession.meaningfulLogLines(Array(supervisor.log.suffix(24))).suffix(8).map { $0 }
+        let entry = RunHistoryEntry(
+            id: UUID().uuidString,
+            startedAt: startedAt,
+            finishedAt: ISO8601DateFormatter().string(from: Date()),
+            status: status,
+            agent: agent.rawValue,
+            scopeLabel: scopeLabel,
+            projectIds: projects.map(\.id),
+            rootPath: root,
+            summary: lastRunOutcome ?? status,
+            openDecideLaterCount: open,
+            logTail: logTail,
+            usage: supervisor.usage.available ? supervisor.usage : nil
+        )
+        store.recordRun(entry)
+        // Always leave a project-visible receipt, even when nothing was proposed for Trash.
+        store.writeRunReceipts(projects: projects, entry: entry)
+    }
+
+    /// Add project folders after setup (Home / Settings). Seeds the index immediately.
+    func addProjectFolders() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = true
+        panel.prompt = "Add"
+        panel.message = "Choose project folders for Trace to manage."
+        panel.begin { [weak self] response in
+            guard response == .OK, let self else { return }
+            Task { @MainActor in
+                for url in panel.urls {
+                    self.store.addSelectedRoot(url.path)
+                }
+            }
+        }
+    }
+
+    func clearRunBanner() {
+        supervisor.dismissStatus()
+        activeRunProjectId = nil
+        activeRunLabel = nil
+        lastRunOutcome = nil
     }
 
     func finishSetup(runFirstPass: Bool) async {
@@ -116,25 +242,20 @@ final class AppModel: ObservableObject {
         } catch {
             setupDraft.lastMessage = error.localizedDescription
         }
+        store.seedProjectsFromSelectedRoots()
         store.markSetupComplete()
-        if runFirstPass, let root = setupDraft.projectPaths.first {
-            let project = ProjectIndexRow(
-                id: URL(fileURLWithPath: root).lastPathComponent,
-                display_name: URL(fileURLWithPath: root).lastPathComponent,
-                roots: [root],
-                memory_log: root + "/.trace/memory",
-                memory_dir: root + "/.trace/memory"
-            )
-            let payload = SkillComposer.prepareHomePayload(project: project, store: store)
-            await supervisor.start(
-                kind: setupDraft.preferredAgent,
-                projectRoot: root,
-                resumeId: nil,
-                prompt: SkillComposer.compose(payload)
-            )
-            store.refresh()
-        }
         destination = .home
+
+        // S4: first run stays on Home with a progress banner (never Execute, no Run screen).
+        guard runFirstPass else { return }
+        guard !store.projects.isEmpty else {
+            setupDraft.lastMessage = "Saved. Add at least one project root, then use Run from Home."
+            return
+        }
+        let scope: RunScope = store.projects.count == 1
+            ? .project(store.projects[0])
+            : .allPermitted
+        await runInPlace(scope)
     }
 
     func applySetupDraft() {

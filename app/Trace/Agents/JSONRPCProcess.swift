@@ -20,8 +20,12 @@ final class JSONRPCProcess: @unchecked Sendable {
         stdinPipe = Pipe()
         stdoutPipe = Pipe()
         stderrPipe = Pipe()
-        process.executableURL = URL(fileURLWithPath: which(exe) ?? exe)
+        guard let resolved = AgentPath.resolve(exe) else {
+            throw AdapterError.binaryMissing(exe)
+        }
+        process.executableURL = URL(fileURLWithPath: resolved)
         process.arguments = Array(command.dropFirst())
+        process.environment = AgentPath.processEnvironment()
         process.standardInput = stdinPipe
         process.standardOutput = stdoutPipe
         process.standardError = stderrPipe
@@ -149,20 +153,6 @@ final class JSONRPCProcess: @unchecked Sendable {
             onNotification?(method, params)
         }
     }
-}
-
-private func which(_ name: String) -> String? {
-    if name.contains("/") { return name }
-    let proc = Process()
-    proc.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-    proc.arguments = [name]
-    let pipe = Pipe()
-    proc.standardOutput = pipe
-    try? proc.run()
-    proc.waitUntilExit()
-    let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    let text = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-    return (text?.isEmpty == false) ? text : nil
 }
 
 private extension NSLock {

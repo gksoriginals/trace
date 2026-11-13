@@ -16,21 +16,21 @@ struct SetupView: View {
                 stepBody
                 navButtons
             }
-            .padding(TraceSpace.xxl)
-            .frame(maxWidth: 860, alignment: .leading)
+            .tracePageColumn(maxWidth: .infinity)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            // Match AppChrome: room for traffic lights in the unified title bar.
+            Color.clear.frame(height: TraceSpace.md)
         }
         .background(TraceColor.canvas)
         .task { await redetect() }
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: TraceSpace.md) {
-            TraceMark(size: 36)
-            TraceScreenHeader(
-                title: "Setup",
-                subtitle: "Skills do everyday hygiene inside each coding agent. Trace configures them per host, shows outcomes, and runs a deeper pass when you ask."
-            )
-        }
+        TraceScreenHeader(
+            title: "Setup",
+            subtitle: "Skills do everyday hygiene inside each coding agent. Trace configures them per host, shows outcomes, and runs a deeper pass when you ask."
+        )
     }
 
     private var stepRail: some View {

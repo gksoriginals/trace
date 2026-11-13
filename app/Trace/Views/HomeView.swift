@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// S5 Home — Decide later lane + project insight cards. Local only on open.
+/// S5 Home — project insight tiles. Decide later lives in the top-nav bell.
 struct HomeView: View {
     @ObservedObject var model: AppModel
 
@@ -9,321 +9,270 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: TraceSpace.xl) {
-                header
+            VStack(alignment: .leading, spacing: TraceSpace.lg) {
+                agentBanner
                 if let error = store.loadError {
-                    Label(error, systemImage: "exclamationmark.triangle.fill")
-                        .font(TraceType.body)
-                        .foregroundStyle(TraceColor.critical)
-                        .traceCard(elevated: true)
-                        .accessibilityAddTraits(.isStaticText)
+                    TraceStatusBanner(
+                        kind: .error,
+                        title: "Could not load local files",
+                        detail: error
+                    )
                 }
-                decideLaterLane
                 insightsLane
-                if supervisor.isBusy || !supervisor.log.isEmpty {
-                    sessionPanel
-                }
             }
-            .padding(TraceSpace.xxl)
-            .frame(maxWidth: TraceSpace.contentMax, alignment: .leading)
+            .tracePageColumn()
         }
         .background(TraceColor.canvas)
     }
 
-    private var header: some View {
-        HStack(alignment: .top, spacing: TraceSpace.lg) {
-            TraceScreenHeader(
-                title: "Home",
-                subtitle: "Local files only — no model call and no disk scan to open this screen."
+    @ViewBuilder
+    private var agentBanner: some View {
+        if supervisor.isBusy {
+            TraceStatusBanner(
+                kind: .working,
+                title: supervisor.pendingPermission != nil
+                    ? "Needs your answer"
+                    : "Running\(model.activeRunLabel.map { " · \($0)" } ?? "")…",
+                detail: supervisor.lastMessage ?? "Opening agent session…",
+                primaryTitle: "Stop",
+                primaryAction: { Task { await supervisor.cancel() } },
+                secondaryTitle: supervisor.pendingPermission != nil ? "Allow once" : nil,
+                secondaryAction: supervisor.pendingPermission != nil
+                    ? { Task { await supervisor.replyToPermission(allow: true) } }
+                    : nil
             )
-            Spacer(minLength: TraceSpace.md)
-            HStack(spacing: TraceSpace.sm) {
-                TraceToolbarButton(title: "Refresh", symbol: "arrow.clockwise") {
-                    store.refresh()
-                }
-                .help("Reload local index and queues")
-
-                Menu {
-                    Button("Ask Trace") { model.openAsk(projectId: nil, itemId: nil) }
-                    Divider()
-                    Button("Run all projects") {
-                        startRun(.allPermitted)
+        } else if supervisor.isFailed || supervisor.isCancelled {
+            TraceStatusBanner(
+                kind: .error,
+                title: supervisor.isCancelled
+                    ? "Run cancelled\(model.activeRunLabel.map { " · \($0)" } ?? "")"
+                    : "Run failed\(model.activeRunLabel.map { " · \($0)" } ?? "")",
+                detail: model.lastRunOutcome
+                    ?? supervisor.lastMessage
+                    ?? (supervisor.isCancelled ? "Stopped." : "Unknown error"),
+                primaryTitle: "Run again",
+                primaryAction: {
+                    Task {
+                        if let id = model.activeRunProjectId,
+                           let project = store.projects.first(where: { $0.id == id }) {
+                            await model.runInPlace(.project(project))
+                        } else {
+                            await model.runInPlace(.allPermitted)
+                        }
                     }
-                    .disabled(store.projects.isEmpty)
-                    Button("Open Setup") { model.destination = .setup }
-                } label: {
-                    Label("Actions", systemImage: "ellipsis.circle")
-                }
-                .menuStyle(.borderlessButton)
-                .frame(minHeight: TraceSpace.hit)
-                .help("More Home actions")
-            }
-        }
-    }
-
-    private var decideLaterLane: some View {
-        VStack(alignment: .leading, spacing: TraceSpace.md) {
-            HStack {
-                TraceSectionLabel(title: "Decide later", symbol: TraceSymbol.decideLater)
-                Spacer()
-                Text("\(store.decideLater.count) open")
-                    .font(TraceType.meta)
-                    .foregroundStyle(TraceColor.textSecondary)
-                    .monospacedDigit()
-            }
-
-            if store.decideLater.isEmpty {
-                Text("No open doubts. Skills write here when a decision is unclear.")
-                    .font(TraceType.body)
-                    .foregroundStyle(TraceColor.textSecondary)
-                    .traceCard(elevated: true)
-            } else {
-                ForEach(store.decideLater) { item in
-                    DecideLaterRow(model: model, item: item)
-                }
-            }
+                },
+                secondaryTitle: "Dismiss",
+                secondaryAction: { model.clearRunBanner() }
+            )
+        } else if supervisor.isCompleted || model.lastRunOutcome != nil {
+            TraceStatusBanner(
+                kind: .info,
+                title: "Run finished\(model.activeRunLabel.map { " · \($0)" } ?? "")",
+                detail: model.lastRunOutcome
+                    ?? "Agent finished. \(store.decideLater.count) open decide-later item\(store.decideLater.count == 1 ? "" : "s").",
+                primaryTitle: store.decideLater.isEmpty ? "Run again" : "Review items",
+                primaryAction: {
+                    if store.decideLater.isEmpty {
+                        Task { await model.runInPlace(.allPermitted) }
+                    } else {
+                        model.destination = .decideLaterQueue
+                    }
+                },
+                secondaryTitle: "Dismiss",
+                secondaryAction: { model.clearRunBanner() }
+            )
         }
     }
 
     private var insightsLane: some View {
-        VStack(alignment: .leading, spacing: TraceSpace.md) {
+        VStack(alignment: .leading, spacing: TraceSpace.sm) {
             TraceSectionLabel(title: "Projects")
 
-            if store.insights.isEmpty {
-                VStack(alignment: .leading, spacing: TraceSpace.sm) {
-                    Text("No projects in ~/.trace/index.md yet.")
-                        .font(TraceType.bodyMedium)
-                        .foregroundStyle(TraceColor.textPrimary)
-                    Text("Finish Setup, install skills, and work in a project. Home stays local until then.")
-                        .font(TraceType.body)
-                        .foregroundStyle(TraceColor.textSecondary)
-                    Button("Open Setup") { model.destination = .setup }
-                        .buttonStyle(.borderedProminent)
-                        .tint(TraceColor.brand)
+            LazyVGrid(
+                columns: [GridItem(.adaptive(minimum: 220, maximum: 320), spacing: TraceSpace.md)],
+                alignment: .leading,
+                spacing: TraceSpace.md
+            ) {
+                AddProjectCard {
+                    model.addProjectFolders()
                 }
-                .traceCard(elevated: true)
-            }
-
-            ForEach(store.insights) { insight in
-                ProjectInsightCard(model: model, insight: insight) {
-                    startRun(.project(insight.project))
+                ForEach(store.insights) { insight in
+                    ProjectInsightCard(model: model, insight: insight)
                 }
             }
         }
-    }
-
-    private var sessionPanel: some View {
-        VStack(alignment: .leading, spacing: TraceSpace.sm) {
-            HStack {
-                Label("Agent session", systemImage: TraceSymbol.run)
-                    .font(TraceType.bodyMedium)
-                Text(supervisor.status)
-                    .font(TraceType.caption)
-                    .foregroundStyle(TraceColor.textSecondary)
-                Spacer()
-                Text("Usage: \(supervisor.usage.display)")
-                    .font(TraceType.caption)
-                    .foregroundStyle(TraceColor.textSecondary)
-            }
-            ScrollView {
-                Text(supervisor.log.suffix(24).joined(separator: "\n"))
-                    .font(TraceType.path)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
-            }
-            .frame(maxHeight: 120)
-            if supervisor.pendingPermission != nil {
-                HStack(spacing: TraceSpace.sm) {
-                    Button("Allow once") { Task { await supervisor.replyToPermission(allow: true) } }
-                        .buttonStyle(.borderedProminent)
-                        .tint(TraceColor.brand)
-                    Button("Reject") { Task { await supervisor.replyToPermission(allow: false) } }
-                        .buttonStyle(.bordered)
-                }
-            }
-            Button {
-                Task { await supervisor.cancel() }
-            } label: {
-                Label("Stop", systemImage: TraceSymbol.stop)
-            }
-            .buttonStyle(.bordered)
-        }
-        .traceCard(elevated: true)
-    }
-
-    private func startRun(_ scope: AppModel.RunScope) {
-        model.conductor.stage = .reviewing
-        model.conductor.cards = []
-        model.conductor.milestones = []
-        model.destination = .run(scope)
     }
 }
 
-/// Separate hit regions: body opens detail; Keep/Defer/Ask are their own controls (design.md cards rule).
-private struct DecideLaterRow: View {
-    @ObservedObject var model: AppModel
-    let item: DecideLaterItem
+/// Empty tile with a large plus — primary way to add project folders.
+private struct AddProjectCard: View {
+    let action: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: TraceSpace.md) {
+        Button(action: action) {
+            VStack(spacing: TraceSpace.sm) {
+                Image(systemName: TraceSymbol.addFolder)
+                    .font(.system(size: 36, weight: .light))
+                    .foregroundStyle(TraceColor.brand)
+                Text("Add folder")
+                    .font(TraceType.caption)
+                    .foregroundStyle(TraceColor.textSecondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: 118)
+            .background(
+                RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
+                    .strokeBorder(TraceColor.brand.opacity(0.45), style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                    .background(
+                        RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
+                            .fill(TraceColor.surface.opacity(0.55))
+                    )
+            )
+            .contentShape(RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .help("Add project folder")
+        .accessibilityLabel("Add folder")
+    }
+}
+
+/// Compact project tile for the Home grid — dense so many projects fit on screen.
+private struct ProjectInsightCard: View {
+    @ObservedObject var model: AppModel
+    let insight: ProjectInsight
+
+    private var store: TraceStore { model.store }
+    private var isThisRunning: Bool {
+        model.supervisor.isBusy && model.activeRunProjectId == insight.project.id
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: TraceSpace.sm) {
             Button {
-                model.destination = .decideLater(item.id)
+                model.destination = .memory(insight.project.id)
             } label: {
-                HStack(alignment: .top, spacing: TraceSpace.md) {
-                    Image(systemName: TraceSymbol.decideLater)
-                        .foregroundStyle(TraceColor.review)
-                        .frame(width: 20, height: 20)
-                    VStack(alignment: .leading, spacing: TraceSpace.xs) {
-                        HStack(alignment: .firstTextBaseline) {
-                            Text(item.action ?? item.artifact_id ?? item.id)
-                                .font(TraceType.bodyMedium)
-                                .foregroundStyle(TraceColor.textPrimary)
-                                .multilineTextAlignment(.leading)
-                            Spacer(minLength: TraceSpace.sm)
-                            Text(item.status ?? "open")
+                VStack(alignment: .leading, spacing: TraceSpace.sm) {
+                    HStack(alignment: .center, spacing: TraceSpace.sm) {
+                        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                            .fill(StorageCategory.caches.accent)
+                            .frame(width: 3, height: 16)
+                        Text(insight.project.displayName)
+                            .font(TraceType.bodyMedium)
+                            .foregroundStyle(TraceColor.textPrimary)
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                        if insight.openQueueCount > 0 {
+                            Text("\(insight.openQueueCount)")
                                 .font(TraceType.caption)
-                                .foregroundStyle(TraceColor.textSecondary)
-                        }
-                        Text(item.why_doubtful ?? "Needs a closer look before any action.")
-                            .font(TraceType.body)
-                            .foregroundStyle(TraceColor.textSecondary)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(2)
-                        HStack(spacing: TraceSpace.sm) {
-                            if let pid = item.project_id {
-                                Text(pid)
-                                    .font(TraceType.path)
-                                    .foregroundStyle(TraceColor.textSecondary)
-                                    .lineLimit(1)
-                            }
-                            OriginBadge(origin: .skill)
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(Capsule().fill(TraceColor.review))
+                                .accessibilityLabel("\(insight.openQueueCount) decide later")
                         }
                     }
+
+                    if let roots = insight.project.roots, let first = roots.first {
+                        Text(Self.shortPath(first))
+                            .font(TraceType.path)
+                            .foregroundStyle(TraceColor.textSecondary)
+                            .lineLimit(1)
+                            .help(first)
+                    }
+
+                    insightBody
+                        .frame(maxWidth: .infinity, minHeight: 32, alignment: .topLeading)
                 }
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Open Decide later item")
-            .accessibilityValue(item.action ?? item.id)
+            .help("Open memory for \(insight.project.displayName)")
 
-            HStack(spacing: TraceSpace.sm) {
-                Button("Keep") {
-                    model.store.updateQueueStatus(id: item.id, status: "kept")
-                }
-                .buttonStyle(.bordered)
-                Button("Defer") {
-                    model.store.updateQueueStatus(id: item.id, status: "deferred")
-                }
-                .buttonStyle(.bordered)
-                Button {
-                    model.openAsk(projectId: item.project_id, itemId: item.id)
-                } label: {
-                    Label("Ask", systemImage: TraceSymbol.ask)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(TraceColor.brand)
-                Spacer(minLength: 0)
-            }
-        }
-        .traceCard()
-    }
-}
-
-private struct ProjectInsightCard: View {
-    @ObservedObject var model: AppModel
-    let insight: ProjectInsight
-    let onRun: () -> Void
-
-    private var store: TraceStore { model.store }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: TraceSpace.md) {
-            HStack(alignment: .top, spacing: TraceSpace.md) {
-                CategoryLeadingMark(category: .caches)
-                VStack(alignment: .leading, spacing: TraceSpace.xs) {
-                    Text(insight.project.displayName)
-                        .font(TraceType.bodyMedium)
-                        .foregroundStyle(TraceColor.textPrimary)
-                    if let roots = insight.project.roots, let first = roots.first {
-                        PathLabel(path: first)
-                    }
-                }
-                Spacer(minLength: TraceSpace.sm)
-                AgentBadge(kind: preferredAgent, compact: true)
-                if insight.openQueueCount > 0 {
-                    Label("\(insight.openQueueCount)", systemImage: TraceSymbol.decideLater)
+            if isThisRunning {
+                HStack(spacing: 6) {
+                    ProgressView().controlSize(.mini)
+                    Text(model.supervisor.lastMessage ?? "Running…")
                         .font(TraceType.caption)
                         .foregroundStyle(TraceColor.review)
-                        .help("\(insight.openQueueCount) open Decide later items")
+                        .lineLimit(1)
                 }
             }
 
-            insightBody
-
-            HStack(spacing: TraceSpace.sm) {
-                TraceToolbarButton(title: "Refresh insights", symbol: "sparkles") {
-                    Task { await refreshInsights() }
-                }
-                TraceToolbarButton(title: "Ask", symbol: TraceSymbol.ask) {
-                    model.openAsk(projectId: insight.project.id, itemId: nil)
-                }
+            HStack {
+                Spacer(minLength: 0)
                 Button {
-                    onRun()
+                    Task { await model.runInPlace(.project(insight.project)) }
                 } label: {
-                    Label("Run project", systemImage: TraceSymbol.run)
+                    if isThisRunning {
+                        ProgressView().controlSize(.mini)
+                    } else {
+                        Image(systemName: TraceSymbol.run)
+                    }
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(TraceColor.brand)
-                .help("Deep Run for this project only")
-
-                TraceToolbarButton(title: "Memory", symbol: TraceSymbol.memory) {
-                    model.destination = .memory(insight.project.id)
-                }
-                Spacer(minLength: 0)
+                .controlSize(.small)
+                .disabled(model.supervisor.isBusy)
+                .help("Run \(insight.project.displayName)")
+                .accessibilityLabel("Run \(insight.project.displayName)")
             }
         }
-        .traceCard()
+        .padding(TraceSpace.md)
+        .frame(maxWidth: .infinity, minHeight: 118, alignment: .topLeading)
+        .background(
+            RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
+                .fill(TraceColor.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
+                .stroke(isThisRunning ? TraceColor.brand : TraceColor.line.opacity(0.35), lineWidth: isThisRunning ? 1.5 : 1)
+        )
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Project \(insight.project.displayName)")
     }
 
     @ViewBuilder
     private var insightBody: some View {
+        // Prefer last-run receipt / insights; fall back to skill memory; never “No memory yet”.
         let body = store.insightBodies[insight.project.id] ?? ""
-        if body.isEmpty {
-            if insight.recentEvents.isEmpty {
-                Text("No memory events yet — skills write as you work.")
-                    .font(TraceType.meta)
-                    .foregroundStyle(TraceColor.textSecondary)
-            } else {
-                ForEach(insight.recentEvents.prefix(3)) { event in
-                    HStack(alignment: .top, spacing: TraceSpace.sm) {
-                        OriginBadge(origin: .skill)
-                        Text("\(event.event_type ?? "event"): \(event.why ?? event.what?.location ?? event.event_id)")
-                            .font(TraceType.meta)
-                            .foregroundStyle(TraceColor.textSecondary)
-                            .lineLimit(2)
-                    }
-                }
-            }
-        } else {
-            Text(body)
-                .font(TraceType.body)
+        if !body.isEmpty {
+            Text(cardSummary(from: body))
+                .font(TraceType.meta)
                 .foregroundStyle(TraceColor.textSecondary)
-                .lineLimit(8)
+                .lineLimit(2)
+        } else if let run = store.runs(for: insight.project.id).first {
+            Text(run.summary)
+                .font(TraceType.meta)
+                .foregroundStyle(TraceColor.textSecondary)
+                .lineLimit(2)
+        } else if let event = insight.recentEvents.first {
+            Text(event.why ?? event.what?.location ?? event.event_type ?? "Recent activity")
+                .font(TraceType.meta)
+                .foregroundStyle(TraceColor.textSecondary)
+                .lineLimit(2)
+        } else {
+            Text("Open for insights, history, and Ask — or Run.")
+                .font(TraceType.meta)
+                .foregroundStyle(TraceColor.textSecondary)
+                .lineLimit(2)
         }
     }
 
-    private var preferredAgent: AgentKind {
-        AgentKind(rawValue: store.settings.preferredAgent) ?? .cursor
+    private func cardSummary(from insights: String) -> String {
+        let lines = insights
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && !$0.hasPrefix("#") && !$0.hasPrefix("- **When") }
+        if let summary = lines.first(where: { $0.hasPrefix("- **Summary:**") }) {
+            return summary.replacingOccurrences(of: "- **Summary:**", with: "").trimmingCharacters(in: .whitespaces)
+        }
+        return lines.first { !$0.hasPrefix("-") } ?? lines.first ?? insights
     }
 
-    private func refreshInsights() async {
-        let agent = preferredAgent
-        let payload = SkillComposer.prepareHomePayload(project: insight.project, store: store)
-        let prompt = SkillComposer.compose(payload)
-        let root = store.projectRoot(for: insight.project)
-        await model.supervisor.start(kind: agent, projectRoot: root, resumeId: nil, prompt: prompt)
-        store.refresh()
+    private static func shortPath(_ path: String) -> String {
+        let url = URL(fileURLWithPath: path)
+        let tail = url.lastPathComponent
+        let parent = url.deletingLastPathComponent().lastPathComponent
+        if parent.isEmpty { return tail }
+        return "…/\(parent)/\(tail)"
     }
 }

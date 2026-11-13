@@ -25,144 +25,140 @@ struct RunView: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: TraceSpace.xl) {
+                VStack(alignment: .leading, spacing: TraceSpace.lg) {
                     header
-                    scopeBanner
                     stageRail
+                    if supervisor.isFailed {
+                        TraceStatusBanner(
+                            kind: .error,
+                            title: "Reviewing failed — \(agent.title)",
+                            detail: supervisor.lastMessage ?? "Unknown error",
+                            primaryTitle: "Retry Reviewing",
+                            primaryAction: { Task { await startReview() } },
+                            secondaryTitle: "Dismiss",
+                            secondaryAction: { supervisor.dismissStatus() }
+                        )
+                    } else if supervisor.isBusy {
+                        TraceStatusBanner(
+                            kind: .working,
+                            title: "Reviewing with \(agent.title)…",
+                            detail: supervisor.lastMessage,
+                            primaryTitle: "Stop",
+                            primaryAction: { Task { await supervisor.cancel() } }
+                        )
+                    }
                     switch conductor.stage {
                     case .reviewing: reviewingBody
                     case .actions: actionsList
                     case .execute, .done: ResultPanel(model: model, freeBefore: freeBefore, freeAfter: freeAfter)
                     }
-                    Text("Usage: \(conductor.usage.display) · session \(supervisor.usage.display)")
-                        .font(TraceType.caption)
-                        .foregroundStyle(TraceColor.textSecondary)
                 }
-                .padding(TraceSpace.xxl)
-                .frame(maxWidth: 880, alignment: .leading)
+                .tracePageColumn(maxWidth: .infinity)
             }
             if conductor.stage == .actions {
                 executeFooter
             }
         }
         .background(TraceColor.canvas)
-        .onAppear {
+        .task {
             agent = AgentKind(rawValue: store.settings.preferredAgent) ?? .cursor
             freeBefore = volumeFreeBytes()
-            if conductor.stage == .reviewing && conductor.cards.isEmpty {
-                Task { await startReview() }
+            if conductor.stage == .reviewing && conductor.cards.isEmpty && !supervisor.isBusy {
+                await startReview()
             }
         }
     }
 
     private var header: some View {
-        HStack(alignment: .top) {
-            TraceScreenHeader(title: "Run", subtitle: scope.title)
+        HStack(alignment: .center, spacing: TraceSpace.md) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Run")
+                    .font(TraceType.screen)
+                    .foregroundStyle(TraceColor.textPrimary)
+                Text(scopeSubtitle)
+                    .font(TraceType.meta)
+                    .foregroundStyle(TraceColor.textSecondary)
+            }
             Spacer()
-            AgentBadge(kind: agent, compact: true)
             Picker("Agent", selection: $agent) {
                 ForEach(AgentKind.allCases) { Text($0.title).tag($0) }
             }
             .labelsHidden()
-            .frame(width: 120)
+            .frame(width: 110)
             .accessibilityLabel("Coding agent")
-            Button("Close") { model.destination = .home }
-                .buttonStyle(.bordered)
+            Button("Close") {
+                supervisor.dismissStatus()
+                model.destination = .home
+            }
+            .buttonStyle(.bordered)
         }
     }
 
-    private var scopeBanner: some View {
-        Text(scopeBannerText)
-            .font(TraceType.meta)
-            .foregroundStyle(TraceColor.textSecondary)
-            .traceCard(elevated: true)
-    }
-
-    private var scopeBannerText: String {
+    private var scopeSubtitle: String {
         switch scope {
-        case .project:
-            return "Project Run: Reviewing → Actions → Execute for this project only."
+        case .project(let p):
+            return "\(p.displayName) · Reviewing → Actions → Execute"
         case .allPermitted:
-            return "All permitted projects (\(projects.count)): same stages across every indexed Trace project under your selected roots. Never whole-disk."
+            return "\(projects.count) projects · never whole-disk"
         }
     }
 
     private var stageRail: some View {
-        HStack(spacing: 0) {
-            stageChip("Reviewing", active: conductor.stage == .reviewing, done: conductor.stage != .reviewing)
-            connector
-            stageChip("Actions", active: conductor.stage == .actions, done: conductor.stage == .execute || conductor.stage == .done)
-            connector
-            stageChip("Execute", active: conductor.stage == .execute || conductor.stage == .done, done: false)
+        HStack(spacing: TraceSpace.md) {
+            stageChip("1 Reviewing", active: conductor.stage == .reviewing, done: conductor.stage != .reviewing)
+            stageChip("2 Actions", active: conductor.stage == .actions, done: conductor.stage == .execute || conductor.stage == .done)
+            stageChip("3 Execute", active: conductor.stage == .execute || conductor.stage == .done, done: false)
+            Spacer(minLength: 0)
         }
-        .traceCard(elevated: true)
-    }
-
-    private var connector: some View {
-        Rectangle()
-            .fill(TraceColor.line.opacity(0.4))
-            .frame(height: 1)
-            .frame(maxWidth: 48)
+        .font(TraceType.meta)
     }
 
     private func stageChip(_ title: String, active: Bool, done: Bool) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: done ? "checkmark.circle.fill" : (active ? "circle.fill" : "circle"))
-                .foregroundStyle(active || done ? TraceColor.brand : TraceColor.textSecondary)
-            Text(title)
-                .font(.system(size: 13, weight: active ? .semibold : .regular))
-                .foregroundStyle(active ? TraceColor.textPrimary : TraceColor.textSecondary)
-        }
-        .padding(.horizontal, 8)
+        Text(title)
+            .font(.system(size: 12, weight: active ? .semibold : .regular))
+            .foregroundStyle(active || done ? TraceColor.brand : TraceColor.textSecondary)
     }
 
     private var reviewingBody: some View {
         VStack(alignment: .leading, spacing: TraceSpace.md) {
-            TraceSectionLabel(title: "Reviewing")
-            Toggle("Use coding agent (composed skills)", isOn: $useAgent)
+            Toggle("Use coding agent", isOn: $useAgent)
                 .font(TraceType.body)
-            ForEach(conductor.milestones, id: \.self) { milestone in
-                Label(milestone, systemImage: "checkmark")
-                    .font(TraceType.meta)
-                    .foregroundStyle(TraceColor.textSecondary)
-            }
-            if supervisor.isBusy {
-                ProgressView().controlSize(.small)
-                Text(supervisor.log.suffix(8).joined(separator: "\n"))
-                    .font(.system(.caption, design: .monospaced))
-                if supervisor.pendingPermission != nil {
-                    HStack {
-                        Button("Allow once") { Task { await supervisor.replyToPermission(allow: true) } }
-                        Button("Reject") { Task { await supervisor.replyToPermission(allow: false) } }
+            if !conductor.milestones.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(conductor.milestones.suffix(6), id: \.self) { milestone in
+                        Text("· \(milestone)")
+                            .font(TraceType.meta)
+                            .foregroundStyle(TraceColor.textSecondary)
                     }
                 }
+            }
+            if !supervisor.isBusy {
                 Button {
-                    Task { await supervisor.cancel() }
+                    Task { await startReview() }
                 } label: {
-                    Label("Stop", systemImage: TraceSymbol.stop)
+                    Label(supervisor.isFailed ? "Retry Reviewing" : "Start Reviewing", systemImage: TraceSymbol.run)
                 }
-            } else {
-                Button("Start Reviewing") { Task { await startReview() } }
-                    .buttonStyle(.borderedProminent)
-                    .tint(TraceColor.brand)
-                    .keyboardShortcut(.defaultAction)
+                .buttonStyle(.borderedProminent)
+                .tint(TraceColor.brand)
+                .keyboardShortcut(.defaultAction)
             }
         }
-        .traceCard()
     }
 
     private var actionsList: some View {
         VStack(alignment: .leading, spacing: TraceSpace.md) {
-            TraceSectionLabel(title: "Actions")
-            Text("Select action cards. Shared, unknown, and protected stay unselected. Selection is the consent — no second sheet.")
-                .font(TraceType.body)
+            Text("Select cards to Trash. Selection is consent.")
+                .font(TraceType.meta)
                 .foregroundStyle(TraceColor.textSecondary)
 
             if conductor.cards.isEmpty {
-                Text("No conservative proposals from memory. Re-run Reviewing or Ask Trace for context.")
-                    .font(TraceType.body)
-                    .foregroundStyle(TraceColor.textSecondary)
-                    .traceCard(elevated: true)
+                TraceStatusBanner(
+                    kind: .info,
+                    title: "No action cards yet",
+                    detail: "Memory had nothing conservative to propose. Run Reviewing again after skills write events.",
+                    primaryTitle: "Start Reviewing",
+                    primaryAction: { Task { await startReview() } }
+                )
             }
 
             ForEach(conductor.cards) { card in
@@ -193,8 +189,7 @@ struct RunView: View {
                 }
                 Spacer()
                 Button("Back to Reviewing") {
-                    conductor.stage = .reviewing
-                    conductor.cards = []
+                    Task { await startReview() }
                 }
                 .buttonStyle(.bordered)
                 Button {
@@ -221,15 +216,35 @@ struct RunView: View {
     }
 
     private func startReview() async {
+        guard !projects.isEmpty else {
+            conductor.stage = .reviewing
+            conductor.milestones = ["No projects in scope. Add a root in Setup or Settings."]
+            return
+        }
+        conductor.stage = .reviewing
+        conductor.cards = []
+        conductor.results = []
+        conductor.usage = .unavailable
+
         if useAgent {
             let payload = SkillComposer.reviewingPayload(projects: projects, store: store)
             let prompt = SkillComposer.compose(payload)
             let root = projects.first.map { store.projectRoot(for: $0) } ?? FileManager.default.homeDirectoryForCurrentUser.path
-            conductor.milestones = ["Composing skills for Reviewing (\(projects.count) project(s))…"]
+            conductor.milestones = [
+                "Starting Reviewing for \(projects.count) project(s)…",
+                "Opening \(agent.title) session…",
+            ]
             await supervisor.start(kind: agent, projectRoot: root, resumeId: nil, prompt: prompt)
             conductor.usage = supervisor.usage
-            conductor.buildLocalOnly(store: store, projects: projects, agent: agent)
+            store.refresh()
+
+            // Stay on Reviewing when the agent never ran — do not fake an Actions pass.
+            if supervisor.status == "error" || supervisor.status == "cancelled" {
+                conductor.milestones.append("Agent session \(supervisor.status). Fix the session, then Start Reviewing again.")
+                return
+            }
             conductor.milestones.append("Agent finished: \(supervisor.status)")
+            conductor.applyCards(from: projects, store: store, agent: agent, advanceToActions: true)
         } else {
             conductor.buildLocalOnly(store: store, projects: projects, agent: agent)
         }
@@ -394,8 +409,7 @@ struct ResultView: View {
     var body: some View {
         ScrollView {
             ResultPanel(model: model, freeBefore: nil, freeAfter: nil)
-                .padding(32)
-                .frame(maxWidth: 880, alignment: .leading)
+                .tracePageColumn(maxWidth: 880)
         }
         .background(TraceColor.canvas)
     }

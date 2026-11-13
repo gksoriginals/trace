@@ -73,7 +73,16 @@ struct SettingsView: View {
                             }
                         ))
                         .toggleStyle(.checkbox)
+                        Button("Remove") {
+                            store.removeSelectedRoot(root)
+                        }
+                        .foregroundStyle(TraceColor.critical)
                     }
+                }
+                Button {
+                    model.addProjectFolders()
+                } label: {
+                    Label("Add folder…", systemImage: "folder.badge.plus")
                 }
                 Text("Categories: \(store.settings.categories.joined(separator: ", "))")
                     .font(.caption)

@@ -8,10 +8,12 @@ struct TraceApp: App {
     var body: some Scene {
         WindowGroup {
             RootView(model: model)
+                .unifiedTitleBar()
                 .onAppear {
                     NSApp.setActivationPolicy(.regular)
                 }
         }
+        .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1080, height: 740)
         .commands {
             CommandGroup(replacing: .newItem) {}

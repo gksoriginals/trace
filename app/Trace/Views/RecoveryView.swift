@@ -83,8 +83,7 @@ struct RecoveryView: View {
                         .foregroundStyle(TraceColor.review)
                 }
             }
-            .padding(32)
-            .frame(maxWidth: 880, alignment: .leading)
+            .tracePageColumn(maxWidth: 880)
         }
         .background(TraceColor.canvas)
     }

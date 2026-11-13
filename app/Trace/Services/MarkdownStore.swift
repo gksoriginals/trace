@@ -25,7 +25,12 @@ enum MarkdownStore {
         if text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("{") {
             return try JSONDecoder().decode(ProjectIndexFile.self, from: Data(text.utf8))
         }
-        let (_, body) = loadFrontmatter(text)
+        let (meta, body) = loadFrontmatter(text)
+        if let itemsJSON = meta["projects"], let data = itemsJSON.data(using: .utf8),
+           let projects = try? JSONDecoder().decode([ProjectIndexRow].self, from: data) {
+            let version = Int(meta["schema_version"] ?? "1") ?? 1
+            return ProjectIndexFile(schema_version: version, projects: projects)
+        }
         if let start = body.range(of: "["),
            let end = body.range(of: "]", options: .backwards) {
             let json = String(body[start.lowerBound...end.upperBound])
@@ -91,6 +96,45 @@ enum MarkdownStore {
         guard let text = try? String(contentsOf: url, encoding: .utf8) else { return "" }
         let (_, body) = loadFrontmatter(text)
         return body.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// App-written Home insight card body (skills may replace later).
+    static func writeInsights(body: String, at url: URL) throws {
+        let text = [
+            "---",
+            "schema_version: 1",
+            "---",
+            "",
+            body.trimmingCharacters(in: .whitespacesAndNewlines),
+            "",
+        ].joined(separator: "\n")
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try text.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    /// Bootstrap / update `~/.trace/index.md` (skills own ongoing updates; Setup seeds on first run).
+    static func writeIndex(_ file: ProjectIndexFile, at url: URL) throws {
+        let pretty = JSONEncoder()
+        pretty.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let projectsJSON = String(data: try pretty.encode(file.projects), encoding: .utf8) ?? "[]"
+        let compactJSON = String(data: try JSONEncoder().encode(file.projects), encoding: .utf8) ?? "[]"
+        let lines = [
+            "---",
+            "schema_version: \(file.schema_version)",
+            "projects: \(compactJSON)",
+            "---",
+            "",
+            "Trace project index. Skills maintain this file. The app reads it; Home does not call a model to open.",
+            "",
+            "```json",
+            projectsJSON,
+            "```",
+            "",
+        ]
+        let md = lines.joined(separator: "\n")
+        let target = url.pathExtension == "json" ? url.deletingPathExtension().appendingPathExtension("md") : url
+        try FileManager.default.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try md.write(to: target, atomically: true, encoding: .utf8)
     }
 
     /// Write product markdown and the JSON sibling (matches `skills/shared/queue_md.write_both`).

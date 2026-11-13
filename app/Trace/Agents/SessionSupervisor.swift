@@ -41,7 +41,11 @@ final class SessionSupervisor: ObservableObject {
                 handle(event)
             }
             guard isCurrent(generation) else { return }
-            status = "completed"
+            // Never overwrite a real terminal failure/cancel with a synthetic "completed".
+            if status != "error" && status != "cancelled" && status != "completed" {
+                status = "completed"
+                if log.last != "Completed" { log.append("Completed") }
+            }
         } catch {
             guard isCurrent(generation) else { return }
             status = "error"
@@ -65,6 +69,11 @@ final class SessionSupervisor: ObservableObject {
     }
 
     func cancel() async {
+        // Idempotent: Stop on an already-dead session must clear the banner, not append more noise.
+        guard isBusy || session != nil else {
+            dismissStatus()
+            return
+        }
         runGeneration += 1
         status = "cancelling"
         do {
@@ -76,7 +85,34 @@ final class SessionSupervisor: ObservableObject {
         pendingPermission = nil
         isBusy = false
         status = "cancelled"
-        log.append("Cancelled; process group reaped")
+        log.append("Cancelled")
+    }
+
+    /// Latest useful line for banners (skip empty / duplicate cancel noise).
+    var lastMessage: String? {
+        for line in log.reversed() {
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            if trimmed == "Cancelled" || trimmed.hasPrefix("Cancelled;") { continue }
+            return trimmed
+        }
+        return log.last
+    }
+
+    var isFailed: Bool { status == "error" }
+    var isCancelled: Bool { status == "cancelled" }
+    var isCompleted: Bool { status == "completed" }
+    /// Home always shows live work and the last finished outcome until the user dismisses it.
+    var showsHomeBanner: Bool { isBusy || isFailed || isCancelled || isCompleted }
+
+    /// Clear a finished/failed session so Home/Run stop showing the banner.
+    func dismissStatus() {
+        guard !isBusy else { return }
+        status = "idle"
+        log = []
+        usage = .unavailable
+        pendingPermission = nil
+        session = nil
     }
 
     private func handle(_ event: AgentEvent) {

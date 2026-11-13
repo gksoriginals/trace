@@ -26,10 +26,17 @@ struct RootView: View {
             SetupView(model: model)
         case .home:
             HomeView(model: model)
-        case .decideLater(let id):
+        case .decideLaterQueue:
+            DecideLaterQueueView(model: model)
+        case .decideLaterItem(let id):
             DecideLaterView(model: model, itemId: id)
         case .ask(let projectId, let itemId):
-            AskTraceView(model: model, initialProjectId: projectId, initialItemId: itemId)
+            // Legacy destination — open floating Ask and stay on Home.
+            Color.clear
+                .onAppear {
+                    model.openAsk(projectId: projectId, itemId: itemId)
+                    model.destination = .home
+                }
         case .run(let scope):
             RunView(model: model, scope: scope)
         case .result:
@@ -38,6 +45,8 @@ struct RootView: View {
             RecoveryView(model: model)
         case .memory(let projectId):
             MemoryView(model: model, projectId: projectId)
+        case .history:
+            HistoryView(model: model)
         case .settings:
             SettingsView(model: model)
         }

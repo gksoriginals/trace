@@ -23,6 +23,10 @@ final class AppDatabase: @unchecked Sendable {
     var journalURL: URL { root.appendingPathComponent("action-journal.json") }
     var checkpointsURL: URL { root.appendingPathComponent("session-checkpoints.json") }
     var settingsURL: URL { root.appendingPathComponent("settings.json") }
+    var runHistoryURL: URL { root.appendingPathComponent("run-history.json") }
+
+    /// Cap kept History rows so the file stays local and skim-friendly.
+    static let runHistoryLimit = 100
 
     struct Settings: Codable {
         var neverTouch: [String] = []
@@ -79,5 +83,22 @@ final class AppDatabase: @unchecked Sendable {
         }
         all.append(checkpoint)
         try encoder.encode(all).write(to: checkpointsURL, options: .atomic)
+    }
+
+    func loadRunHistory() -> [RunHistoryEntry] {
+        guard let data = try? Data(contentsOf: runHistoryURL),
+              let rows = try? decoder.decode([RunHistoryEntry].self, from: data) else {
+            return []
+        }
+        return rows
+    }
+
+    func appendRunHistory(_ entry: RunHistoryEntry) throws {
+        var all = loadRunHistory()
+        all.insert(entry, at: 0)
+        if all.count > Self.runHistoryLimit {
+            all = Array(all.prefix(Self.runHistoryLimit))
+        }
+        try encoder.encode(all).write(to: runHistoryURL, options: .atomic)
     }
 }

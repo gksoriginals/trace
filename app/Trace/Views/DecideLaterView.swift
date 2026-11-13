@@ -15,9 +15,9 @@ struct DecideLaterView: View {
             VStack(alignment: .leading, spacing: 20) {
                 HStack {
                     Button {
-                        model.destination = .home
+                        model.destination = .decideLaterQueue
                     } label: {
-                        Label("Home", systemImage: "chevron.left")
+                        Label("Decide later", systemImage: "chevron.left")
                     }
                     .buttonStyle(.plain)
                     Spacer()
@@ -29,11 +29,10 @@ struct DecideLaterView: View {
                     Text("This Decide-later item is no longer open.")
                         .foregroundStyle(TraceColor.textSecondary)
                         .traceCard()
-                    Button("Back to Home") { model.destination = .home }
+                    Button("Back to queue") { model.destination = .decideLaterQueue }
                 }
             }
-            .padding(32)
-            .frame(maxWidth: 720, alignment: .leading)
+            .tracePageColumn(maxWidth: 720)
         }
         .background(TraceColor.canvas)
     }
@@ -71,20 +70,22 @@ struct DecideLaterView: View {
             HStack {
                 if let project = model.store.projects.first(where: { $0.id == item.project_id }) {
                     Button("Plan action") {
-                        model.conductor.stage = .reviewing
-                        model.conductor.cards = []
-                        model.destination = .run(.project(project))
+                        Task {
+                            model.destination = .decideLaterQueue
+                            await model.runInPlace(.project(project))
+                        }
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(TraceColor.brand)
+                    .disabled(model.supervisor.isBusy)
                 }
                 Button("Keep this time") {
                     model.store.updateQueueStatus(id: item.id, status: "kept")
-                    model.destination = .home
+                    model.destination = .decideLaterQueue
                 }
                 Button("Defer") {
                     model.store.updateQueueStatus(id: item.id, status: "deferred")
-                    model.destination = .home
+                    model.destination = .decideLaterQueue
                 }
                 Button {
                     model.openAsk(projectId: item.project_id, itemId: item.id)

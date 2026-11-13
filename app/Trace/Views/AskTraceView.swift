@@ -1,10 +1,13 @@
 import SwiftUI
 
 /// S13 Ask Trace — chat-style memory-first Ask; agent escalation after scope accept.
+/// `compact` presents as the floating corner mini-chat with composer focused.
 struct AskTraceView: View {
     @ObservedObject var model: AppModel
     var initialProjectId: String?
     var initialItemId: String?
+    var compact: Bool = false
+    var onClose: (() -> Void)? = nil
 
     @State private var question = ""
     @State private var projectId = ""
@@ -14,6 +17,7 @@ struct AskTraceView: View {
     @State private var showAgentConfirm = false
     @State private var selectedAgent: AgentKind = .cursor
     @State private var phase: Phase = .idle
+    @FocusState private var composerFocused: Bool
 
     private enum Phase { case idle, retrieving, answered, escalating, stopped }
 
@@ -37,13 +41,17 @@ struct AskTraceView: View {
             header
             Divider().overlay(TraceColor.line.opacity(0.35))
             messageList
-            if showAgentConfirm { agentConfirm.padding(.horizontal, TraceSpace.xl) }
+            if showAgentConfirm {
+                agentConfirm.padding(.horizontal, compact ? TraceSpace.md : TraceSpace.xl)
+            }
             if supervisor.isBusy || phase == .escalating {
-                agentPanel.padding(.horizontal, TraceSpace.xl).padding(.bottom, TraceSpace.sm)
+                agentPanel
+                    .padding(.horizontal, compact ? TraceSpace.md : TraceSpace.xl)
+                    .padding(.bottom, TraceSpace.sm)
             }
             composer
         }
-        .background(TraceColor.canvas)
+        .background(compact ? TraceColor.surface : TraceColor.canvas)
         .onAppear {
             projectId = initialProjectId ?? ""
             itemId = initialItemId
@@ -54,56 +62,68 @@ struct AskTraceView: View {
             if messages.isEmpty {
                 messages.append(ChatMessage(
                     role: .assistant,
-                    text: "Ask about storage, provenance, or a Decide-later item. Memory only · local · no hosted tokens — until you escalate.",
+                    text: compact
+                        ? "Ask about storage or a Decide-later item. Memory first — escalate only if needed."
+                        : "Ask about storage, provenance, or a Decide-later item. Memory only · local · no hosted tokens — until you escalate.",
                     tier: "memory"
                 ))
             }
+            if compact {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    composerFocused = true
+                }
+            }
+        }
+        .onChange(of: initialProjectId) { _, newValue in
+            if let newValue { projectId = newValue }
+        }
+        .onChange(of: initialItemId) { _, newValue in
+            itemId = newValue
         }
     }
 
     private var header: some View {
-        HStack(spacing: TraceSpace.md) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Ask Trace")
-                    .font(TraceType.screen)
-                    .foregroundStyle(TraceColor.textPrimary)
-                Text("Memory first · escalate only when local evidence is insufficient")
-                    .font(TraceType.meta)
-                    .foregroundStyle(TraceColor.textSecondary)
-            }
-            Spacer()
+        HStack(spacing: TraceSpace.sm) {
+            Text("Ask")
+                .font(compact ? TraceType.section : TraceType.screen)
+                .foregroundStyle(TraceColor.textPrimary)
+            Spacer(minLength: 0)
             Picker("Project", selection: $projectId) {
                 Text("All permitted").tag("")
                 ForEach(store.projects) { Text($0.displayName).tag($0.id) }
             }
             .labelsHidden()
-            .frame(maxWidth: 200)
-            if let itemId {
-                Label("Item", systemImage: TraceSymbol.decideLater)
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(TraceColor.elevated)
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-                    .help(itemId)
+            .pickerStyle(.menu)
+            .frame(maxWidth: compact ? 140 : 200)
+            if let onClose {
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(TraceColor.textSecondary)
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("Close Ask")
+                .accessibilityLabel("Close Ask")
             }
         }
-        .padding(.horizontal, TraceSpace.windowPad)
-        .padding(.vertical, TraceSpace.md)
-        .background(TraceColor.surface)
+        .padding(.horizontal, compact ? TraceSpace.md : TraceSpace.windowPad)
+        .padding(.vertical, compact ? TraceSpace.sm : TraceSpace.md)
+        .background(compact ? TraceColor.elevated.opacity(0.55) : TraceColor.surface)
     }
 
     private var messageList: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: TraceSpace.md) {
+                LazyVStack(alignment: .leading, spacing: TraceSpace.sm) {
                     ForEach(messages) { message in
                         bubble(message).id(message.id)
                     }
                 }
-                .padding(TraceSpace.xl)
-                .frame(maxWidth: 720, alignment: .leading)
-                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(compact ? TraceSpace.md : TraceSpace.xl)
+                .frame(maxWidth: compact ? .infinity : 720, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: compact ? .leading : .center)
             }
             .onChange(of: messages.count) { _, _ in
                 if let last = messages.last {
@@ -162,32 +182,53 @@ struct AskTraceView: View {
 
     private var composer: some View {
         VStack(alignment: .leading, spacing: TraceSpace.sm) {
-            TextField("Ask about storage, provenance, or a Decide-later item…", text: $question, axis: .vertical)
-                .lineLimit(2...5)
-                .textFieldStyle(.plain)
-                .padding(TraceSpace.md)
-                .background(TraceColor.surface)
-                .clipShape(RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
-                        .stroke(TraceColor.line.opacity(0.35), lineWidth: 1)
-                )
-                .onSubmit { runMemory() }
+            TextField(
+                compact ? "Ask Trace…" : "Ask about storage, provenance, or a Decide-later item…",
+                text: $question,
+                axis: .vertical
+            )
+            .lineLimit(compact ? 2...4 : 2...5)
+            .textFieldStyle(.plain)
+            .focused($composerFocused)
+            .padding(TraceSpace.md)
+            .background(compact ? TraceColor.canvas : TraceColor.surface)
+            .clipShape(RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
+                    .stroke(TraceColor.line.opacity(0.35), lineWidth: 1)
+            )
+            .onSubmit { runMemory() }
 
-            HStack {
-                Button {
-                    runMemory()
-                } label: {
-                    Label(phase == .retrieving ? "Retrieving…" : "Ask memory", systemImage: TraceSymbol.memory)
+            HStack(spacing: TraceSpace.sm) {
+                if compact {
+                    Button {
+                        runMemory()
+                    } label: {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundStyle(TraceColor.brand)
+                    }
+                    .buttonStyle(.plain)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || phase == .retrieving)
+                    .help(phase == .retrieving ? "Retrieving…" : "Ask memory")
+                    .accessibilityLabel(phase == .retrieving ? "Retrieving" : "Ask memory")
+                } else {
+                    Button {
+                        runMemory()
+                    } label: {
+                        Label(phase == .retrieving ? "Retrieving…" : "Ask memory", systemImage: TraceSymbol.memory)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(TraceColor.brand)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || phase == .retrieving)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(TraceColor.brand)
-                .keyboardShortcut(.defaultAction)
-                .disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || phase == .retrieving)
 
                 if offerAgent {
                     Button("Ask agent…") { showAgentConfirm = true }
                         .buttonStyle(.bordered)
+                        .controlSize(compact ? .small : .regular)
                 }
                 if supervisor.isBusy {
                     Button {
@@ -199,14 +240,17 @@ struct AskTraceView: View {
                     } label: {
                         Label("Stop", systemImage: TraceSymbol.stop)
                     }
+                    .controlSize(compact ? .small : .regular)
                 }
-                Spacer()
-                Text("Ask is read-only. It cannot Execute.")
-                    .font(TraceType.meta)
-                    .foregroundStyle(TraceColor.textSecondary)
+                if !compact {
+                    Spacer()
+                    Text("Ask is read-only. It cannot Execute.")
+                        .font(TraceType.meta)
+                        .foregroundStyle(TraceColor.textSecondary)
+                }
             }
         }
-        .padding(.horizontal, TraceSpace.windowPad)
+        .padding(.horizontal, compact ? TraceSpace.md : TraceSpace.windowPad)
         .padding(.vertical, TraceSpace.md)
         .background(TraceColor.elevated)
     }

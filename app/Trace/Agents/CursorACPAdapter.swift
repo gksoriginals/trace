@@ -22,14 +22,7 @@ final class CursorACPAdapter: AgentAdapter {
 
     static func binaryName() -> String? {
         for name in ["agent", "cursor-agent"] {
-            let proc = Process()
-            proc.executableURL = URL(fileURLWithPath: "/usr/bin/which")
-            proc.arguments = [name]
-            let pipe = Pipe()
-            proc.standardOutput = pipe
-            try? proc.run()
-            proc.waitUntilExit()
-            if proc.terminationStatus == 0 { return name }
+            if AgentPath.isAvailable(name) { return name }
         }
         return nil
     }

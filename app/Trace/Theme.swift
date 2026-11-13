@@ -43,6 +43,8 @@ enum TraceSpace {
     static let xl: CGFloat = 24
     static let xxl: CGFloat = 32
     static let windowPad: CGFloat = 24
+    /// Leading inset so nav content clears native traffic lights in a unified title bar.
+    static let trafficLights: CGFloat = 78
     static let contentMax: CGFloat = 960
     static let hit: CGFloat = 28
     static let radius: CGFloat = 8
@@ -76,11 +78,13 @@ private extension NSColor {
 struct TraceCardModifier: ViewModifier {
     var elevated = false
     var selected = false
+    var compact = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
-            .padding(TraceSpace.lg)
+            .padding(compact ? TraceSpace.sm : TraceSpace.lg)
+            .padding(.horizontal, compact ? TraceSpace.md : 0)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
@@ -95,8 +99,17 @@ struct TraceCardModifier: ViewModifier {
 }
 
 extension View {
-    func traceCard(elevated: Bool = false, selected: Bool = false) -> some View {
-        modifier(TraceCardModifier(elevated: elevated, selected: selected))
+    func traceCard(elevated: Bool = false, selected: Bool = false, compact: Bool = false) -> some View {
+        modifier(TraceCardModifier(elevated: elevated, selected: selected, compact: compact))
+    }
+
+    /// Full-width page body inside a ScrollView. Default fills the window (window pad only)
+    /// so wide macOS windows do not leave an empty right gutter.
+    func tracePageColumn(maxWidth: CGFloat = .infinity) -> some View {
+        self
+            .padding(TraceSpace.windowPad)
+            .frame(maxWidth: maxWidth == .infinity ? .infinity : maxWidth, alignment: .leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     func traceFocusRing() -> some View {
@@ -108,14 +121,17 @@ extension View {
 enum TraceSymbol {
     static let home = "house"
     static let setup = "slider.horizontal.3"
-    static let ask = "magnifyingglass"
+    static let ask = "bubble.left.and.bubble.right"
     static let run = "play.circle"
     static let memory = "books.vertical"
+    static let history = "clock.arrow.circlepath"
     static let settings = "gearshape"
-    static let decideLater = "diamond"
+    /// Uncertain leftovers waiting for a decision — not a system notification bell.
+    static let decideLater = "questionmark.diamond"
+    static let addFolder = "plus"
     static let protected = "lock.fill"
     static let safe = "checkmark.circle"
-    static let review = "diamond"
+    static let review = "questionmark.diamond"
     static let caches = "square.stack.3d.up"
     static let builds = "hammer"
     static let worktrees = "arrow.triangle.branch"
@@ -143,6 +159,91 @@ struct TraceScreenHeader: View {
             }
         }
         .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// High-visibility status strip for dogfood — errors must not hide in scroll chrome.
+struct TraceStatusBanner: View {
+    enum Kind { case error, working, info }
+
+    let kind: Kind
+    let title: String
+    let detail: String?
+    var primaryTitle: String? = nil
+    var primaryAction: (() -> Void)? = nil
+    var secondaryTitle: String? = nil
+    var secondaryAction: (() -> Void)? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: TraceSpace.sm) {
+            HStack(alignment: .top, spacing: TraceSpace.md) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(accent)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(TraceType.bodyMedium)
+                        .foregroundStyle(TraceColor.textPrimary)
+                    if let detail, !detail.isEmpty {
+                        Text(detail)
+                            .font(TraceType.path)
+                            .foregroundStyle(TraceColor.textPrimary)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            if primaryTitle != nil || secondaryTitle != nil {
+                HStack(spacing: TraceSpace.sm) {
+                    if let primaryTitle, let primaryAction {
+                        Button(primaryTitle, action: primaryAction)
+                            .buttonStyle(.borderedProminent)
+                            .tint(kind == .error ? TraceColor.critical : TraceColor.brand)
+                    }
+                    if let secondaryTitle, let secondaryAction {
+                        Button(secondaryTitle, action: secondaryAction)
+                            .buttonStyle(.bordered)
+                    }
+                }
+            }
+        }
+        .padding(TraceSpace.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
+                .fill(fill)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
+                .stroke(accent.opacity(0.55), lineWidth: 1.5)
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(title). \(detail ?? "")")
+    }
+
+    private var icon: String {
+        switch kind {
+        case .error: return "exclamationmark.triangle.fill"
+        case .working: return "arrow.triangle.2.circlepath"
+        case .info: return "info.circle.fill"
+        }
+    }
+
+    private var accent: Color {
+        switch kind {
+        case .error: return TraceColor.critical
+        case .working: return TraceColor.review
+        case .info: return TraceColor.brand
+        }
+    }
+
+    private var fill: Color {
+        switch kind {
+        case .error: return TraceColor.critical.opacity(0.14)
+        case .working: return TraceColor.review.opacity(0.12)
+        case .info: return TraceColor.elevated
+        }
     }
 }
 
@@ -335,5 +436,24 @@ struct TraceToolbarButton: View {
         .buttonStyle(.bordered)
         .controlSize(.regular)
         .frame(minHeight: TraceSpace.hit)
+    }
+}
+
+/// Fixed-height page toolbar — keeps pickers/labels vertically centered (no floating controls).
+struct TracePageBar<Leading: View, Trailing: View>: View {
+    var height: CGFloat = 44
+    @ViewBuilder var leading: () -> Leading
+    @ViewBuilder var trailing: () -> Trailing
+
+    var body: some View {
+        HStack(alignment: .center, spacing: TraceSpace.md) {
+            leading()
+            Spacer(minLength: 0)
+            trailing()
+        }
+        .padding(.horizontal, TraceSpace.windowPad)
+        .frame(height: height)
+        .frame(maxWidth: .infinity)
+        .background(TraceColor.canvas)
     }
 }

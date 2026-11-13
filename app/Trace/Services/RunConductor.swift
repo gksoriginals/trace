@@ -45,6 +45,16 @@ final class RunConductor: ObservableObject {
     func buildLocalOnly(store: TraceStore, projects: [ProjectIndexRow], agent: AgentKind) {
         stage = .reviewing
         milestones = ["Offline reviewing from memory (no agent)", "\(projects.count) project(s) in scope"]
+        applyCards(from: projects, store: store, agent: agent, advanceToActions: true)
+    }
+
+    /// Build action cards from local memory. Optionally advance to Actions.
+    func applyCards(
+        from projects: [ProjectIndexRow],
+        store: TraceStore,
+        agent: AgentKind,
+        advanceToActions: Bool
+    ) {
         var built: [ActionCard] = []
         for project in projects {
             let events = store.events(for: project.id)
@@ -52,7 +62,9 @@ final class RunConductor: ObservableObject {
         }
         cards = built
         milestones.append("Built \(cards.count) action cards")
-        stage = .actions
+        if advanceToActions {
+            stage = .actions
+        }
     }
 
     func toggle(id: String) {

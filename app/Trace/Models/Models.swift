@@ -254,6 +254,25 @@ struct JournalEntry: Codable, Identifiable, Hashable {
     var at: String
 }
 
+/// One finished (or cancelled/failed) Reviewing pass from Home/Run.
+struct RunHistoryEntry: Codable, Identifiable, Hashable {
+    var id: String
+    /// ISO-8601 start time.
+    var startedAt: String
+    /// ISO-8601 end time.
+    var finishedAt: String
+    /// `completed`, `failed`, or `cancelled`.
+    var status: String
+    var agent: String
+    var scopeLabel: String
+    var projectIds: [String]
+    var rootPath: String?
+    var summary: String
+    var openDecideLaterCount: Int
+    var logTail: [String]
+    var usage: UsageReport?
+}
+
 struct SessionCheckpoint: Codable, Hashable {
     var projectId: String
     var agent: String
