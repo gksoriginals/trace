@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "id": "at-dev-05",
+  "skill": "attribution",
+  "split": "dev",
+  "title": "Linked worktree outside the usual folder is found and attributed",
+  "fixture": {
+    "project_id": "proj-at-dev-05",
+    "files": {
+      "project/README.md": "# app\n",
+      "repo-debrief/project/README.md": "# app\n",
+      "repo-debrief/project/out/build.bin": "built\n",
+      ".claude/worktrees/agent-x/project/out/orphan.bin": "orphan\n",
+      "evidence/git-worktree-list.txt": "ev-git-wt worktree /repo-debrief linked to project (porcelain)\n",
+      "evidence/transcript.txt": "ev-tx-wt transcript: cursor session sess-at-dev-05 created /repo-debrief and wrote project/out/build.bin\n"
+    },
+    "protected": [
+      "project/README.md",
+      "repo-debrief/project/out/build.bin",
+      ".claude/worktrees/agent-x/project/out/orphan.bin"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "git worktree list attributes the sibling path; a .claude/worktrees name alone is not evidence.",
+    "artifacts": [
+      {
+        "id": "sibling-build",
+        "path": "repo-debrief/project/out/build.bin"
+      },
+      {
+        "id": "named-orphan",
+        "path": ".claude/worktrees/agent-x/project/out/orphan.bin"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-git-wt",
+        "kind": "git",
+        "text": "ev-git-wt worktree /repo-debrief linked to project (porcelain)\n"
+      },
+      {
+        "id": "ev-tx-wt",
+        "kind": "transcript",
+        "text": "ev-tx-wt transcript: cursor session sess-at-dev-05 created /repo-debrief and wrote project/out/build.bin\n"
+      }
+    ],
+    "git": {
+      "steps": [
+        {"op": "init", "default_branch": "main"},
+        {"op": "commit", "message": "init", "files": {"project/README.md": "# app\n"}, "name": "base"},
+        {"op": "branch", "name": "debrief"},
+        {"op": "worktree_add", "path": "repo-debrief", "ref": "debrief"}
+      ]
+    }
+  },
+  "expected": {
+    "must_remain": [
+      "repo-debrief/project/out/build.bin",
+      ".claude/worktrees/agent-x/project/out/orphan.bin"
+    ],
+    "must_be_trashed": [],
+    "attribution": [
+      {
+        "id": "sibling-build",
+        "creator": "cursor",
+        "session_id": "sess-at-dev-05",
+        "label": "verified",
+        "source": "transcript",
+        "evidence": [
+          "ev-tx-wt",
+          "ev-git-wt"
+        ],
+        "forbidden_evidence": [],
+        "counts": true
+      },
+      {
+        "id": "named-orphan",
+        "creator": "unknown",
+        "session_id": "unknown",
+        "label": "unattributed",
+        "source": "none",
+        "evidence": [],
+        "forbidden_evidence": [
+          "ev-tx-wt",
+          "ev-git-wt"
+        ],
+        "counts": false
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-dev-05a",
+        "event_type": "artifact",
+        "what": {
+          "id": "sibling-build",
+          "kind": "blob",
+          "location": "repo-debrief/project/out/build.bin",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "git worktree list links repo-debrief; the transcript names sess-at-dev-05 as creator.",
+        "claim": "verified",
+        "agent": {
+          "harness": "cursor",
+          "session_id": "sess-at-dev-05"
+        },
+        "project": {
+          "id": "proj-at-dev-05",
+          "consumers": [
+            "proj-at-dev-05"
+          ]
+        },
+        "created": {
+          "at": "2026-11-13T10:00:00+05:30",
+          "source": "observed"
+        },
+        "can_go_when": "task complete and no consumers",
+        "evidence_ids": [
+          "ev-tx-wt",
+          "ev-git-wt"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "transcript",
+          "label": "verified",
+          "counts": true
+        }
+      },
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-dev-05b",
+        "event_type": "artifact",
+        "what": {
+          "id": "named-orphan",
+          "kind": "blob",
+          "location": ".claude/worktrees/agent-x/project/out/orphan.bin",
+          "bytes": 100,
+          "completeness": "known"
+        },
+        "why": "Path under .claude/worktrees/agent-x is not evidence. No transcript names this file.",
+        "claim": "observed",
+        "agent": {
+          "harness": "unknown",
+          "session_id": "unknown"
+        },
+        "project": {
+          "id": "proj-at-dev-05",
+          "consumers": [
+            "proj-at-dev-05"
+          ]
+        },
+        "created": {
+          "at": "2026-11-13T10:00:00+05:30",
+          "source": "discovered"
+        },
+        "can_go_when": "creator is not an agent-created artifact in the ratio",
+        "evidence_ids": [],
+        "correction_of": null,
+        "attribution": {
+          "source": "none",
+          "label": "unattributed",
+          "counts": false
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

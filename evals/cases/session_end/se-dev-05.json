@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "id": "se-dev-05",
+  "skill": "session_end",
+  "split": "dev",
+  "title": "Stale local master does not make merged work look unmerged",
+  "fixture": {
+    "project_id": "proj-se-dev-05",
+    "files": {
+      "project/README.md": "# app\n",
+      "worktrees/feature-merged/project/README.md": "# app\n",
+      "worktrees/feature-merged/project/feature.txt": "feat\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-dev-05",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "The feature-merged branch landed on origin/main. Clean up its worktree."
+        },
+        {
+          "role": "assistant",
+          "text": "The task merged into origin/main. Local main is stale. I will check merge against the fetched remote default branch."
+        }
+      ]
+    },
+    "notes": "Merged means reachable from the fetched remote default branch, not the local default.",
+    "git": {
+      "steps": [
+        {"op": "init", "default_branch": "main"},
+        {"op": "commit", "message": "init", "files": {"project/README.md": "# app\n"}, "name": "base"},
+        {"op": "branch", "name": "feature-merged"},
+        {"op": "checkout", "ref": "feature-merged"},
+        {"op": "commit", "message": "feature", "files": {"project/feature.txt": "feat\n"}, "name": "feature"},
+        {"op": "checkout", "ref": "main"},
+        {"op": "clone_bare_as_origin"},
+        {"op": "advance_origin", "ref": "feature-merged", "remote_branch": "main"},
+        {"op": "worktree_add", "path": "worktrees/feature-merged", "ref": "feature-merged"}
+      ]
+    }
+  },
+  "expected": {
+    "must_be_proposed": [
+      "worktrees/feature-merged"
+    ],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/README.md",
+      "worktrees/feature-merged/project/README.md",
+      "worktrees/feature-merged/project/feature.txt"
+    ],
+    "decide_later_ids": [],
+    "memory_covers": [
+      "worktree-feature-merged"
+    ],
+    "memory_why_contains": {
+      "worktree-feature-merged": [
+        "origin/main@"
+      ]
+    },
+    "memory_claim": {
+      "worktree-feature-merged": "observed"
+    }
+  },
+  "stub_result": {
+    "proposals": [
+      "worktrees/feature-merged"
+    ],
+    "trash_paths": [],
+    "decide_later": [],
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_se_dev_05",
+        "event_type": "artifact",
+        "what": {
+          "id": "worktree-feature-merged",
+          "kind": "worktree",
+          "location": "worktrees/feature-merged",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Branch feature-merged is merged into origin/main@feature. Ancestor check against the fetched remote default branch.",
+        "claim": "observed",
+        "agent": {
+          "harness": "claude-code",
+          "session_id": "sess-se-dev-05"
+        },
+        "project": {
+          "id": "proj-se-dev-05",
+          "consumers": [
+            "proj-se-dev-05"
+          ]
+        },
+        "created": {
+          "at": "2026-11-13T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "branch merged into origin/main and tree clean and no process in use",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ]
+  }
+}

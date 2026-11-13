@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "id": "hs-dev-06",
+  "skill": "hygienic_setup",
+  "split": "dev",
+  "title": "Lockfile differs, so a fresh install is right",
+  "fixture": {
+    "project_id": "proj-hs-dev-06",
+    "files": {
+      "project/package.json": "{ \"name\": \"app\" }\n",
+      "project/package-lock.json": "{ \"lockfileVersion\": 3, \"packages\": { \"a\": {} } }\n",
+      "project/node_modules/.keep": "primary\n",
+      "worktrees/feature-newlock/package.json": "{ \"name\": \"app\" }\n",
+      "worktrees/feature-newlock/package-lock.json": "{ \"lockfileVersion\": 3, \"packages\": { \"b\": {} } }\n"
+    },
+    "protected": [
+      "project/package.json",
+      "project/package-lock.json",
+      "project/node_modules/.keep"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-hs-dev-06",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Install deps in the worktree."
+        },
+        {
+          "role": "assistant",
+          "text": "The worktree lockfile differs from primary. A project-local install is right; do not clone."
+        }
+      ]
+    },
+    "notes": "Different lockfile: fresh local install, no clone.",
+    "git": {
+      "root": "project",
+      "steps": [
+        {"op": "init", "default_branch": "main"},
+        {
+          "op": "commit",
+          "message": "init",
+          "files": {
+            "package.json": "{ \"name\": \"app\" }\n",
+            "package-lock.json": "{ \"lockfileVersion\": 3, \"packages\": { \"a\": {} } }\n",
+            ".gitignore": "node_modules/\n"
+          },
+          "add": ["package.json", "package-lock.json", ".gitignore"],
+          "name": "base"
+        },
+        {"op": "branch", "name": "feature-newlock"},
+        {"op": "checkout", "ref": "feature-newlock"},
+        {
+          "op": "commit",
+          "message": "new lock",
+          "files": {
+            "package-lock.json": "{ \"lockfileVersion\": 3, \"packages\": { \"b\": {} } }\n"
+          },
+          "add": ["package-lock.json"],
+          "name": "newlock"
+        },
+        {"op": "checkout", "ref": "main"},
+        {"op": "worktree_add", "path": "worktrees/feature-newlock", "ref": "feature-newlock"}
+      ]
+    }
+  },
+  "expected": {
+    "setup_locations": [
+      "worktrees/feature-newlock/node_modules/.keep"
+    ],
+    "memory_covers": [
+      "worktree-deps-fresh"
+    ],
+    "must_remain": [
+      "project/node_modules/.keep"
+    ],
+    "must_not_exist": [
+      "worktrees/feature-newlock/node_modules-clone/.keep"
+    ],
+    "decide_later_ids": [],
+    "memory_why_contains": {
+      "worktree-deps-fresh": [
+        "Lockfile",
+        "install"
+      ]
+    },
+    "memory_why_forbids": {
+      "worktree-deps-fresh": [
+        "clone"
+      ]
+    },
+    "memory_claim": {
+      "worktree-deps-fresh": "observed"
+    }
+  },
+  "stub_result": {
+    "create_files": {
+      "worktrees/feature-newlock/node_modules/.keep": "fresh-install\n"
+    },
+    "setup": {
+      "locations": [
+        {
+          "id": "worktree-deps-fresh",
+          "path": "worktrees/feature-newlock/node_modules/.keep"
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_hsd6",
+        "event_type": "artifact",
+        "what": {
+          "id": "worktree-deps-fresh",
+          "kind": "dependencies",
+          "location": "worktrees/feature-newlock/node_modules/.keep",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Lockfile differs from primary. Recorded a project-local install.",
+        "claim": "observed",
+        "agent": {
+          "harness": "codex",
+          "session_id": "sess-hs-dev-06"
+        },
+        "project": {
+          "id": "proj-hs-dev-06",
+          "consumers": [
+            "worktrees/feature-newlock"
+          ]
+        },
+        "created": {
+          "at": "2026-11-13T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When the worktree is removed.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [],
+    "proposals": []
+  }
+}

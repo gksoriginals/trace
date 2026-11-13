@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "id": "se-dev-10",
+  "skill": "session_end",
+  "split": "dev",
+  "title": "Worktree with an identical ignored .env is proposed",
+  "fixture": {
+    "project_id": "proj-se-dev-10",
+    "files": {
+      "project/README.md": "# app\n",
+      "project/.env": "TOKEN=same\n",
+      "worktrees/feature-env-same/project/README.md": "# app\n",
+      "worktrees/feature-env-same/project/feature.txt": "feat\n",
+      "worktrees/feature-env-same/.env": "TOKEN=same\n"
+    },
+    "protected": [
+      "project/README.md",
+      "project/.env",
+      "worktrees/feature-env-same/.env"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-dev-10",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "feature-env-same merged. Remove the worktree."
+        },
+        {
+          "role": "assistant",
+          "text": "The ignored .env matches the primary checkout byte-for-byte."
+        }
+      ]
+    },
+    "notes": "Twin of se-dev-09 with identical .env; proposable.",
+    "git": {
+      "steps": [
+        {"op": "init", "default_branch": "main"},
+        {"op": "commit", "message": "init", "files": {"project/README.md": "# app\n", ".gitignore": ".env\n"}, "name": "base"},
+        {"op": "branch", "name": "feature-env-same"},
+        {"op": "checkout", "ref": "feature-env-same"},
+        {"op": "commit", "message": "feature", "files": {"project/feature.txt": "feat\n"}, "name": "feature"},
+        {"op": "checkout", "ref": "main"},
+        {"op": "clone_bare_as_origin"},
+        {"op": "advance_origin", "ref": "feature-env-same", "remote_branch": "main"},
+        {"op": "worktree_add", "path": "worktrees/feature-env-same", "ref": "feature-env-same"}
+      ]
+    }
+  },
+  "expected": {
+    "must_be_proposed": [
+      "worktrees/feature-env-same"
+    ],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/README.md",
+      "project/.env",
+      "worktrees/feature-env-same/.env"
+    ],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "proposals": [
+      "worktrees/feature-env-same"
+    ],
+    "trash_paths": [],
+    "decide_later": [],
+    "memory_events": []
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "id": "hs-dev-05",
+  "skill": "hygienic_setup",
+  "split": "dev",
+  "title": "New worktree reuses dependencies instead of reinstalling",
+  "fixture": {
+    "project_id": "proj-hs-dev-05",
+    "files": {
+      "project/package.json": "{ \"name\": \"app\" }\n",
+      "project/package-lock.json": "{ \"lockfileVersion\": 3, \"packages\": {} }\n",
+      "project/node_modules/.keep": "primary\n",
+      "worktrees/feature-deps/package.json": "{ \"name\": \"app\" }\n",
+      "worktrees/feature-deps/package-lock.json": "{ \"lockfileVersion\": 3, \"packages\": {} }\n"
+    },
+    "protected": [
+      "project/package.json",
+      "project/package-lock.json",
+      "project/node_modules/.keep"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-hs-dev-05",
+      "harness": "cursor",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Create a worktree and install dependencies."
+        },
+        {
+          "role": "assistant",
+          "text": "The worktree lockfile hash matches the primary checkout. Prefer a shared store or APFS clone; do not symlink node_modules."
+        }
+      ]
+    },
+    "notes": "Lockfile match: clone or store reference, not a second full tree.",
+    "git": {
+      "root": "project",
+      "steps": [
+        {"op": "init", "default_branch": "main"},
+        {
+          "op": "commit",
+          "message": "init",
+          "files": {
+            "package.json": "{ \"name\": \"app\" }\n",
+            "package-lock.json": "{ \"lockfileVersion\": 3, \"packages\": {} }\n",
+            ".gitignore": "node_modules/\n"
+          },
+          "add": ["package.json", "package-lock.json", ".gitignore"],
+          "name": "base"
+        },
+        {"op": "branch", "name": "feature-deps"},
+        {"op": "worktree_add", "path": "worktrees/feature-deps", "ref": "feature-deps"}
+      ]
+    }
+  },
+  "expected": {
+    "setup_locations": [
+      "worktrees/feature-deps/node_modules/.keep"
+    ],
+    "memory_covers": [
+      "worktree-deps"
+    ],
+    "must_remain": [
+      "project/package-lock.json",
+      "project/node_modules/.keep"
+    ],
+    "must_not_exist": [
+      "worktrees/feature-deps/node_modules-full-copy/.keep"
+    ],
+    "decide_later_ids": [],
+    "memory_why_contains": {
+      "worktree-deps": [
+        "Lockfile",
+        "clone"
+      ]
+    },
+    "memory_claim": {
+      "worktree-deps": "observed"
+    },
+    "memory_can_go_when": {
+      "worktree-deps": "worktree removed"
+    }
+  },
+  "stub_result": {
+    "create_files": {
+      "worktrees/feature-deps/node_modules/.keep": "clone-ref\n"
+    },
+    "setup": {
+      "locations": [
+        {
+          "id": "worktree-deps",
+          "path": "worktrees/feature-deps/node_modules/.keep"
+        }
+      ]
+    },
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt_hsd5",
+        "event_type": "artifact",
+        "what": {
+          "id": "worktree-deps",
+          "kind": "dependencies",
+          "location": "worktrees/feature-deps/node_modules/.keep",
+          "bytes": null,
+          "completeness": "known"
+        },
+        "why": "Lockfile hash matches the primary checkout. Used an APFS clone of project/node_modules; shared APFS blocks, not a second full tree.",
+        "claim": "observed",
+        "agent": {
+          "harness": "cursor",
+          "session_id": "sess-hs-dev-05"
+        },
+        "project": {
+          "id": "proj-hs-dev-05",
+          "consumers": [
+            "worktrees/feature-deps"
+          ]
+        },
+        "created": {
+          "at": "2026-11-13T10:00:00+05:30",
+          "timezone": "Asia/Kolkata",
+          "source": "observed",
+          "evidence_ids": [
+            "turn-1"
+          ]
+        },
+        "can_go_when": "When the worktree removed.",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "correction_of": null
+      }
+    ],
+    "decide_later": [],
+    "proposals": []
+  }
+}

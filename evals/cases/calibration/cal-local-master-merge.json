@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "id": "cal-local-master-merge",
+  "skill": "session_end",
+  "split": "calibration",
+  "title": "Planted: merge judged against stale local main",
+  "fixture": {
+    "project_id": "proj-cal-local-master-merge",
+    "files": {
+      "project/README.md": "# app\n",
+      "worktrees/feature-merged/project/README.md": "# app\n",
+      "worktrees/feature-merged/project/feature.txt": "feat\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-cal-local-master",
+      "harness": "claude-code",
+      "turns": [
+        {
+          "role": "user",
+          "text": "The feature-merged branch landed on origin/main."
+        },
+        {
+          "role": "assistant",
+          "text": "Bad outcome treats local main as the merge base and queues the worktree."
+        }
+      ]
+    },
+    "notes": "Calibration twin of se-dev-05.",
+    "git": {
+      "steps": [
+        {"op": "init", "default_branch": "main"},
+        {"op": "commit", "message": "init", "files": {"project/README.md": "# app\n"}, "name": "base"},
+        {"op": "branch", "name": "feature-merged"},
+        {"op": "checkout", "ref": "feature-merged"},
+        {"op": "commit", "message": "feature", "files": {"project/feature.txt": "feat\n"}, "name": "feature"},
+        {"op": "checkout", "ref": "main"},
+        {"op": "clone_bare_as_origin"},
+        {"op": "advance_origin", "ref": "feature-merged", "remote_branch": "main"},
+        {"op": "worktree_add", "path": "worktrees/feature-merged", "ref": "feature-merged"}
+      ]
+    }
+  },
+  "expected": {
+    "must_be_proposed": [
+      "worktrees/feature-merged"
+    ],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/README.md",
+      "worktrees/feature-merged/project/README.md",
+      "worktrees/feature-merged/project/feature.txt"
+    ],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "proposals": [],
+    "trash_paths": [],
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "dl_cal_local_master",
+        "project_id": "proj-cal-local-master-merge",
+        "agent": "claude-code",
+        "session_id": "sess-cal-local-master",
+        "artifact_id": "worktree-feature-merged",
+        "action": "remove merged worktree feature-merged",
+        "why_doubtful": "Judged merge against local main, which is behind origin/main.",
+        "bytes": null,
+        "completeness": "unknown",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "Fetch origin and re-check against origin/main.",
+        "first_observed": "2026-11-13T10:00:00+05:30",
+        "last_observed": "2026-11-13T10:00:00+05:30",
+        "status": "open"
+      }
+    ],
+    "memory_events": []
+  },
+  "expect_fail_checks": [
+    "proposed_trash",
+    "decide_later_ids"
+  ]
+}

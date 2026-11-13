@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "id": "se-dev-06",
+  "skill": "session_end",
+  "split": "dev",
+  "title": "Merged worktree with uncommitted edits stays",
+  "fixture": {
+    "project_id": "proj-se-dev-06",
+    "files": {
+      "project/README.md": "# app\n",
+      "worktrees/feature-dirty/project/README.md": "# app\n",
+      "worktrees/feature-dirty/project/feature.txt": "feat\n",
+      "worktrees/feature-dirty/scratch.txt": "uncommitted\n"
+    },
+    "protected": [
+      "project/README.md",
+      "worktrees/feature-dirty/scratch.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-dev-06",
+      "harness": "cursor",
+      "turns": [
+        {
+          "role": "user",
+          "text": "feature-dirty merged. Remove its worktree."
+        },
+        {
+          "role": "assistant",
+          "text": "The branch merged, but the worktree has uncommitted edits."
+        }
+      ]
+    },
+    "notes": "Dirty trees stay; queue as worktree-dirty.",
+    "git": {
+      "steps": [
+        {"op": "init", "default_branch": "main"},
+        {"op": "commit", "message": "init", "files": {"project/README.md": "# app\n"}, "name": "base"},
+        {"op": "branch", "name": "feature-dirty"},
+        {"op": "checkout", "ref": "feature-dirty"},
+        {"op": "commit", "message": "feature", "files": {"project/feature.txt": "feat\n"}, "name": "feature"},
+        {"op": "checkout", "ref": "main"},
+        {"op": "clone_bare_as_origin"},
+        {"op": "advance_origin", "ref": "feature-dirty", "remote_branch": "main"},
+        {"op": "worktree_add", "path": "worktrees/feature-dirty", "ref": "feature-dirty"},
+        {"op": "dirty", "path": "worktrees/feature-dirty", "files": {"scratch.txt": "uncommitted\n"}}
+      ]
+    }
+  },
+  "expected": {
+    "must_be_proposed": [],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/README.md",
+      "worktrees/feature-dirty/project/README.md",
+      "worktrees/feature-dirty/scratch.txt"
+    ],
+    "decide_later_ids": [
+      "worktree-dirty"
+    ],
+    "decide_later_status": {
+      "worktree-dirty": "open"
+    }
+  },
+  "stub_result": {
+    "proposals": [],
+    "trash_paths": [],
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "worktree-dirty",
+        "project_id": "proj-se-dev-06",
+        "agent": "cursor",
+        "session_id": "sess-se-dev-06",
+        "artifact_id": "worktree-feature-dirty",
+        "action": "remove merged worktree feature-dirty",
+        "why_doubtful": "Worktree has uncommitted edits (worktree-dirty).",
+        "bytes": null,
+        "completeness": "known",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "Commit, stash, or discard the dirty files, then re-check.",
+        "first_observed": "2026-11-13T10:00:00+05:30",
+        "last_observed": "2026-11-13T10:00:00+05:30",
+        "status": "open"
+      }
+    ],
+    "memory_events": []
+  }
+}

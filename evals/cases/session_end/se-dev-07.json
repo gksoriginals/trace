@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "id": "se-dev-07",
+  "skill": "session_end",
+  "split": "dev",
+  "title": "Unmerged clean worktree stays",
+  "fixture": {
+    "project_id": "proj-se-dev-07",
+    "files": {
+      "project/README.md": "# app\n",
+      "worktrees/feature-ahead/project/README.md": "# app\n",
+      "worktrees/feature-ahead/project/feature.txt": "feat\n",
+      "worktrees/feature-ahead/project/extra.txt": "unmerged\n"
+    },
+    "protected": [
+      "project/README.md",
+      "worktrees/feature-ahead/project/extra.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-dev-07",
+      "harness": "codex",
+      "turns": [
+        {
+          "role": "user",
+          "text": "Tidy agent worktrees."
+        },
+        {
+          "role": "assistant",
+          "text": "feature-ahead is clean but still has commits not on origin/main."
+        }
+      ]
+    },
+    "notes": "Unmerged is an ordinary keep, not a Decide-later item.",
+    "git": {
+      "steps": [
+        {"op": "init", "default_branch": "main"},
+        {"op": "commit", "message": "init", "files": {"project/README.md": "# app\n"}, "name": "base"},
+        {"op": "clone_bare_as_origin"},
+        {"op": "advance_origin", "ref": "main", "remote_branch": "main"},
+        {"op": "branch", "name": "feature-ahead"},
+        {"op": "checkout", "ref": "feature-ahead"},
+        {"op": "commit", "message": "feature", "files": {"project/feature.txt": "feat\n"}},
+        {"op": "commit", "message": "extra", "files": {"project/extra.txt": "unmerged\n"}, "name": "ahead"},
+        {"op": "checkout", "ref": "main"},
+        {"op": "worktree_add", "path": "worktrees/feature-ahead", "ref": "feature-ahead"}
+      ]
+    }
+  },
+  "expected": {
+    "must_be_proposed": [],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/README.md",
+      "worktrees/feature-ahead/project/extra.txt"
+    ],
+    "decide_later_ids": []
+  },
+  "stub_result": {
+    "proposals": [],
+    "trash_paths": [],
+    "decide_later": [],
+    "memory_events": []
+  }
+}

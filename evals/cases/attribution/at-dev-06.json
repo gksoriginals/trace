@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "id": "at-dev-06",
+  "skill": "attribution",
+  "split": "dev",
+  "title": "Database names attribute a data store to a project",
+  "fixture": {
+    "project_id": "proj-at-dev-06",
+    "files": {
+      "stores/postgres/PG_VERSION": "16\n",
+      "stores/postgres/base/.keep": "data\n",
+      "evidence/db-catalog.txt": "ev-db-cat tool_manifest catalog: databases entri_app, entri_test last-modified 2025-06-01 owned by role entri\n"
+    },
+    "protected": [
+      "stores/postgres/PG_VERSION",
+      "stores/postgres/base/.keep"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Database names in the tool catalog are inferred attribution. The data store is protected.",
+    "artifacts": [
+      {
+        "id": "postgres-store",
+        "path": "stores/postgres/base/.keep"
+      }
+    ],
+    "evidence": [
+      {
+        "id": "ev-db-cat",
+        "kind": "tool_manifest",
+        "text": "ev-db-cat tool_manifest catalog: databases entri_app, entri_test last-modified 2025-06-01 owned by role entri\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_remain": [
+      "stores/postgres/base/.keep",
+      "stores/postgres/PG_VERSION"
+    ],
+    "must_be_trashed": [],
+    "must_be_proposed": [],
+    "attribution": [
+      {
+        "id": "postgres-store",
+        "creator": "unknown",
+        "session_id": "unknown",
+        "label": "inferred",
+        "source": "tool_manifest",
+        "evidence": [
+          "ev-db-cat"
+        ],
+        "forbidden_evidence": [],
+        "counts": false
+      }
+    ]
+  },
+  "stub_result": {
+    "memory_events": [
+      {
+        "schema_version": 1,
+        "event_id": "evt-at-dev-06",
+        "event_type": "artifact",
+        "what": {
+          "id": "postgres-store",
+          "kind": "database",
+          "location": "stores/postgres/base/.keep",
+          "bytes": null,
+          "completeness": "unknown"
+        },
+        "why": "Database names entri_app and entri_test in the tool catalog attribute this store to the entri project. Source of truth; never proposed.",
+        "claim": "inferred",
+        "agent": {
+          "harness": "unknown",
+          "session_id": "unknown"
+        },
+        "project": {
+          "id": "proj-at-dev-06",
+          "consumers": [
+            "entri"
+          ]
+        },
+        "created": {
+          "at": "2025-06-01T00:00:00+05:30",
+          "source": "discovered"
+        },
+        "can_go_when": "never; source of truth database store",
+        "evidence_ids": [
+          "ev-db-cat"
+        ],
+        "correction_of": null,
+        "attribution": {
+          "source": "tool_manifest",
+          "label": "inferred",
+          "counts": false
+        }
+      }
+    ],
+    "proposals": [],
+    "decide_later": []
+  }
+}

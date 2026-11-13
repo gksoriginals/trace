@@ -1,0 +1,94 @@
+{
+  "schema_version": 1,
+  "id": "se-dev-08",
+  "skill": "session_end",
+  "split": "dev",
+  "title": "Merged clean worktree in use by a live process stays",
+  "fixture": {
+    "project_id": "proj-se-dev-08",
+    "files": {
+      "project/README.md": "# app\n",
+      "worktrees/feature-live/project/README.md": "# app\n",
+      "worktrees/feature-live/project/feature.txt": "feat\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-dev-08",
+      "harness": "cursor",
+      "turns": [
+        {
+          "role": "user",
+          "text": "feature-live merged. Remove the worktree."
+        },
+        {
+          "role": "assistant",
+          "text": "A live process still has its cwd under the worktree."
+        }
+      ]
+    },
+    "notes": "In-use is Decide-later worktree-in-use, not a silent keep.",
+    "git": {
+      "steps": [
+        {"op": "init", "default_branch": "main"},
+        {"op": "commit", "message": "init", "files": {"project/README.md": "# app\n"}, "name": "base"},
+        {"op": "branch", "name": "feature-live"},
+        {"op": "checkout", "ref": "feature-live"},
+        {"op": "commit", "message": "feature", "files": {"project/feature.txt": "feat\n"}, "name": "feature"},
+        {"op": "checkout", "ref": "main"},
+        {"op": "clone_bare_as_origin"},
+        {"op": "advance_origin", "ref": "feature-live", "remote_branch": "main"},
+        {"op": "worktree_add", "path": "worktrees/feature-live", "ref": "feature-live"}
+      ]
+    },
+    "processes": [
+      {
+        "cwd": "worktrees/feature-live",
+        "command": ["sleep", "120"]
+      }
+    ]
+  },
+  "expected": {
+    "must_be_proposed": [],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/README.md",
+      "worktrees/feature-live/project/feature.txt"
+    ],
+    "decide_later_ids": [
+      "worktree-in-use"
+    ],
+    "decide_later_status": {
+      "worktree-in-use": "open"
+    },
+    "processes_alive": true
+  },
+  "stub_result": {
+    "proposals": [],
+    "trash_paths": [],
+    "decide_later": [
+      {
+        "schema_version": 1,
+        "id": "worktree-in-use",
+        "project_id": "proj-se-dev-08",
+        "agent": "cursor",
+        "session_id": "sess-se-dev-08",
+        "artifact_id": "worktree-feature-live",
+        "action": "remove merged worktree feature-live",
+        "why_doubtful": "A live process has cwd under the worktree (worktree-in-use).",
+        "bytes": null,
+        "completeness": "known",
+        "evidence_ids": [
+          "turn-1"
+        ],
+        "would_resolve": "Stop the process, then re-check in-use.",
+        "first_observed": "2026-11-13T10:00:00+05:30",
+        "last_observed": "2026-11-13T10:00:00+05:30",
+        "status": "open"
+      }
+    ],
+    "memory_events": []
+  }
+}

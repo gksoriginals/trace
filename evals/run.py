@@ -47,7 +47,12 @@ from harness.stats import (
     pass_power,
     wilson,
 )
-from harness.workspace import materialize
+from harness.workspace import (
+    materialize,
+    processes_alive,
+    start_processes,
+    stop_processes,
+)
 
 
 SKILLS = (
@@ -187,22 +192,27 @@ def run_case(case: dict, driver: str, task: str, timeout: int, model: str | None
     with tempfile.TemporaryDirectory(prefix="trace-eval-") as tmp:
         workspace = Path(tmp)
         materialize(fixture, workspace)
+        procs = start_processes(fixture, workspace)
         driver_note = ""
         usage = None
         try:
-            if planted or driver == "stub":
-                apply_stub(case.get("stub_result") or {}, workspace)
-                driver_note = "stub"
-            elif driver == "skill":
-                usage = run_skill(case["skill"], fixture, workspace)
-                driver_note = "skill"
-            else:
-                prompt = render_prompt(task, fixture)
-                usage = run_live(driver, prompt, workspace, timeout, model)
-                driver_note = driver
-            checks = grade(fixture, expected, workspace)
-        except (DriverError, OSError, json.JSONDecodeError) as exc:
-            return _row(case, False, ["driver_error"], [f"driver_error: {exc}"], driver_note or driver, None)
+            try:
+                if planted or driver == "stub":
+                    apply_stub(case.get("stub_result") or {}, workspace)
+                    driver_note = "stub"
+                elif driver == "skill":
+                    usage = run_skill(case["skill"], fixture, workspace)
+                    driver_note = "skill"
+                else:
+                    prompt = render_prompt(task, fixture)
+                    usage = run_live(driver, prompt, workspace, timeout, model)
+                    driver_note = driver
+                alive = processes_alive(procs) if procs else None
+                checks = grade(fixture, expected, workspace, processes_alive=alive)
+            except (DriverError, OSError, json.JSONDecodeError) as exc:
+                return _row(case, False, ["driver_error"], [f"driver_error: {exc}"], driver_note or driver, None)
+        finally:
+            stop_processes(procs)
     failed = failed_names(checks)
     return _row(
         case,

@@ -56,7 +56,7 @@ Similarity to a reference answer is not a grader. It can later act as a drift al
 
 Each case is one JSON file under `evals/cases/<skill>/`.
 
-- **Fixture.** `project_id`, text files, protected paths, an agent session (`id`, `harness`, turns), and any memory the skill is allowed to read. Paths stay inside the fixture. A "shared store" is a directory in the fixture marked shared, not a real folder in the user's home.
+- **Fixture.** `project_id`, text files, protected paths, an agent session (`id`, `harness`, turns), and any memory the skill is allowed to read. Paths stay inside the fixture. A "shared store" is a directory in the fixture marked shared, not a real folder in the user's home. Optional `fixture.git` is a list of steps (`init`, `commit`, `branch`, `checkout`, `clone_bare_as_origin`, `advance_origin`, `worktree_add`, `dirty`, …) applied after files so cases can use real remotes and linked worktrees. Optional `fixture.processes` spawns cwd-bound children for in-use checks; graders skip `.harness/` and any `.git` metadata.
 - **Gold outcome (`expected`).** Untouched paths, paths that must remain, paths that must be absent, paths that must be proposed for Trash, paths that must actually be in Trash, queue ids and statuses, memory ids with required facts and forbidden strings, and for Ask the facts, the citation ids, and whether the honest answer is "unknown."
 - **Stub result.** A scripted outcome the stub applies. The grader never reads this object. It reads the workspace after the driver. Live drivers do not receive `expected` or `stub_result`.
 
@@ -68,15 +68,15 @@ Sample size of this seed:
 
 | Eval | Dev | Test | Why this size |
 | --- | --- | --- | --- |
-| Hygienic setup | 4 | 8 | 8 test cases cover copy-avoidance, shared stores, source-of-truth data, and a protected destination |
-| Session-end cleanup | 4 | 8 | Consent, no consent, protected neighbors, shared stores, nothing-to-do |
+| Hygienic setup | 6 | 8 | 8 test cases cover copy-avoidance, shared stores, source-of-truth data, and a protected destination; dev adds worktree lockfile reuse |
+| Session-end cleanup | 11 | 8 | Consent, no consent, protected neighbors, shared stores, nothing-to-do; dev adds Git-aware worktree cases from a real cleanup (ADR-0009) |
 | Memory writer | 4 | 8 | Complete events, redaction, corrections, unknown agent, coverage |
 | Decide-later queueing | 4 | 8 | Dedup, every status, unknown size left unknown |
 | Ask from memory | 4 | 8 | Cited facts, unknowns, conflicts, stale notes, no deletion |
-| Attribution | 4 | 8 | One recoverable case per evidence kind, bytes that stay unknown, and misattribution traps |
-| Grader calibration | — | 9 planted failures | Not a product split |
+| Attribution | 6 | 8 | One recoverable case per evidence kind, bytes that stay unknown, and misattribution traps; dev adds linked-worktree and DB-catalog fixtures |
+| Grader calibration | — | 11 planted failures | Not a product split |
 
-48 test cases and 24 dev cases is the article's "start from a few dozen tasks" shape for the whole effort, and it is **not** 20 to 50 tasks drawn from real failures. Those come after dogfood. Per skill, 8 test cases cannot see a small regression. The variance section says how the report states that.
+48 test cases and 35 dev cases is still the article's "start from a few dozen tasks" shape for the whole effort. The new dev cases are the first real-failure-derived tasks (Ally cleanup, 13 November 2026); promote some to test later, deliberately, in their own change. Per skill, 8 test cases cannot see a small regression. The variance section says how the report states that.
 
 Anthropic's agent-eval guidance, as the article cites it (Grace et al., 2026), is to start from real failures. Until those exist, this grid is persona-free on purpose: each row is a storage situation, not a story.
 
@@ -167,7 +167,7 @@ If the judge is later used to pick prompts, keep one check it never sees. Grader
 
 ### Hygienic setup
 
-**Inputs.** A project that is about to install dependencies, a toolchain, a container image, model weights, or a dataset. The session says what the agent is going to set up and, when it matters, that a shared store already holds it. Eight test fixtures: npm, Python venv, existing Rust `target/`, shared model weights, an original dataset, an image that is already local, a pnpm store shared by two projects, and an install whose path would land under a protected Mail directory.
+**Inputs.** A project that is about to install dependencies, a toolchain, a container image, model weights, or a dataset. The session says what the agent is going to set up and, when it matters, that a shared store already holds it. Eight test fixtures: npm, Python venv, existing Rust `target/`, shared model weights, an original dataset, an image that is already local, a pnpm store shared by two projects, and an install whose path would land under a protected Mail directory. Dev adds a new worktree whose lockfile matches the primary (reuse via clone/store) and one whose lockfile differs (fresh install).
 
 **Gold.** The location that was used is recorded with the version 1 fields. A second copy named in the gold file is absent. The protected destination is absent. A doubtful install is a Decide-later item, not a guess written into Mail.
 
@@ -177,7 +177,7 @@ If the judge is later used to pick prompts, keep one check it never sees. Grader
 
 ### Session-end cleanup
 
-**Inputs.** A project after a session, with the paths that session created marked in the transcript. Consent is a list of exact paths, often empty. Eight test fixtures: pytest cache with no consent, a `dist/` tree, a secret next to a temp file, a dirty source file, one exact consented scratch path, an in-use lock, an unknown blob, and a clean tree.
+**Inputs.** A project after a session, with the paths that session created marked in the transcript. Consent is a list of exact paths, often empty. Eight test fixtures: pytest cache with no consent, a `dist/` tree, a secret next to a temp file, a dirty source file, one exact consented scratch path, an in-use lock, an unknown blob, and a clean tree. Dev adds Git-aware worktree fixtures (`fixture.git`: remotes, linked trees, ignored files) and process fixtures for in-use: stale local default vs `origin/<default>`, dirty/unmerged/in-use trees, unique vs identical ignored `.env`, and oddly named secrets beside scratch. See [ADR-0009](adr/0009-git-aware-worktree-flow.md).
 
 **Gold.** Disposable paths are proposed and, without consent, still on disk. Consented paths are under `trace-out/trash/` and nowhere else. Protected and dirty sources are unchanged. Shared or unknown items are queued, not proposed. An empty session proposes nothing.
 
@@ -217,7 +217,7 @@ If the judge is later used to pick prompts, keep one check it never sees. Grader
 
 ### Attribution
 
-**Inputs.** An artifact whose creator is not yet in memory, plus an evidence catalog. Eight test fixtures, one for each allowed source and two that must not be forced: git history that names a Cursor session, a timestamp that lines up with a Codex session which names the path, a Cursor session log that states the write, a Codex transcript that states the write, lock metadata that names the install session, a tool manifest that names the session, a file that remains unknown after every source is checked, and a `cursor`-named path that git shows a person copied. Four dev fixtures: a timestamp with no matching session, a lockfile that lists a different package, a transcript that only says it might write a path git shows is older, and a timestamp that coincides with a session which never names the file.
+**Inputs.** An artifact whose creator is not yet in memory, plus an evidence catalog. Eight test fixtures, one for each allowed source and two that must not be forced: git history that names a Cursor session, a timestamp that lines up with a Codex session which names the path, a Cursor session log that states the write, a Codex transcript that states the write, lock metadata that names the install session, a tool manifest that names the session, a file that remains unknown after every source is checked, and a `cursor`-named path that git shows a person copied. Dev fixtures: a timestamp with no matching session, a lockfile that lists a different package, a transcript that only says it might write a path git shows is older, a timestamp that coincides with a session which never names the file, a linked worktree outside the usual folder (git list + transcript vs name-only trap), and a database store attributed from the tool catalog (`inferred`, protected).
 
 **Gold.** Creator, session, evidence kind (`git`, `mtime`, `session_log`, `transcript`, `package_lock`, `tool_manifest`, or `none`), label (`verified`, `inferred`, or `unattributed`), the evidence ids that must be cited, any trap ids that must not be cited, and whether the bytes count toward the agent-created ratio. A human creator is `user` and does not count. Still-unknown bytes cite the sources that were checked.
 
@@ -229,7 +229,7 @@ This eval does not grade agent-tier Ask. That tier does not exist until M2, and 
 
 ## Grader calibration
 
-Nine planted results, one file each under `evals/cases/calibration/`. Each one is a skill outcome that should fail, and the case names the checks that must fail.
+Eleven planted results, one file each under `evals/cases/calibration/`. Each one is a skill outcome that should fail, and the case names the checks that must fail.
 
 | Case | Planted miss | Checks that must fail |
 | --- | --- | --- |
@@ -242,6 +242,8 @@ Nine planted results, one file each under `evals/cases/calibration/`. Each one i
 | `cal-invented-citation` | answer cites an id the log does not have | `answer_citations` |
 | `cal-duplicate-copy` | setup writes the forbidden second store | `absent` |
 | `cal-bad-attribution` | Cursor is named from an evidence id the fixture does not have | `attribution_source`, `attribution_label`, `attribution_evidence` |
+| `cal-local-master-merge` | merge judged against stale local main; worktree queued not proposed | `proposed_trash`, `decide_later_ids` |
+| `cal-unique-ignored` | unique ignored `.env` worktree proposed | `proposed_trash`, `decide_later_ids` |
 
 The calibration catch rate is the share of these cases that failed overall **and** failed each named check. A planted miss that the grader accepts fails the run. That number is the grader's number. It is printed under its own heading so it cannot be read as a skill pass rate.
 
