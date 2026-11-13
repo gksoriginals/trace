@@ -89,7 +89,7 @@ struct HomeView: View {
             TraceSectionLabel(title: "Projects")
 
             LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 220, maximum: 320), spacing: TraceSpace.md)],
+                columns: [GridItem(.adaptive(minimum: 260), spacing: TraceSpace.md)],
                 alignment: .leading,
                 spacing: TraceSpace.md
             ) {
@@ -235,7 +235,7 @@ private struct ProjectInsightCard: View {
         // Prefer last-run receipt / insights; fall back to skill memory; never “No memory yet”.
         let body = store.insightBodies[insight.project.id] ?? ""
         if !body.isEmpty {
-            Text(cardSummary(from: body))
+            Text(.init(cardSummary(from: body)))
                 .font(TraceType.meta)
                 .foregroundStyle(TraceColor.textSecondary)
                 .lineLimit(2)

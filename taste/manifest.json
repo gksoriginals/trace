@@ -1,0 +1,58 @@
+{
+  "name": "Trace",
+  "version": "0.1.0",
+  "surfaces": [
+    "Home and app chrome"
+  ],
+  "setupStatus": "usable_partial",
+  "setupPolicy": {
+    "minimumUsableEvidence": "source_reviewed"
+  },
+  "setupScope": {
+    "description": "Owner correction during Home spacing work",
+    "selection": "user_confirmed",
+    "repositoryApps": [
+      "Trace"
+    ],
+    "products": [
+      "Trace"
+    ],
+    "exclusions": [
+      "Other surfaces",
+      "Outdated Pencil design"
+    ],
+    "coverageTarget": "Source-reviewed Home layout preservation",
+    "requiredCoverage": [
+      "home-layout"
+    ]
+  },
+  "coverage": [
+    {
+      "id": "home-layout",
+      "app": "Trace",
+      "surface": "Home and app chrome",
+      "status": "source_reviewed",
+      "evidence": [
+        {
+          "type": "source_reviewed",
+          "reference": "docs/adr/0013-preserve-layout-fix-spacing.md",
+          "checkedAt": "2026-11-14"
+        },
+        {
+          "type": "source_reviewed",
+          "reference": "app/Trace/Views/HomeView.swift",
+          "checkedAt": "2026-11-14"
+        },
+        {
+          "type": "source_reviewed",
+          "reference": "app/Trace/Views/Chrome.swift",
+          "checkedAt": "2026-11-14"
+        }
+      ],
+      "guidanceFiles": [
+        "references/home-layout.md"
+      ],
+      "gap": "Full final visual/interaction validation blocked by SwiftUI accessibility crashes during computer-use clicks."
+    }
+  ]
+}

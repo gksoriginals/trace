@@ -50,6 +50,10 @@ Hooks are optional, opt-in, and per host. A hook is a stop or session-end hook, 
 | **Ask Trace — contextual** | One question surface reached globally, per project, per action or per Decide-later item; memory-first cited answers and explicit agent-tier escalation. | A general chatbot, hidden full Run or chat-based execution bypass. |
 | **Run — explicit, deeper and costlier** | A fully agentic, on-demand pass through **Reviewing → Actions → Execute**, using existing memories and targeted catch-up where skills were absent or coverage has gaps. Started **per project** or across **all permitted Trace projects** (selected roots / index) — never whole-disk. | A prerequisite for routine skill work, an always-on whole-disk crawler or a token-burning refresh on each app open. |
 
+### Desktop layout
+
+Preserve the right icon rail and Home project-card grid, including the Add folder tile. Cards use available column width without a narrow maximum; project details use a wider reading column with compact section spacing. History shows an adaptive grid of compact run cards; opening a card reveals its timing, scope, log, and actions inline. Settings retains its grouped form, labels protected paths, and keeps Apply reachable while scrolling. Sparse records need not fill the window. See [ADR-0013](adr/0013-preserve-layout-fix-spacing.md).
+
 ### Ask Trace — memory first, agent only when necessary
 
 **Entry points:** one global **Ask Trace** bar (`⌘K` while Trace is focused), project Ask, an action card's Ask and a Decide-later item's Ask. They open the **same** surface with explicit scope chips, not four separate chat systems. Global Ask searches permitted local project indexes first; agent escalation is project-scoped and never silently uploads every project's memory.

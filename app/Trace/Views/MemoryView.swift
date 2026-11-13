@@ -147,7 +147,7 @@ struct MemoryView: View {
             Divider().overlay(TraceColor.line.opacity(0.35))
 
             ScrollView {
-                VStack(alignment: .leading, spacing: TraceSpace.xl) {
+                VStack(alignment: .leading, spacing: TraceSpace.lg) {
                     if let root = project.roots?.first {
                         PathLabel(path: root)
                     }
@@ -244,7 +244,7 @@ struct MemoryView: View {
                     .tint(TraceColor.brand)
                 }
                 .padding(TraceSpace.windowPad)
-                .frame(maxWidth: 760, alignment: .leading)
+                .frame(maxWidth: 1100, alignment: .leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }

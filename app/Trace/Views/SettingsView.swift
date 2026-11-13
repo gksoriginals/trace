@@ -90,6 +90,11 @@ struct SettingsView: View {
             }
 
             Section("Guardrails & retention") {
+                Text("Never touch these paths")
+                    .font(TraceType.bodyMedium)
+                Text("One protected path per line. These paths are excluded from cleanup.")
+                    .font(TraceType.meta)
+                    .foregroundStyle(TraceColor.textSecondary)
                 TextEditor(text: Binding(
                     get: { store.settings.neverTouch.joined(separator: "\n") },
                     set: {
@@ -97,6 +102,7 @@ struct SettingsView: View {
                         staged = true
                     }
                 ))
+                .accessibilityLabel("Never touch paths, one per line")
                 .font(.system(.body, design: .monospaced))
                 .frame(minHeight: 80)
                 Stepper(
@@ -144,19 +150,23 @@ struct SettingsView: View {
                     .foregroundStyle(TraceColor.textSecondary)
             }
 
-            if staged {
-                Section {
-                    Button("Apply") {
-                        applyStaged()
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .tint(TraceColor.brand)
-                }
-            }
         }
         .formStyle(.grouped)
-        .padding(16)
         .background(TraceColor.canvas)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if staged {
+                HStack {
+                    Text("Unapplied changes")
+                        .font(TraceType.meta)
+                        .foregroundStyle(TraceColor.textSecondary)
+                    Spacer()
+                    Button("Apply") { applyStaged() }
+                        .buttonStyle(.borderedProminent)
+                }
+                .padding(TraceSpace.md)
+                .background(TraceColor.surface)
+            }
+        }
         .task { await refreshProbe(enableNew: false) }
     }
 
