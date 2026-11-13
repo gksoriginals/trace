@@ -1,49 +1,50 @@
 import SwiftUI
 
+/// Top nav chrome matching Pen Home/Ask/Settings v2.
+/// Trace mark is Home. Setup lives inside Settings / first-run only — not a primary nav item.
 struct AppChrome: View {
     @ObservedObject var model: AppModel
     let content: AnyView
-    @State private var columnVisibility: NavigationSplitViewVisibility = .all
 
     var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            sidebar
-                .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
-        } detail: {
-            VStack(spacing: 0) {
-                topBar
-                Divider().overlay(TraceColor.line.opacity(0.35))
-                content
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(TraceColor.canvas)
-            }
-            .background(TraceColor.canvas)
+        VStack(spacing: 0) {
+            topNav
+            Rectangle()
+                .fill(TraceColor.line.opacity(0.35))
+                .frame(height: 1)
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(TraceColor.canvas)
         }
-        .navigationSplitViewStyle(.balanced)
+        .background(TraceColor.canvas)
         .tint(TraceColor.brand)
     }
 
-    private var sidebar: some View {
-        VStack(alignment: .leading, spacing: TraceSpace.xs) {
-            HStack(spacing: TraceSpace.sm) {
-                TraceMark(size: 22)
-                Text("Trace")
-                    .font(TraceType.bodyMedium)
-                    .foregroundStyle(TraceColor.textPrimary)
+    private var topNav: some View {
+        HStack(spacing: TraceSpace.md) {
+            Button {
+                model.destination = .home
+            } label: {
+                HStack(spacing: TraceSpace.sm) {
+                    TraceMark(size: 22)
+                    Text("Trace")
+                        .font(TraceType.bodyMedium)
+                        .foregroundStyle(TraceColor.textPrimary)
+                }
             }
-            .padding(.horizontal, TraceSpace.lg)
-            .padding(.top, TraceSpace.xl)
-            .padding(.bottom, TraceSpace.md)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Trace")
+            .buttonStyle(.plain)
+            .accessibilityLabel("Trace Home")
+            .accessibilityAddTraits(isHomeSelected ? .isSelected : [])
 
-            sidebarItem("Home", TraceSymbol.home, .home)
-            sidebarItem("Ask Trace", TraceSymbol.ask, .ask(projectId: nil, itemId: nil))
-            sidebarItem("Memory", TraceSymbol.memory, .memory(nil))
-            sidebarItem("Setup", TraceSymbol.setup, .setup)
-            sidebarItem("Settings", TraceSymbol.settings, .settings)
+            Spacer(minLength: TraceSpace.lg)
 
-            Spacer(minLength: 0)
+            HStack(spacing: TraceSpace.xs) {
+                navLink("Home", .home, isHomeSelected)
+                navLink("Ask", .ask(projectId: nil, itemId: nil), isAskSelected)
+                    .keyboardShortcut("k", modifiers: .command)
+                navLink("Memory", .memory(nil), isMemorySelected)
+                navLink("Settings", .settings, isSettingsSelected)
+            }
 
             if model.supervisor.isBusy {
                 HStack(spacing: TraceSpace.sm) {
@@ -52,92 +53,54 @@ struct AppChrome: View {
                     Text(model.supervisor.pendingPermission != nil ? "Needs your answer" : "Agent working")
                         .font(TraceType.caption)
                         .foregroundStyle(TraceColor.review)
-                        .lineLimit(2)
+                        .lineLimit(1)
                 }
-                .padding(TraceSpace.lg)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(model.supervisor.pendingPermission != nil ? "Agent needs your answer" : "Agent working")
+                .padding(.leading, TraceSpace.sm)
             }
-        }
-        .padding(.bottom, TraceSpace.sm)
-        .background(TraceColor.elevated)
-    }
-
-    private func sidebarItem(_ title: String, _ symbol: String, _ dest: AppModel.Destination) -> some View {
-        let selected = isSelected(dest)
-        return Button {
-            model.destination = dest
-        } label: {
-            HStack(spacing: TraceSpace.md) {
-                RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                    .fill(selected ? TraceColor.brand : Color.clear)
-                    .frame(width: 3, height: 18)
-                Label(title, systemImage: symbol)
-                    .font(TraceType.body)
-                    .labelStyle(.titleAndIcon)
-                Spacer(minLength: 0)
-            }
-            .foregroundStyle(selected ? TraceColor.brand : TraceColor.textPrimary)
-            .padding(.vertical, 8)
-            .padding(.trailing, TraceSpace.lg)
-            .padding(.leading, TraceSpace.sm)
-            .frame(maxWidth: .infinity, minHeight: TraceSpace.hit, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(selected ? TraceColor.surface : Color.clear)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, TraceSpace.sm)
-        .accessibilityLabel(title)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-
-    private func isSelected(_ dest: AppModel.Destination) -> Bool {
-        switch (model.destination, dest) {
-        case (.home, .home), (.setup, .setup), (.settings, .settings): return true
-        case (.ask, .ask): return true
-        case (.memory, .memory): return true
-        case (.decideLater, .home), (.run, .home), (.result, .home), (.recovery, .home): return false
-        default: return false
-        }
-    }
-
-    private var topBar: some View {
-        HStack(spacing: TraceSpace.md) {
-            Text(breadcrumb)
-                .font(TraceType.bodyMedium)
-                .foregroundStyle(TraceColor.textSecondary)
-                .lineLimit(1)
-            Spacer(minLength: 0)
-            Button {
-                model.openAsk(projectId: nil, itemId: nil)
-            } label: {
-                Label("Ask Trace", systemImage: TraceSymbol.ask)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(TraceColor.brand)
-            .keyboardShortcut("k", modifiers: .command)
-            .help("Ask Trace (⌘K)")
-            .accessibilityHint("Opens memory-first Ask")
         }
         .padding(.horizontal, TraceSpace.windowPad)
         .padding(.vertical, TraceSpace.md)
         .background(TraceColor.surface)
     }
 
-    private var breadcrumb: String {
-        switch model.destination {
-        case .home: return "Home"
-        case .setup: return "Setup"
-        case .settings: return "Settings"
-        case .ask: return "Ask Trace"
-        case .run(let scope): return "Run · \(scope.title)"
-        case .decideLater: return "Home / Decide later"
-        case .result: return "Run / Result"
-        case .recovery: return "Run / Recovery"
-        case .memory: return "Memory"
+    private func navLink(_ title: String, _ dest: AppModel.Destination, _ selected: Bool) -> some View {
+        Button {
+            model.destination = dest
+        } label: {
+            Text(title)
+                .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                .foregroundStyle(selected ? TraceColor.brand : TraceColor.textPrimary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(selected ? TraceColor.elevated : Color.clear)
+                )
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private var isHomeSelected: Bool {
+        switch model.destination {
+        case .home, .decideLater, .run, .result, .recovery: return true
+        default: return false
+        }
+    }
+
+    private var isAskSelected: Bool {
+        if case .ask = model.destination { return true }
+        return false
+    }
+
+    private var isMemorySelected: Bool {
+        if case .memory = model.destination { return true }
+        return false
+    }
+
+    private var isSettingsSelected: Bool {
+        model.destination == .settings
     }
 }

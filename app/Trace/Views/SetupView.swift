@@ -28,7 +28,7 @@ struct SetupView: View {
             TraceMark(size: 36)
             TraceScreenHeader(
                 title: "Setup",
-                subtitle: "Skills do everyday hygiene inside Cursor and Codex. Trace configures them, shows outcomes, and runs a deeper pass when you ask."
+                subtitle: "Skills do everyday hygiene inside each coding agent. Trace configures them per host, shows outcomes, and runs a deeper pass when you ask."
             )
         }
     }
@@ -76,35 +76,49 @@ struct SetupView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Agents & skills")
                 .font(.system(size: 20, weight: .semibold))
-            Text("Whole-agent install by default. A project can opt out later. No plugin, no MCP.")
+            Text("Whole-agent install by default. Opt-in skills per agent — each host gets its own skills folder. A project can opt out later. No plugin, no MCP.")
                 .foregroundStyle(TraceColor.textSecondary)
 
-            HStack(alignment: .top, spacing: 16) {
-                agentCard(.cursor, status: draft.wrappedValue.cursorStatus, version: draft.wrappedValue.cursorVersion)
-                agentCard(.codex, status: draft.wrappedValue.codexStatus, version: draft.wrappedValue.codexVersion)
-                unavailableCard("Claude", reason: "Later adapter")
-                unavailableCard("Gemini", reason: "Later adapter")
+            let agents = draft.wrappedValue.enabledAgents.sorted { $0.rawValue < $1.rawValue }
+            if agents.isEmpty {
+                Text("No coding agents detected yet. Install a CLI, then Add agent.")
+                    .font(.caption)
+                    .foregroundStyle(TraceColor.textSecondary)
+                    .traceCard(elevated: true)
+            } else {
+                HStack(alignment: .top, spacing: 16) {
+                    ForEach(agents) { kind in
+                        agentCard(kind)
+                    }
+                }
             }
 
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Opt-in skills")
-                    .font(.system(size: 15, weight: .semibold))
-                Toggle(isOn: draft.skillHygienic) {
-                    Label("Hygienic setup — ask before installs, avoid needless copies", systemImage: TraceSymbol.builds)
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Need another harness?")
+                        .font(.system(size: 13, weight: .medium))
+                    Text("Installed another CLI? Detect it here.")
+                        .font(.caption)
+                        .foregroundStyle(TraceColor.textSecondary)
                 }
-                Toggle(isOn: draft.skillSessionEnd) {
-                    Label("Session-end cleanup — propose leftovers; Trash only on exact yes", systemImage: TraceSymbol.trash)
+                Spacer()
+                Button {
+                    Task { await redetect() }
+                } label: {
+                    Label(detecting ? "Detecting…" : "Add agent", systemImage: "plus")
                 }
-                Toggle(isOn: draft.skillMemory) {
-                    Label("Memory writer — provenance, coverage, lessons", systemImage: TraceSymbol.memory)
-                }
+                .buttonStyle(.borderedProminent)
+                .tint(TraceColor.brand)
+                .disabled(detecting)
             }
-            .traceCard()
+            .traceCard(elevated: true)
 
-            Picker("Coding agent for app runs", selection: draft.preferredAgent) {
-                ForEach(AgentKind.allCases) { Text($0.title).tag($0) }
+            if !agents.isEmpty {
+                Picker("Coding agent for app runs", selection: draft.preferredAgent) {
+                    ForEach(agents) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
 
             Button {
                 Task { await redetect() }
@@ -115,38 +129,32 @@ struct SetupView: View {
         }
     }
 
-    private func agentCard(_ kind: AgentKind, status: AgentAuthStatus, version: String?) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+    private func agentCard(_ kind: AgentKind) -> some View {
+        let skills = Binding(
+            get: { draft.wrappedValue.skillsByAgent[kind] ?? AgentSkillsOptIn() },
+            set: { draft.wrappedValue.skillsByAgent[kind] = $0 }
+        )
+        return VStack(alignment: .leading, spacing: 10) {
             AgentBadge(kind: kind)
-            statusPill(status)
-            Text(version.map { "CLI \($0)" } ?? "Version unknown")
+            statusPill(draft.wrappedValue.status(for: kind))
+            Text(draft.wrappedValue.version(for: kind).map { "CLI \($0)" } ?? "Version unknown")
                 .font(.caption.monospaced())
                 .foregroundStyle(TraceColor.textSecondary)
             Text("Session adapter: \(kind == .cursor ? "ACP" : "app-server")")
                 .font(.caption)
                 .foregroundStyle(TraceColor.textSecondary)
+
+            Text("Opt-in skills for \(kind.title)")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(TraceColor.textSecondary)
+                .padding(.top, 4)
+            Toggle("Hygienic setup", isOn: skills.hygienicSetup)
+            Toggle("Session-end cleanup", isOn: skills.sessionEnd)
+            Toggle("Memory writer", isOn: skills.memoryWriter)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .traceCard(selected: draft.wrappedValue.preferredAgent == kind)
         .onTapGesture { draft.wrappedValue.preferredAgent = kind }
-    }
-
-    private func unavailableCard(_ name: String, reason: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Image(systemName: "circle.dashed")
-                Text(name).fontWeight(.semibold)
-            }
-            Text(reason)
-                .font(.caption)
-                .foregroundStyle(TraceColor.textSecondary)
-            Text("Unavailable")
-                .font(.caption)
-                .foregroundStyle(TraceColor.critical)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .opacity(0.65)
-        .traceCard()
     }
 
     private func statusPill(_ status: AgentAuthStatus) -> some View {
@@ -272,7 +280,7 @@ struct SetupView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Guardrails")
                 .font(.system(size: 20, weight: .semibold))
-            Text("No token or time budget. Background review only while the menu bar app is running.")
+            Text("No token or time budget. Background review only while Trace is running.")
                 .foregroundStyle(TraceColor.textSecondary)
 
             VStack(alignment: .leading, spacing: 8) {
@@ -286,8 +294,11 @@ struct SetupView: View {
             }
             .traceCard()
 
-            Picker("App run agent", selection: draft.preferredAgent) {
-                ForEach(AgentKind.allCases) { Text($0.title).tag($0) }
+            let agents = draft.wrappedValue.enabledAgents.sorted { $0.rawValue < $1.rawValue }
+            if !agents.isEmpty {
+                Picker("App run agent", selection: draft.preferredAgent) {
+                    ForEach(agents) { Text($0.title).tag($0) }
+                }
             }
 
             Stepper("Memory retention: \(draft.wrappedValue.retentionDays) days", value: draft.retentionDays, in: 7...365)
@@ -297,7 +308,7 @@ struct SetupView: View {
             Toggle("Freed sound on successful Execute", isOn: draft.freedSound)
 
             DisclosureGroup("Advanced") {
-                Text("Full Disk Access is requested only for a specific blocked surface — never as a mandatory gate. Trace never scrapes credential files. Closing the main window leaves the menu bar running; Quit ends owned work.")
+                Text("Full Disk Access is requested only for a specific blocked surface — never as a mandatory gate. Trace never scrapes credential files. Quit ends owned work and any optional background review. There is no menu bar companion and no helper after quit.")
                     .font(.caption)
                     .foregroundStyle(TraceColor.textSecondary)
                     .padding(.top, 8)
@@ -309,15 +320,14 @@ struct SetupView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Save & first run")
                 .font(.system(size: 20, weight: .semibold))
-            Text("Saves config, installs opted-in skills for the whole agent (except opted-out projects), then can start a read-only first Reviewing pass. Never Execute.")
+            Text("Saves config, installs opted-in skills per agent (except opted-out projects), then can start a read-only first Reviewing pass. Never Execute.")
                 .foregroundStyle(TraceColor.textSecondary)
 
             VStack(alignment: .leading, spacing: 8) {
-                summaryRow("Skills", [
-                    draft.wrappedValue.skillHygienic ? "hygienic-setup" : nil,
-                    draft.wrappedValue.skillSessionEnd ? "session-end" : nil,
-                    draft.wrappedValue.skillMemory ? "memory-writer" : nil,
-                ].compactMap { $0 }.joined(separator: ", "))
+                ForEach(draft.wrappedValue.enabledAgents.sorted { $0.rawValue < $1.rawValue }) { kind in
+                    let skills = draft.wrappedValue.skillsByAgent[kind] ?? AgentSkillsOptIn()
+                    summaryRow("Skills · \(kind.title)", skills.summaryLabel)
+                }
                 summaryRow("Agent", draft.wrappedValue.preferredAgent.title)
                 summaryRow("Roots", draft.wrappedValue.projectPaths.isEmpty ? "None yet" : draft.wrappedValue.projectPaths.joined(separator: "\n"))
                 summaryRow("Categories", draft.wrappedValue.enabledCategories.joined(separator: ", "))
@@ -370,10 +380,7 @@ struct SetupView: View {
         detecting = true
         defer { detecting = false }
         let result = await AgentProbe.probeAll()
-        draft.wrappedValue.cursorVersion = result.cursor.0
-        draft.wrappedValue.cursorStatus = result.cursor.1
-        draft.wrappedValue.codexVersion = result.codex.0
-        draft.wrappedValue.codexStatus = result.codex.1
+        draft.wrappedValue.applyProbe(cursor: result.cursor, codex: result.codex)
         if draft.wrappedValue.suggestedPaths.isEmpty {
             draft.wrappedValue.suggestedPaths = AgentProbe.suggestProjectRoots()
         }

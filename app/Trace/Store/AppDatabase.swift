@@ -29,6 +29,8 @@ final class AppDatabase: @unchecked Sendable {
         var selectedRoots: [String] = []
         var categories: [String] = ["caches", "builds", "worktrees", "containers", "models", "data"]
         var preferredAgent: String = AgentKind.cursor.rawValue
+        /// Agents the user has added. Empty means “use detected first adapters” until Setup saves.
+        var enabledAgents: [String] = []
         var backgroundReviewEnabled: Bool = false
         var notificationsDecideLater: Bool = false
         var memoryRetentionDays: Int = 90

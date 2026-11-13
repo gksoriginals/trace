@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// S13 Ask Trace — full local memory corpus first; agent = Mode 2 skills+context+input.
+/// S13 Ask Trace — chat-style memory-first Ask; agent escalation after scope accept.
 struct AskTraceView: View {
     @ObservedObject var model: AppModel
     var initialProjectId: String?
@@ -9,7 +9,7 @@ struct AskTraceView: View {
     @State private var question = ""
     @State private var projectId = ""
     @State private var itemId: String?
-    @State private var answer: AskAnswer?
+    @State private var messages: [ChatMessage] = []
     @State private var offerAgent = false
     @State private var showAgentConfirm = false
     @State private var selectedAgent: AgentKind = .cursor
@@ -17,25 +17,31 @@ struct AskTraceView: View {
 
     private enum Phase { case idle, retrieving, answered, escalating, stopped }
 
+    private struct ChatMessage: Identifiable, Hashable {
+        let id = UUID()
+        let role: Role
+        let text: String
+        var tier: String?
+        var citations: [String] = []
+        var usage: UsageReport?
+        var unknown: Bool = false
+
+        enum Role { case user, assistant }
+    }
+
     private var store: TraceStore { model.store }
     private var supervisor: SessionSupervisor { model.supervisor }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: TraceSpace.xl) {
-                header
-                scopeChips
-                questionField
-                actions
-                if showAgentConfirm { agentConfirm }
-                if let answer { answerCard(answer) }
-                if supervisor.isBusy || phase == .escalating { agentPanel }
-                Text("Ask is read-only. Memory uses the full local corpus for the scope. Agent escalation uses harness tools with composed inputs — it cannot Execute.")
-                    .font(TraceType.meta)
-                    .foregroundStyle(TraceColor.textSecondary)
+        VStack(spacing: 0) {
+            header
+            Divider().overlay(TraceColor.line.opacity(0.35))
+            messageList
+            if showAgentConfirm { agentConfirm.padding(.horizontal, TraceSpace.xl) }
+            if supervisor.isBusy || phase == .escalating {
+                agentPanel.padding(.horizontal, TraceSpace.xl).padding(.bottom, TraceSpace.sm)
             }
-            .padding(TraceSpace.xxl)
-            .frame(maxWidth: 720, alignment: .leading)
+            composer
         }
         .background(TraceColor.canvas)
         .onAppear {
@@ -45,81 +51,164 @@ struct AskTraceView: View {
             if let itemId, let item = store.decideLater.first(where: { $0.id == itemId }) {
                 question = "Why is \(item.action ?? item.artifact_id ?? item.id) doubtful, and what would resolve it?"
             }
+            if messages.isEmpty {
+                messages.append(ChatMessage(
+                    role: .assistant,
+                    text: "Ask about storage, provenance, or a Decide-later item. Memory only · local · no hosted tokens — until you escalate.",
+                    tier: "memory"
+                ))
+            }
         }
     }
 
     private var header: some View {
-        HStack(alignment: .top) {
-            TraceScreenHeader(
-                title: "Ask Trace",
-                subtitle: "Memory only · local · full corpus for scope · no hosted tokens — until you escalate."
-            )
+        HStack(spacing: TraceSpace.md) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Ask Trace")
+                    .font(TraceType.screen)
+                    .foregroundStyle(TraceColor.textPrimary)
+                Text("Memory first · escalate only when local evidence is insufficient")
+                    .font(TraceType.meta)
+                    .foregroundStyle(TraceColor.textSecondary)
+            }
             Spacer()
-            Button("Close") { model.destination = .home }
-                .buttonStyle(.bordered)
-        }
-    }
-
-    private var scopeChips: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Scope")
-                .font(.system(size: 13, weight: .semibold))
-            HStack {
-                Picker("Project", selection: $projectId) {
-                    Text("All permitted").tag("")
-                    ForEach(store.projects) { Text($0.displayName).tag($0.id) }
-                }
-                .labelsHidden()
-                .frame(maxWidth: 280)
-                if let itemId {
-                    Label("Item \(itemId)", systemImage: TraceSymbol.decideLater)
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(TraceColor.elevated)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                }
+            Picker("Project", selection: $projectId) {
+                Text("All permitted").tag("")
+                ForEach(store.projects) { Text($0.displayName).tag($0.id) }
+            }
+            .labelsHidden()
+            .frame(maxWidth: 200)
+            if let itemId {
+                Label("Item", systemImage: TraceSymbol.decideLater)
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(TraceColor.elevated)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                    .help(itemId)
             }
         }
-        .traceCard(elevated: true)
+        .padding(.horizontal, TraceSpace.windowPad)
+        .padding(.vertical, TraceSpace.md)
+        .background(TraceColor.surface)
     }
 
-    private var questionField: some View {
-        TextField("Ask about storage, provenance, or a Decide-later item…", text: $question, axis: .vertical)
-            .lineLimit(3...6)
-            .textFieldStyle(.roundedBorder)
-            .onSubmit { runMemory() }
-    }
-
-    private var actions: some View {
-        HStack {
-            Button {
-                runMemory()
-            } label: {
-                Label(phase == .retrieving ? "Retrieving…" : "Ask memory", systemImage: TraceSymbol.memory)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(TraceColor.brand)
-            .keyboardShortcut(.defaultAction)
-            .disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || phase == .retrieving)
-
-            if offerAgent {
-                Button("Ask agent…") {
-                    showAgentConfirm = true
-                }
-                .buttonStyle(.bordered)
-            }
-            if supervisor.isBusy {
-                Button {
-                    Task {
-                        await supervisor.cancel()
-                        phase = .stopped
+    private var messageList: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: TraceSpace.md) {
+                    ForEach(messages) { message in
+                        bubble(message).id(message.id)
                     }
-                } label: {
-                    Label("Stop", systemImage: TraceSymbol.stop)
+                }
+                .padding(TraceSpace.xl)
+                .frame(maxWidth: 720, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .center)
+            }
+            .onChange(of: messages.count) { _, _ in
+                if let last = messages.last {
+                    withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                 }
             }
         }
+    }
+
+    private func bubble(_ message: ChatMessage) -> some View {
+        HStack {
+            if message.role == .user { Spacer(minLength: 48) }
+            VStack(alignment: .leading, spacing: 8) {
+                if message.role == .assistant, let tier = message.tier {
+                    HStack {
+                        Text(tier.uppercased())
+                            .font(.system(size: 10, weight: .bold))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(TraceColor.elevated)
+                            .foregroundStyle(TraceColor.brand)
+                            .clipShape(RoundedRectangle(cornerRadius: 4))
+                        if let usage = message.usage {
+                            Text("Usage: \(usage.display)")
+                                .font(.caption)
+                                .foregroundStyle(TraceColor.textSecondary)
+                        }
+                    }
+                }
+                Text(message.text)
+                    .textSelection(.enabled)
+                    .foregroundStyle(TraceColor.textPrimary)
+                if !message.citations.isEmpty {
+                    Text("Sources: \(message.citations.joined(separator: ", "))")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(TraceColor.brand)
+                }
+                if message.unknown {
+                    Text("Memory is insufficient or stale. Escalate only if you accept provider scope.")
+                        .font(.caption)
+                        .foregroundStyle(TraceColor.review)
+                }
+            }
+            .padding(TraceSpace.md)
+            .background(
+                RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
+                    .fill(message.role == .user ? TraceColor.brand.opacity(0.12) : TraceColor.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
+                    .stroke(TraceColor.line.opacity(0.35), lineWidth: 1)
+            )
+            if message.role == .assistant { Spacer(minLength: 48) }
+        }
+    }
+
+    private var composer: some View {
+        VStack(alignment: .leading, spacing: TraceSpace.sm) {
+            TextField("Ask about storage, provenance, or a Decide-later item…", text: $question, axis: .vertical)
+                .lineLimit(2...5)
+                .textFieldStyle(.plain)
+                .padding(TraceSpace.md)
+                .background(TraceColor.surface)
+                .clipShape(RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: TraceSpace.radius, style: .continuous)
+                        .stroke(TraceColor.line.opacity(0.35), lineWidth: 1)
+                )
+                .onSubmit { runMemory() }
+
+            HStack {
+                Button {
+                    runMemory()
+                } label: {
+                    Label(phase == .retrieving ? "Retrieving…" : "Ask memory", systemImage: TraceSymbol.memory)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(TraceColor.brand)
+                .keyboardShortcut(.defaultAction)
+                .disabled(question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || phase == .retrieving)
+
+                if offerAgent {
+                    Button("Ask agent…") { showAgentConfirm = true }
+                        .buttonStyle(.bordered)
+                }
+                if supervisor.isBusy {
+                    Button {
+                        Task {
+                            await supervisor.cancel()
+                            phase = .stopped
+                            messages.append(ChatMessage(role: .assistant, text: "Stopped.", tier: "agent"))
+                        }
+                    } label: {
+                        Label("Stop", systemImage: TraceSymbol.stop)
+                    }
+                }
+                Spacer()
+                Text("Ask is read-only. It cannot Execute.")
+                    .font(TraceType.meta)
+                    .foregroundStyle(TraceColor.textSecondary)
+            }
+        }
+        .padding(.horizontal, TraceSpace.windowPad)
+        .padding(.vertical, TraceSpace.md)
+        .background(TraceColor.elevated)
     }
 
     private var agentConfirm: some View {
@@ -146,6 +235,7 @@ struct AskTraceView: View {
             }
         }
         .traceCard(elevated: true)
+        .padding(.bottom, TraceSpace.sm)
     }
 
     private func labeled(_ title: String, _ value: String) -> some View {
@@ -153,37 +243,6 @@ struct AskTraceView: View {
             Text(title).font(.caption).foregroundStyle(TraceColor.textSecondary)
             Text(value).font(.system(size: 12, design: .monospaced))
         }
-    }
-
-    private func answerCard(_ answer: AskAnswer) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(answer.tier.uppercased())
-                    .font(.system(size: 10, weight: .bold))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(TraceColor.elevated)
-                    .foregroundStyle(TraceColor.brand)
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-                Spacer()
-                Text("Usage: \(answer.usage?.display ?? "unavailable")")
-                    .font(.caption)
-                    .foregroundStyle(TraceColor.textSecondary)
-            }
-            Text(answer.text)
-                .textSelection(.enabled)
-            if !answer.citations.isEmpty {
-                Text("Sources: \(answer.citations.joined(separator: ", "))")
-                    .font(.caption.monospaced())
-                    .foregroundStyle(TraceColor.brand)
-            }
-            if answer.unknown {
-                Text("Memory is insufficient or stale for a confident answer. Escalate only if you accept provider scope.")
-                    .font(.caption)
-                    .foregroundStyle(TraceColor.review)
-            }
-        }
-        .traceCard()
     }
 
     private var agentPanel: some View {
@@ -207,6 +266,10 @@ struct AskTraceView: View {
     }
 
     private func runMemory() {
+        let q = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !q.isEmpty else { return }
+        messages.append(ChatMessage(role: .user, text: q))
+        question = ""
         phase = .retrieving
         let events: [MemoryEvent]
         if projectId.isEmpty {
@@ -215,11 +278,18 @@ struct AskTraceView: View {
             events = store.events(for: projectId)
         }
         let result = MemoryAsk.answer(
-            question: question,
+            question: q,
             events: events,
             scopeProjectId: projectId.isEmpty ? nil : projectId
         )
-        answer = result
+        messages.append(ChatMessage(
+            role: .assistant,
+            text: result.text,
+            tier: result.tier,
+            citations: result.citations,
+            usage: result.usage,
+            unknown: result.unknown
+        ))
         offerAgent = result.unknown || result.citations.isEmpty
         showAgentConfirm = false
         phase = .answered
@@ -228,22 +298,24 @@ struct AskTraceView: View {
     private func runAgent() async {
         guard let project = store.projects.first(where: { $0.id == projectId })
                 ?? store.projects.first else {
-            answer = AskAnswer(
-                tier: "agent",
+            messages.append(ChatMessage(
+                role: .assistant,
                 text: "Pick a project scope before asking the agent.",
-                citations: [],
-                unknown: true,
-                usage: .unavailable
-            )
+                tier: "agent",
+                usage: .unavailable,
+                unknown: true
+            ))
             return
         }
         phase = .escalating
+        let prior = messages.last(where: { $0.role == .assistant })?.text
+        let lastUser = messages.last(where: { $0.role == .user })?.text ?? ""
         let root = store.projectRoot(for: project)
         let payload = SkillComposer.askPayload(
             project: project,
             store: store,
-            question: question,
-            priorMemoryAnswer: answer?.text,
+            question: lastUser,
+            priorMemoryAnswer: prior,
             itemId: itemId
         )
         await supervisor.start(
@@ -252,13 +324,13 @@ struct AskTraceView: View {
             resumeId: nil,
             prompt: SkillComposer.compose(payload)
         )
-        answer = AskAnswer(
-            tier: "agent",
+        messages.append(ChatMessage(
+            role: .assistant,
             text: supervisor.log.suffix(12).joined(separator: "\n"),
-            citations: answer?.citations ?? [],
-            unknown: false,
+            tier: "agent",
+            citations: messages.last(where: { !$0.citations.isEmpty })?.citations ?? [],
             usage: supervisor.usage
-        )
+        ))
         phase = .answered
     }
 }

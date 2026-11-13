@@ -19,7 +19,7 @@ Markdown: `~/.trace/index.md`, `<project>/.trace/memory/*.md`, `decide-later.md`
 | Home | File-only Decide-later + insights; Refresh = compose prepare-home |
 | Ask | Full-corpus memory-first; agent tier = task+params+inputs (harness tools) |
 | Run | Per-project or all permitted; Reviewing → Actions → Execute (Trash + journal) |
-| Background | Optional; only while menu bar app running; never Execute |
+| Background | Optional; only while Trace app running; never Execute; no menu bar |
 
 ## Try
 
@@ -30,4 +30,4 @@ Markdown: `~/.trace/index.md`, `<project>/.trace/memory/*.md`, `decide-later.md`
 python3 evals/run.py --agent skill
 ```
 
-Full Setup → Home → Ask → Run lives in the main window. The menu bar is the short companion only ([ADR-0008](adr/0008-full-app-vs-menubar.md)).
+Full Setup → Home → Ask → Run lives in the main window. There is no menu bar companion ([ADR-0012](adr/0012-no-menu-bar-companion.md)).

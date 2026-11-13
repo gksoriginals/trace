@@ -1,6 +1,6 @@
 # ADR-0008: Full app vs menu bar
 
-- **Status:** accepted
+- **Status:** superseded by [ADR-0012](0012-no-menu-bar-companion.md) (no menu bar companion; main window remains the product)
 - **Date:** 2026-11-12
 - **Deciders:** Gopi
 

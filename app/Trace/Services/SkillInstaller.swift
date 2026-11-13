@@ -1,7 +1,34 @@
 import Foundation
 
 enum SkillInstaller {
+    /// Install opted-in skills per agent host. Skips hosts with no skills checked.
+    @discardableResult
+    static func install(optIn: SkillsOptIn, projectPath: String?) throws -> String {
+        var outputs: [String] = []
+        var installedAny = false
+        for kind in AgentKind.allCases {
+            let skills = optIn[kind]
+            guard skills.anyEnabled else { continue }
+            let text = try install(
+                host: kind,
+                skills: skills.skillDirectoryNames + ["prepare-home"],
+                projectPath: installedAny ? nil : projectPath
+            )
+            outputs.append(text)
+            installedAny = true
+        }
+        if !installedAny {
+            return "No skills opted in for any agent."
+        }
+        return outputs.joined(separator: "\n")
+    }
+
+    @discardableResult
     static func install(projectPath: String?) throws -> String {
+        try install(optIn: SkillsOptIn(), projectPath: projectPath)
+    }
+
+    private static func install(host: AgentKind, skills: [String], projectPath: String?) throws -> String {
         let repoSkills = locateSkillsRoot()
         guard let repoSkills else {
             throw NSError(domain: "Trace", code: 1, userInfo: [
@@ -9,7 +36,7 @@ enum SkillInstaller {
             ])
         }
         let script = repoSkills.appendingPathComponent("install.sh")
-        var args = [script.path]
+        var args = [script.path, "--host", host.rawValue, "--skills", skills.joined(separator: ",")]
         if let projectPath, !projectPath.isEmpty {
             args += ["--project", projectPath]
         }
@@ -38,12 +65,12 @@ enum SkillInstaller {
            FileManager.default.fileExists(atPath: recorded + "/install.sh") {
             return URL(fileURLWithPath: recorded)
         }
-        // Dev: app/ next to skills/
         let bundle = Bundle.main.bundleURL
         let candidates = [
             bundle.deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
                 .appendingPathComponent("skills"),
             URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("skills"),
+            URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("projects/trace/skills"),
             URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("projects/trace-1/skills"),
         ]
         return candidates.first { FileManager.default.fileExists(atPath: $0.appendingPathComponent("install.sh").path) }

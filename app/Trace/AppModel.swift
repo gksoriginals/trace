@@ -3,7 +3,7 @@ import Combine
 import AppKit
 import SwiftUI
 
-/// Shared state for full window + menu-bar companion (ADR-0008).
+/// Shared state for the main-window app (ADR-0012: no menu bar companion).
 @MainActor
 final class AppModel: ObservableObject {
     enum Destination: Hashable {
@@ -92,27 +92,11 @@ final class AppModel: ObservableObject {
         }
     }
 
-    var menuQueueCount: Int {
-        store.decideLater.filter { ($0.status ?? "") == "open" }.count
-    }
-
-    var menuStatusLine: String {
-        if supervisor.isBusy {
-            if supervisor.pendingPermission != nil { return "Needs your answer" }
-            return "Working · \(supervisor.status)"
-        }
-        if menuQueueCount > 0 { return "\(menuQueueCount) Decide later" }
-        if let last = store.journal.last {
-            return "Last: \(last.outcome) · \(URL(fileURLWithPath: last.path).lastPathComponent)"
-        }
-        return "Idle · local Home"
-    }
-
     func openMain(to dest: Destination) {
         destination = dest
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
-        for window in NSApp.windows where window.identifier?.rawValue != "menubar" {
+        for window in NSApp.windows {
             window.makeKeyAndOrderFront(nil)
         }
     }
@@ -124,9 +108,10 @@ final class AppModel: ObservableObject {
     func finishSetup(runFirstPass: Bool) async {
         applySetupDraft()
         do {
-            _ = try SkillInstaller.install(
-                projectPath: setupDraft.projectPaths.first
-            )
+            let project = setupDraft.optedOutProjects.contains(setupDraft.projectPaths.first ?? "")
+                ? nil
+                : setupDraft.projectPaths.first
+            _ = try SkillInstaller.install(optIn: store.skillsOptIn, projectPath: project)
         } catch {
             setupDraft.lastMessage = error.localizedDescription
         }
@@ -152,11 +137,7 @@ final class AppModel: ObservableObject {
     }
 
     func applySetupDraft() {
-        store.skillsOptIn = SkillsOptIn(
-            hygienicSetup: setupDraft.skillHygienic,
-            sessionEnd: setupDraft.skillSessionEnd,
-            memoryWriter: setupDraft.skillMemory
-        )
+        store.skillsOptIn = setupDraft.skillsOptIn
         store.settings.preferredAgent = setupDraft.preferredAgent.rawValue
         store.settings.selectedRoots = setupDraft.projectPaths
         store.settings.categories = setupDraft.enabledCategories
@@ -166,6 +147,7 @@ final class AppModel: ObservableObject {
         store.settings.memoryRetentionDays = setupDraft.retentionDays
         store.settings.freedSound = setupDraft.freedSound
         store.settings.optedOutProjects = setupDraft.optedOutProjects
+        store.settings.enabledAgents = setupDraft.enabledAgents.map(\.rawValue).sorted()
         try? store.database.saveSettings(store.settings)
         store.skillsOptIn.save()
         background.restart()
@@ -174,9 +156,12 @@ final class AppModel: ObservableObject {
 
 struct SetupDraft {
     var step = 0
-    var skillHygienic = true
-    var skillSessionEnd = true
-    var skillMemory = true
+    var skillsByAgent: [AgentKind: AgentSkillsOptIn] = [
+        .cursor: AgentSkillsOptIn(),
+        .codex: AgentSkillsOptIn(),
+    ]
+    /// Agents the user has added (detected or kept). Unavailable adapters stay out until Add agent finds them.
+    var enabledAgents: Set<AgentKind> = []
     var preferredAgent: AgentKind = .cursor
     var cursorStatus: AgentAuthStatus = .unknown
     var codexStatus: AgentAuthStatus = .unknown
@@ -193,12 +178,46 @@ struct SetupDraft {
     var optedOutProjects: [String] = []
     var lastMessage = ""
 
+    var skillsOptIn: SkillsOptIn {
+        SkillsOptIn(agents: Dictionary(uniqueKeysWithValues: skillsByAgent.map { ($0.key.rawValue, $0.value) }))
+    }
+
+    func status(for kind: AgentKind) -> AgentAuthStatus {
+        switch kind {
+        case .cursor: return cursorStatus
+        case .codex: return codexStatus
+        }
+    }
+
+    func version(for kind: AgentKind) -> String? {
+        switch kind {
+        case .cursor: return cursorVersion
+        case .codex: return codexVersion
+        }
+    }
+
+    mutating func applyProbe(cursor: (String?, AgentAuthStatus), codex: (String?, AgentAuthStatus)) {
+        cursorVersion = cursor.0
+        cursorStatus = cursor.1
+        codexVersion = codex.0
+        codexStatus = codex.1
+        for kind in AgentKind.allCases {
+            if status(for: kind) != .unsupported {
+                enabledAgents.insert(kind)
+            }
+        }
+        if !enabledAgents.contains(preferredAgent), let first = enabledAgents.sorted(by: { $0.rawValue < $1.rawValue }).first {
+            preferredAgent = first
+        }
+    }
+
     @MainActor
     static func from(store: TraceStore) -> SetupDraft {
         var d = SetupDraft()
-        d.skillHygienic = store.skillsOptIn.hygienicSetup
-        d.skillSessionEnd = store.skillsOptIn.sessionEnd
-        d.skillMemory = store.skillsOptIn.memoryWriter
+        d.skillsByAgent[.cursor] = store.skillsOptIn[.cursor]
+        d.skillsByAgent[.codex] = store.skillsOptIn[.codex]
+        let saved = store.settings.enabledAgents.compactMap(AgentKind.init(rawValue:))
+        d.enabledAgents = Set(saved.isEmpty ? AgentKind.allCases : saved)
         d.preferredAgent = AgentKind(rawValue: store.settings.preferredAgent) ?? .cursor
         d.projectPaths = store.settings.selectedRoots
         d.enabledCategories = store.settings.categories

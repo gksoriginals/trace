@@ -119,10 +119,74 @@ struct ProjectInsight: Identifiable, Hashable {
     var openQueueCount: Int
 }
 
-struct SkillsOptIn: Codable, Equatable {
+/// Opt-in skills for one coding-agent host (each host has its own skills folder).
+struct AgentSkillsOptIn: Codable, Equatable {
     var hygienicSetup: Bool = true
     var sessionEnd: Bool = true
     var memoryWriter: Bool = true
+
+    var anyEnabled: Bool { hygienicSetup || sessionEnd || memoryWriter }
+
+    /// Skill directory names under `skills/` (product skills only).
+    var skillDirectoryNames: [String] {
+        var names: [String] = []
+        if hygienicSetup { names.append("hygienic-setup") }
+        if sessionEnd { names.append("session-end-cleanup") }
+        if memoryWriter { names.append("memory-writer") }
+        return names
+    }
+
+    var summaryLabel: String {
+        let parts = skillDirectoryNames
+        return parts.isEmpty ? "None" : parts.joined(separator: ", ")
+    }
+}
+
+/// Per-agent skill opt-in. Migrates the older flat `SkillsOptIn` shape on load.
+struct SkillsOptIn: Codable, Equatable {
+    var agents: [String: AgentSkillsOptIn]
+
+    init(agents: [String: AgentSkillsOptIn]? = nil) {
+        if let agents, !agents.isEmpty {
+            self.agents = agents
+        } else {
+            self.agents = [
+                AgentKind.cursor.rawValue: AgentSkillsOptIn(),
+                AgentKind.codex.rawValue: AgentSkillsOptIn(),
+            ]
+        }
+    }
+
+    subscript(_ kind: AgentKind) -> AgentSkillsOptIn {
+        get { agents[kind.rawValue] ?? AgentSkillsOptIn() }
+        set { agents[kind.rawValue] = newValue }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agents, hygienicSetup, sessionEnd, memoryWriter
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        if let agents = try c.decodeIfPresent([String: AgentSkillsOptIn].self, forKey: .agents), !agents.isEmpty {
+            self.agents = agents
+            return
+        }
+        let flat = AgentSkillsOptIn(
+            hygienicSetup: try c.decodeIfPresent(Bool.self, forKey: .hygienicSetup) ?? true,
+            sessionEnd: try c.decodeIfPresent(Bool.self, forKey: .sessionEnd) ?? true,
+            memoryWriter: try c.decodeIfPresent(Bool.self, forKey: .memoryWriter) ?? true
+        )
+        self.agents = [
+            AgentKind.cursor.rawValue: flat,
+            AgentKind.codex.rawValue: flat,
+        ]
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(agents, forKey: .agents)
+    }
 
     static func load() -> SkillsOptIn {
         guard let data = UserDefaults.standard.data(forKey: "trace.skillsOptIn"),

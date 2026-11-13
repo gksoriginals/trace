@@ -31,7 +31,7 @@ Two kinds of decision sit in this document.
 13. **No Trace caps for now.** Coding agents mostly run on subscription quota. Trace sets no token cap and no time cap on a Run or an Ask. It shows the usage the agent reported for that Run or Ask, or "unavailable." Memory-only answers spend none of that. Caps can be revisited later. This replaced the budget settings.
 14. **The 70% metric.** The share of bytes from agent-created artifacts that are removed within 30 days of creation. Shared caches count once. Measured free space is shown beside it and is never the percentage. Bytes with no creator are not dropped on sight. A deep attribution pass searches git history, file timestamps, agent session logs and transcripts, package and lock metadata, and the tool's own manifests. What that pass can support with evidence gets a creator, the evidence ids, and a `verified` or `inferred` label, and those bytes count. A known human creator is recorded and does not count as agent-created. Only bytes still unknown after the pass stay out of both sides, and they are reported separately with the sources that were checked.
 15. **Local storage, split writers.** The ledger, queue, index, settings, and logs stay on the Mac. Skills append to a per-project log. The app is the only writer of its database. Skills keep the project index. No telemetry by default. No cloud memory sync.
-16. **Background only while the app is running.** A review the user opted into runs only while the menu bar app is running. Quit ends it. There is no helper process after quit, and no scheduled Execute.
+16. **Background only while the app is running.** A review the user opted into runs only while the Trace app process is running. Quit ends it. There is no menu bar companion, no helper process after quit, and no scheduled Execute.
 17. **Local dogfood only.** Auth, distribution, and the public name are decided at M2. Until then Trace is a local build on Gopi's Mac. Codex app-server auth is acceptable for that dogfood. Its ban on commercial or hosted use is an M2 question, not a reason to block the spike.
 18. **First agents.** Cursor over ACP, and Codex over app-server. Claude and Gemini are later adapters. The eval harness and the throwaway spikes follow that order.
 19. **Models.** Trace cannot always choose the model. For an app-triggered run the user picks the coding agent. The evals compare that agent's available models and name a best-value model per agent (quality, then cost), scored on the model that actually ran. If only some models handle a skill well, the skill may ask for that model in a subagent. On Cursor that request is a preference, never a gate: the skill still runs, a mismatch is not a failure, and the skill is labeled **best effort on Cursor** when the pin does not stick.
@@ -95,7 +95,7 @@ These names are the vocabulary for spikes and ADRs. The grouping is a current gu
 | Decide-later queue | Durable doubtful decisions. Writers: skills, and later Reviewing. Reader: Home. |
 | Memory log | Append-only provenance ledger. The app does not keep a parallel summary. |
 | Project registry | Stable project ids, roots, categories, shared-store notes. |
-| Settings | Opt-in skills, whole-agent install with per-project opt-out, never-touch list, retention, notifications. No budget fields. |
+| Settings | Per-agent opt-in skills, Add agent / re-detect, whole-agent install with per-project opt-out, never-touch list, retention, notifications. No budget fields. |
 | Coverage receipts | Per project, per agent, per skill version: completed, partial, or failed, and which session range. |
 | Action journal | What was confirmed, the fingerprint at confirm time, what reached Trash, what was skipped. |
 | Session checkpoint | Ids needed to resume one Trace conversation. Not a filesystem snapshot. |
@@ -189,7 +189,7 @@ A skill that sees a project for the first time adds or updates that project's in
 
 ### Settings
 
-One local document, inside the app database. It holds opted-in skills, the whole-agent default, the per-project opt-out list, the never-touch list, category scope, memory-retention preference, menu-bar and Decide-later notification opt-in, and the optional review schedule, which is off and runs only while the app is running. Appearance and the Freed sound live here too. There is no Run budget and no Ask budget.
+One local document, inside the app database. It holds opted-in skills, the whole-agent default, the per-project opt-out list, the never-touch list, category scope, memory-retention preference, Decide-later notification opt-in, and the optional review schedule, which is off and runs only while the app is running. Appearance and the Freed sound live here too. There is no Run budget and no Ask budget. There is no menu bar companion.
 
 A signed-in CLI is recorded as a status the adapter reports (`ready`, `unknown`, `unsupported`, `terms_unmet`). The status is not a copy of a token.
 

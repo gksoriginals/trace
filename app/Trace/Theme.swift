@@ -125,7 +125,6 @@ enum TraceSymbol {
     static let trash = "trash"
     static let undo = "arrow.uturn.backward"
     static let stop = "stop.circle"
-    static let menuMark = "point.topleft.down.to.point.bottomright.curvepath"
 }
 
 struct TraceScreenHeader: View {

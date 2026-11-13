@@ -69,7 +69,16 @@ struct DecideLaterView: View {
             .traceCard()
 
             HStack {
-                Button("Keep") {
+                if let project = model.store.projects.first(where: { $0.id == item.project_id }) {
+                    Button("Plan action") {
+                        model.conductor.stage = .reviewing
+                        model.conductor.cards = []
+                        model.destination = .run(.project(project))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(TraceColor.brand)
+                }
+                Button("Keep this time") {
                     model.store.updateQueueStatus(id: item.id, status: "kept")
                     model.destination = .home
                 }
@@ -80,21 +89,11 @@ struct DecideLaterView: View {
                 Button {
                     model.openAsk(projectId: item.project_id, itemId: item.id)
                 } label: {
-                    Label("Ask Trace", systemImage: TraceSymbol.ask)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(TraceColor.brand)
-
-                if let project = model.store.projects.first(where: { $0.id == item.project_id }) {
-                    Button("Plan action…") {
-                        model.conductor.stage = .reviewing
-                        model.conductor.cards = []
-                        model.destination = .run(.project(project))
-                    }
+                    Label("Ask", systemImage: TraceSymbol.ask)
                 }
             }
 
-            Text("Keep and Defer are local — no agent call. Plan action opens Reviewing; it is not consent to clean.")
+            Text("Plan action is not consent to clean. S8 still owns selection and Trash. Keep and Defer are local — no agent call.")
                 .font(.caption)
                 .foregroundStyle(TraceColor.textSecondary)
         }

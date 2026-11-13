@@ -33,11 +33,6 @@ struct TraceApp: App {
             }
         }
 
-        MenuBarExtra("Trace", systemImage: TraceSymbol.menuMark) {
-            MenuBarView(model: model)
-        }
-        .menuBarExtraStyle(.window)
-
         Settings {
             SettingsView(model: model)
                 .frame(minWidth: 480, minHeight: 420)

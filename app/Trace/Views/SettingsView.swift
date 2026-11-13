@@ -4,34 +4,59 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var model: AppModel
     @State private var staged = false
+    @State private var detecting = false
+    @State private var probeMessage = ""
+    @State private var cursorStatus: AgentAuthStatus = .unknown
+    @State private var codexStatus: AgentAuthStatus = .unknown
+    @State private var cursorVersion: String?
+    @State private var codexVersion: String?
 
     private var store: TraceStore { model.store }
 
+    private var enabledAgents: [AgentKind] {
+        let saved = store.settings.enabledAgents.compactMap(AgentKind.init(rawValue:))
+        let set = Set(saved.isEmpty ? AgentKind.allCases : saved)
+        return set.sorted { $0.rawValue < $1.rawValue }
+    }
+
     var body: some View {
         Form {
-            Section("Agents & skills") {
+            Section {
+                Text("Whole-agent install with per-project opt-out. Opt-in skills are per agent.")
+                    .font(.caption)
+                    .foregroundStyle(TraceColor.textSecondary)
+
+                ForEach(enabledAgents) { kind in
+                    agentSkillsBlock(kind)
+                }
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Add another agent")
+                            .font(.system(size: 13, weight: .medium))
+                        Text(probeMessage.isEmpty
+                             ? "Detect another CLI. Skills opt-in when that agent is added."
+                             : probeMessage)
+                            .font(.caption)
+                            .foregroundStyle(TraceColor.textSecondary)
+                    }
+                    Spacer()
+                    Button {
+                        Task { await addAgent() }
+                    } label: {
+                        Label(detecting ? "Detecting…" : "Add agent", systemImage: "plus")
+                    }
+                    .disabled(detecting)
+                }
+
                 Picker("App run agent", selection: Binding(
                     get: { AgentKind(rawValue: store.settings.preferredAgent) ?? .cursor },
                     set: { store.settings.preferredAgent = $0.rawValue; staged = true }
                 )) {
-                    ForEach(AgentKind.allCases) { Text($0.title).tag($0) }
+                    ForEach(enabledAgents) { Text($0.title).tag($0) }
                 }
-                Toggle("Hygienic setup", isOn: Binding(
-                    get: { store.skillsOptIn.hygienicSetup },
-                    set: { store.skillsOptIn.hygienicSetup = $0; staged = true }
-                ))
-                Toggle("Session-end cleanup", isOn: Binding(
-                    get: { store.skillsOptIn.sessionEnd },
-                    set: { store.skillsOptIn.sessionEnd = $0; staged = true }
-                ))
-                Toggle("Memory writer", isOn: Binding(
-                    get: { store.skillsOptIn.memoryWriter },
-                    set: { store.skillsOptIn.memoryWriter = $0; staged = true }
-                ))
-                Button("Re-open Setup wizard") {
-                    model.setupDraft = SetupDraft.from(store: store)
-                    model.destination = .setup
-                }
+            } header: {
+                Text("Agents & skills")
             }
 
             Section("Projects & scope") {
@@ -75,7 +100,7 @@ struct SettingsView: View {
                 )
             }
 
-            Section("Menu bar & notifications") {
+            Section("Notifications") {
                 Toggle("Decide-later notifications", isOn: Binding(
                     get: { store.settings.notificationsDecideLater },
                     set: { store.settings.notificationsDecideLater = $0; staged = true }
@@ -113,11 +138,7 @@ struct SettingsView: View {
             if staged {
                 Section {
                     Button("Apply") {
-                        store.skillsOptIn.save()
-                        try? store.database.saveSettings(store.settings)
-                        model.background.restart()
-                        staged = false
-                        store.refresh()
+                        applyStaged()
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(TraceColor.brand)
@@ -127,5 +148,116 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .padding(16)
         .background(TraceColor.canvas)
+        .task { await refreshProbe(enableNew: false) }
+    }
+
+    @ViewBuilder
+    private func agentSkillsBlock(_ kind: AgentKind) -> some View {
+        let status = kind == .cursor ? cursorStatus : codexStatus
+        let version = kind == .cursor ? cursorVersion : codexVersion
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(kind.title).fontWeight(.semibold)
+                Spacer()
+                Text(statusLabel(status))
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(statusColor(status))
+            }
+            Text(version.map { "CLI \($0) · \(kind == .cursor ? "ACP" : "app-server")" } ?? "\(kind == .cursor ? "ACP" : "app-server")")
+                .font(.caption)
+                .foregroundStyle(TraceColor.textSecondary)
+            Text("Opt-in skills")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(TraceColor.textSecondary)
+            Toggle("Hygienic setup", isOn: skillBinding(kind, \.hygienicSetup))
+            Toggle("Session-end cleanup", isOn: skillBinding(kind, \.sessionEnd))
+            Toggle("Memory writer", isOn: skillBinding(kind, \.memoryWriter))
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func skillBinding(_ kind: AgentKind, _ keyPath: WritableKeyPath<AgentSkillsOptIn, Bool>) -> Binding<Bool> {
+        Binding(
+            get: { store.skillsOptIn[kind][keyPath: keyPath] },
+            set: { newValue in
+                var opt = store.skillsOptIn
+                var agent = opt[kind]
+                agent[keyPath: keyPath] = newValue
+                opt[kind] = agent
+                store.skillsOptIn = opt
+                staged = true
+            }
+        )
+    }
+
+    private func statusLabel(_ status: AgentAuthStatus) -> String {
+        switch status {
+        case .ready: return "App session ready"
+        case .unknown: return "Sign-in unknown"
+        case .unsupported: return "CLI not found"
+        case .termsUnmet: return "Terms unmet"
+        }
+    }
+
+    private func statusColor(_ status: AgentAuthStatus) -> Color {
+        switch status {
+        case .ready: return TraceColor.safe
+        case .unknown: return TraceColor.review
+        case .unsupported, .termsUnmet: return TraceColor.critical
+        }
+    }
+
+    private func addAgent() async {
+        await refreshProbe(enableNew: true)
+    }
+
+    private func refreshProbe(enableNew: Bool) async {
+        detecting = true
+        defer { detecting = false }
+        let result = await AgentProbe.probeAll()
+        cursorVersion = result.cursor.0
+        cursorStatus = result.cursor.1
+        codexVersion = result.codex.0
+        codexStatus = result.codex.1
+
+        guard enableNew else { return }
+
+        var enabled = Set(store.settings.enabledAgents.compactMap(AgentKind.init(rawValue:)))
+        if enabled.isEmpty { enabled = Set(AgentKind.allCases) }
+        var added: [String] = []
+        if result.cursor.1 != .unsupported, enabled.insert(.cursor).inserted {
+            added.append("Cursor")
+        }
+        if result.codex.1 != .unsupported, enabled.insert(.codex).inserted {
+            added.append("Codex")
+        }
+        // Keep agents that are already enabled even if temporarily unsupported.
+        store.settings.enabledAgents = enabled.map(\.rawValue).sorted()
+        if added.isEmpty {
+            let found = [result.cursor.1 != .unsupported ? "Cursor" : nil, result.codex.1 != .unsupported ? "Codex" : nil]
+                .compactMap { $0 }
+            probeMessage = found.isEmpty
+                ? "No new CLI found. Install Cursor or Codex, then try again."
+                : "Already added: \(found.joined(separator: ", "))."
+        } else {
+            probeMessage = "Added \(added.joined(separator: ", ")). Opt in skills above, then Apply."
+            staged = true
+        }
+    }
+
+    private func applyStaged() {
+        store.skillsOptIn.save()
+        try? store.database.saveSettings(store.settings)
+        do {
+            let project = store.settings.optedOutProjects.contains(store.settings.selectedRoots.first ?? "")
+                ? nil
+                : store.settings.selectedRoots.first
+            _ = try SkillInstaller.install(optIn: store.skillsOptIn, projectPath: project)
+        } catch {
+            probeMessage = error.localizedDescription
+        }
+        model.background.restart()
+        staged = false
+        store.refresh()
     }
 }

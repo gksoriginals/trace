@@ -1,6 +1,6 @@
 import Foundation
 
-/// Optional scoped review while the menu bar app is running. Never Execute. Dies on quit.
+/// Optional scoped review while the Trace app process is running. Never Execute. Dies on quit.
 @MainActor
 final class BackgroundReview: ObservableObject {
     @Published var lastRunAt: Date?
