@@ -88,16 +88,20 @@ final class TraceStore: ObservableObject {
     }
 
     func updateQueueStatus(id: String, status: String) {
-        // Local Keep/Defer: rewrite decide-later.json beside md when present
+        // Local Keep/Defer: rewrite decide-later.md (product) and decide-later.json together
         for project in projects {
             var items = loadQueue(for: project)
             guard let idx = items.firstIndex(where: { $0.id == id }) else { continue }
+            if let projectId = items[idx].project_id, !projectId.isEmpty, projectId != project.id {
+                continue
+            }
             items[idx].status = status
-            let url = queueURL(for: project)
-            let payload = DecideLaterFile(items: items)
-            if let data = try? JSONEncoder().encode(payload) {
-                let jsonURL = url.deletingPathExtension().appendingPathExtension("json")
-                try? data.write(to: jsonURL, options: .atomic)
+            let base = queueURL(for: project).deletingLastPathComponent()
+            do {
+                try MarkdownStore.writeDecideLater(items: items, baseDirectory: base)
+            } catch {
+                loadError = error.localizedDescription
+                return
             }
         }
         refresh()

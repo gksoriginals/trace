@@ -111,7 +111,8 @@ final class AppModel: ObservableObject {
             let project = setupDraft.optedOutProjects.contains(setupDraft.projectPaths.first ?? "")
                 ? nil
                 : setupDraft.projectPaths.first
-            _ = try SkillInstaller.install(optIn: store.skillsOptIn, projectPath: project)
+            let enabled = store.settings.enabledAgents.compactMap(AgentKind.init(rawValue:))
+            _ = try SkillInstaller.install(optIn: store.skillsOptIn, enabledAgents: enabled, projectPath: project)
         } catch {
             setupDraft.lastMessage = error.localizedDescription
         }

@@ -252,7 +252,8 @@ struct SettingsView: View {
             let project = store.settings.optedOutProjects.contains(store.settings.selectedRoots.first ?? "")
                 ? nil
                 : store.settings.selectedRoots.first
-            _ = try SkillInstaller.install(optIn: store.skillsOptIn, projectPath: project)
+            let enabled = store.settings.enabledAgents.compactMap(AgentKind.init(rawValue:))
+            _ = try SkillInstaller.install(optIn: store.skillsOptIn, enabledAgents: enabled, projectPath: project)
         } catch {
             probeMessage = error.localizedDescription
         }

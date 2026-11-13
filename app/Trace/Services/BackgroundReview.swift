@@ -34,6 +34,10 @@ final class BackgroundReview: ObservableObject {
 
     private func tick() async {
         guard let store, let supervisor, store.settings.backgroundReviewEnabled else { return }
+        guard !supervisor.isBusy else {
+            note = "Skipped (agent busy)"
+            return
+        }
         guard let project = store.projects.first else {
             note = "No projects"
             return

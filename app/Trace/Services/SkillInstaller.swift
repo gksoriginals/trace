@@ -2,11 +2,13 @@ import Foundation
 
 enum SkillInstaller {
     /// Install opted-in skills per agent host. Skips hosts with no skills checked.
+    /// When `enabledAgents` is non-empty, only those hosts are considered (Setup/Settings selection).
     @discardableResult
-    static func install(optIn: SkillsOptIn, projectPath: String?) throws -> String {
+    static func install(optIn: SkillsOptIn, enabledAgents: [AgentKind] = [], projectPath: String?) throws -> String {
         var outputs: [String] = []
         var installedAny = false
-        for kind in AgentKind.allCases {
+        let hosts = enabledAgents.isEmpty ? AgentKind.allCases : enabledAgents
+        for kind in hosts {
             let skills = optIn[kind]
             guard skills.anyEnabled else { continue }
             let text = try install(
@@ -25,7 +27,7 @@ enum SkillInstaller {
 
     @discardableResult
     static func install(projectPath: String?) throws -> String {
-        try install(optIn: SkillsOptIn(), projectPath: projectPath)
+        try install(optIn: SkillsOptIn(), enabledAgents: [], projectPath: projectPath)
     }
 
     private static func install(host: AgentKind, skills: [String], projectPath: String?) throws -> String {

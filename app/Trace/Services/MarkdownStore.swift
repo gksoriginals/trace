@@ -92,4 +92,35 @@ enum MarkdownStore {
         let (_, body) = loadFrontmatter(text)
         return body.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    /// Write product markdown and the JSON sibling (matches `skills/shared/queue_md.write_both`).
+    static func writeDecideLater(items: [DecideLaterItem], baseDirectory: URL) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let itemsData = try encoder.encode(items)
+        let itemsJSON = String(data: itemsData, encoding: .utf8) ?? "[]"
+
+        var bodyLines = ["# Decide later", ""]
+        for item in items {
+            bodyLines.append("## \(item.id) (\(item.status ?? "open"))")
+            bodyLines.append("- action: \(item.action ?? "")")
+            bodyLines.append("- why: \(item.why_doubtful ?? "")")
+            bodyLines.append("- would resolve: \(item.would_resolve ?? "")")
+            bodyLines.append("")
+        }
+        var mdLines = [
+            "---",
+            "schema_version: 1",
+            "items: \(itemsJSON)",
+            "---",
+            "",
+        ]
+        mdLines.append(contentsOf: bodyLines)
+        let md = mdLines.joined(separator: "\n")
+        let mdURL = baseDirectory.appendingPathComponent("decide-later.md")
+        let jsonURL = baseDirectory.appendingPathComponent("decide-later.json")
+        try md.write(to: mdURL, atomically: true, encoding: .utf8)
+        let payload = DecideLaterFile(items: items)
+        try encoder.encode(payload).write(to: jsonURL, options: .atomic)
+    }
 }
