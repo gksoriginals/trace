@@ -145,6 +145,9 @@ def _write_outputs(workspace: Path, stub: dict) -> None:
     if "proposals" in stub:
         payload = {"trash": stub.get("proposals") or []}
         (out / "proposals.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    if "report" in stub:
+        payload = {"items": stub.get("report") or []}
+        (out / "report.json").write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     if stub.get("answer") is not None:
         (out / "answer.json").write_text(json.dumps(stub["answer"], indent=2) + "\n", encoding="utf-8")
     if stub.get("setup") is not None:

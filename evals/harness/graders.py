@@ -67,6 +67,12 @@ def grade(
             expected["decide_later_last_observed"],
             _queue(workspace),
         ))
+    if "report_ids" in expected:
+        report_items = _report(workspace)
+        checks.append(_report_ids(expected["report_ids"], report_items))
+        checks.append(_report_fields(expected["report_ids"], report_items))
+    if "report_forbidden_ids" in expected:
+        checks.append(_report_forbidden(expected["report_forbidden_ids"], _report(workspace)))
     events = _events(workspace)
     if "memory_covers" in expected:
         checks.append(_memory_covers(expected["memory_covers"], events))
@@ -251,6 +257,54 @@ def _queue(workspace: Path) -> list[dict]:
     data = json.loads(path.read_text(encoding="utf-8"))
     items = data.get("items") if isinstance(data, dict) else data
     return list(items or [])
+
+
+def _report(workspace: Path) -> list[dict]:
+    path = workspace / "trace-out" / "report.json"
+    if not path.is_file():
+        return []
+    data = json.loads(path.read_text(encoding="utf-8"))
+    items = data.get("items") if isinstance(data, dict) else data
+    return list(items or [])
+
+
+def _report_ids(gold_ids: list[str], items: list[dict]) -> Check:
+    actual = [item.get("id") for item in items]
+    if set(actual) == set(gold_ids) and len(actual) == len(gold_ids):
+        return Check("report_ids", True, f"{len(gold_ids)} ids")
+    return Check("report_ids", False, f"gold={gold_ids} actual={actual}")
+
+
+def _report_fields(gold_ids: list[str], items: list[dict]) -> Check:
+    by_id = {item.get("id"): item for item in items}
+    required = ("schema_version", "id", "kind", "subject", "why_report_only", "actionable", "evidence_ids")
+    bad = []
+    for item_id in gold_ids:
+        item = by_id.get(item_id)
+        if not item:
+            bad.append(f"{item_id} missing")
+            continue
+        if item.get("schema_version") != 1:
+            bad.append(f"{item_id} schema")
+        if item.get("actionable") is not False:
+            bad.append(f"{item_id} actionable must be false")
+        for key in required:
+            if key in {"schema_version", "actionable"}:
+                continue
+            value = item.get(key)
+            if value is None or value == "" or value == []:
+                bad.append(f"{item_id}.{key}")
+    if bad:
+        return Check("report_fields", False, "; ".join(bad))
+    return Check("report_fields", True, "report items carry the version 1 fields")
+
+
+def _report_forbidden(forbidden_ids: list[str], items: list[dict]) -> Check:
+    actual = {item.get("id") for item in items}
+    hit = sorted(set(forbidden_ids) & actual)
+    if hit:
+        return Check("report_forbidden_ids", False, "reported but must not: " + ", ".join(hit))
+    return Check("report_forbidden_ids", True, f"{len(forbidden_ids)} ids absent")
 
 
 def _queue_ids(gold_ids: list[str], items: list[dict]) -> Check:

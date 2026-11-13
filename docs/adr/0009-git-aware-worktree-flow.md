@@ -49,7 +49,7 @@ candidate worktree W
 
 - Eval harness gains `fixture.git` and optional process fixtures; new cases live in the **dev** split (`se-dev-05`…, `hs-dev-05/06`, `at-dev-05/06`) until deliberately promoted.
 - Skills must refuse host `--force` worktree removal; least-privilege one-item commands are the default.
-- Report-only container items (PRD §8.5) are still undecided for `trace-out/` shape — not part of this ADR.
+- Report-only container items (PRD §8.5) use `trace-out/report.json` per [ADR-0010](0010-report-only-channel.md), not Decide-later.
 - Never-delete patterns expand toward `*.env`, `id_*` without `.pub`, and light content sniffing (separate skill change; seeded by `se-dev-12`).
 
 ## What would change it

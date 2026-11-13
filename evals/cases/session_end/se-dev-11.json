@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "id": "se-dev-11",
+  "skill": "session_end",
+  "split": "dev",
+  "title": "Never-started container is reported; an exited one's image is not",
+  "fixture": {
+    "project_id": "proj-se-dev-11",
+    "files": {
+      "project/README.md": "# app\n",
+      "evidence/docker-ps.txt": "ev-docker-ps context=orbstack*\nNAME status\nally-never-started Created\nally-exited Exited (0) 2 days ago\n",
+      "evidence/docker-images.txt": "ev-docker-img ally-ai-test:local used by ally-exited\nally-never-started-image:local dangling after Created container\n"
+    },
+    "protected": [
+      "project/README.md"
+    ],
+    "consent": [],
+    "session": {
+      "id": "sess-se-dev-11",
+      "harness": "cursor",
+      "turns": [
+        {
+          "role": "user",
+          "text": "What Docker storage can we clean?"
+        },
+        {
+          "role": "assistant",
+          "text": "ally-never-started is Created and never ran. ally-exited still holds its image. Tool-native docker rm stays report-only."
+        }
+      ]
+    },
+    "notes": "Report-only per ADR-0010 / PRD §8.5. Do not propose Trash or queue Decide-later for irreversible docker rm.",
+    "evidence": [
+      {
+        "id": "ev-docker-ps",
+        "kind": "tool_manifest",
+        "text": "ev-docker-ps context=orbstack*\nNAME status\nally-never-started Created\nally-exited Exited (0) 2 days ago\n"
+      },
+      {
+        "id": "ev-docker-img",
+        "kind": "tool_manifest",
+        "text": "ev-docker-img ally-ai-test:local used by ally-exited\nally-never-started-image:local dangling after Created container\n"
+      }
+    ]
+  },
+  "expected": {
+    "must_be_proposed": [],
+    "must_be_trashed": [],
+    "must_remain": [
+      "project/README.md",
+      "evidence/docker-ps.txt"
+    ],
+    "created_paths": [],
+    "decide_later_ids": [],
+    "report_ids": [
+      "rpt_never_started_ctr"
+    ],
+    "report_forbidden_ids": [
+      "rpt_exited_image"
+    ]
+  },
+  "stub_result": {
+    "proposals": [],
+    "trash_paths": [],
+    "decide_later": [],
+    "report": [
+      {
+        "schema_version": 1,
+        "id": "rpt_never_started_ctr",
+        "kind": "container",
+        "tool": "docker",
+        "context": "orbstack",
+        "subject": "ally-never-started",
+        "state": "created",
+        "why_report_only": "Container is Created and never started; docker rm is tool-native and not Trash-restorable (PRD §8.5).",
+        "bytes": null,
+        "actionable": false,
+        "evidence_ids": [
+          "ev-docker-ps",
+          "turn-1"
+        ]
+      }
+    ],
+    "memory_events": []
+  }
+}

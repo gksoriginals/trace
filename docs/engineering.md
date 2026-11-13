@@ -16,7 +16,7 @@ Two kinds of decision sit in this document.
 
 ## Firm rules
 
-1. **Trash only.** Move eligible filesystem items to the Trash. Never permanently delete. Never empty the Trash. Never Trash a tool's VM disk or a package store's internals to imitate a supported prune. Tool-native removal that cannot be restored stays report-only until a separate recovery design exists.
+1. **Trash only.** Move eligible filesystem items to the Trash. Never permanently delete. Never empty the Trash. Never Trash a tool's VM disk or a package store's internals to imitate a supported prune. Tool-native removal that cannot be restored stays report-only in `trace-out/report.json` ([ADR-0010](adr/0010-report-only-channel.md)) until a separate recovery design exists.
 2. **Never-delete list.** System trees and volume roots; Documents, Photos, and Mail; secrets and credentials; primary source checkouts and original or only-copy data; plus the user's editable never-touch list. A protected ancestor is not a bulk cleanup target. A generated artifact inside a repository is judged on its own. Unknown means keep.
 3. **One confirmation, then a fingerprint check.** The user confirms one immutable selection. Immediately before Trash, re-check identity, fingerprint, source state, and current use. A changed item is skipped and shown again. If the check cannot finish, do nothing.
 4. **No silent removal.** A skill asks before a removal that was not already exactly approved. Doubt, shared consumers, or a source of truth go to Decide-later. Age, a familiar folder name, `.gitignore`, or a model's confidence is not a reason to remove.
