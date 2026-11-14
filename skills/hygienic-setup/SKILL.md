@@ -1,6 +1,6 @@
 ---
 name: trace-hygienic-setup
-description: Before installs, environments, containers, models, or datasets, ask the user, prefer the healthiest project-local or existing shared practice, avoid needless copies, and record the decision in Trace memory. Use before creating storage.
+description: Use without being asked, before npm install, pnpm install, pip install, a python venv, a container image, model weights, or a dataset copy. Ask first, prefer a project-local or existing shared store, and do not copy a store that already exists.
 ---
 
 # Trace — hygienic setup

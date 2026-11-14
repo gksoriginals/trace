@@ -1,6 +1,6 @@
 ---
 name: trace-session-end
-description: At session end, propose disposable leftovers for Trash, queue doubtful items, and move a path only when the user already approved that exact path. Use when finishing work that created caches, builds, or scratch files.
+description: Use without being asked when a session is ending and it left a pytest cache, a dist directory, or a scratch file. Propose Trash. Move a path only when that exact path was already approved. Do not delete from a hook.
 ---
 
 # Trace — session-end cleanup

@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "in-01",
+  "skill": "integration",
+  "split": "test",
+  "title": "Cursor, unprompted npm install fires hygienic setup only",
+  "fixture": {
+    "project_id": "in-01",
+    "files": {
+      "project/keep.txt": "keep\n"
+    },
+    "protected": [
+      "project/keep.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Cursor, unprompted npm install fires hygienic setup only"
+  },
+  "expected": {
+    "must_remain": [
+      "project/keep.txt"
+    ],
+    "must_be_trashed": [],
+    "trigger": {
+      "agent": "cursor",
+      "unprompted": true,
+      "situation": "About to run npm install for this app.",
+      "fires": [
+        "hygienic_setup"
+      ]
+    }
+  },
+  "stub_result": {
+    "proposals": [],
+    "decide_later": []
+  }
+}

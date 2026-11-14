@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "id": "in-04",
+  "skill": "integration",
+  "split": "test",
+  "title": "An unrelated edit fires no Trace skill",
+  "fixture": {
+    "project_id": "in-04",
+    "files": {
+      "project/keep.txt": "keep\n"
+    },
+    "protected": [
+      "project/keep.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "An unrelated edit fires no Trace skill"
+  },
+  "expected": {
+    "must_remain": [
+      "project/keep.txt"
+    ],
+    "must_be_trashed": [],
+    "trigger": {
+      "agent": "cursor",
+      "unprompted": true,
+      "situation": "Rename the button label to Save.",
+      "fires": []
+    }
+  },
+  "stub_result": {
+    "proposals": [],
+    "decide_later": []
+  }
+}

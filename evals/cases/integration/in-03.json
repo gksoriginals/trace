@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "in-03",
+  "skill": "integration",
+  "split": "test",
+  "title": "Claude Code, unprompted build directory fires the memory writer only",
+  "fixture": {
+    "project_id": "in-03",
+    "files": {
+      "project/keep.txt": "keep\n"
+    },
+    "protected": [
+      "project/keep.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Claude Code, unprompted build directory fires the memory writer only"
+  },
+  "expected": {
+    "must_remain": [
+      "project/keep.txt"
+    ],
+    "must_be_trashed": [],
+    "trigger": {
+      "agent": "claude",
+      "unprompted": true,
+      "situation": "The session created a build directory.",
+      "fires": [
+        "memory_writer"
+      ]
+    }
+  },
+  "stub_result": {
+    "proposals": [],
+    "decide_later": []
+  }
+}

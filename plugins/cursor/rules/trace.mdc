@@ -1,0 +1,6 @@
+---
+description: When to use Trace skills, even if the user did not name Trace.
+alwaysApply: true
+---
+
+Use the Trace skills without being asked: trace-hygienic-setup before an install or environment setup, trace-session-end when a session is ending and it left leftovers, and trace-memory-writer when the session created storage. Do not delete anything from a hook.

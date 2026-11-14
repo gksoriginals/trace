@@ -1,6 +1,6 @@
 # ADR-0004: Skills first, not a plugin
 
-- **Status:** accepted
+- **Status:** superseded in part by [ADR-0014](0014-v1-install-unit.md) (hooks are on by default, and the plugin bundle is the install unit). The three skills, the project rule, and no MCP still stand.
 - **Date:** 2026-11-11
 - **Deciders:** Gopi
 

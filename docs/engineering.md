@@ -2,7 +2,7 @@
 
 **Status:** directional. This is not a locked architecture. **Owner:** Gopi · **Date:** 11 November 2026
 
-Companion to [PRD v0.2](prd.md) and [Design & UX v0.2](design.md). The PRD owns scope and safety. The design owns presentation. This document names the pieces and the data they share. Gopi locked the product choices in [ADR-0002](adr/0002-locked-product-decisions.md). How the skills ship is [ADR-0004](adr/0004-skills-not-a-plugin.md). When a guess below changes, record it in [docs/adr/](adr/).
+Companion to [PRD v0.2](prd.md) and [Design & UX v0.2](design.md). The PRD owns scope and safety. The design owns presentation. This document names the pieces and the data they share. Gopi locked the product choices in [ADR-0002](adr/0002-locked-product-decisions.md). How the skills ship is [ADR-0014](adr/0014-v1-install-unit.md), which supersedes the optional-hook and later-plugin clauses of [ADR-0004](adr/0004-skills-not-a-plugin.md). When a guess below changes, record it in [docs/adr/](adr/).
 
 Checked against official agent docs on 11 November 2026. Those capabilities are documented, not device-tested on Gopi's Mac. `gksoriginals/shed` returned 404 from this environment; Shed lessons below are the ones the PRD kept after reading that archive.
 
@@ -36,7 +36,7 @@ Two kinds of decision sit in this document.
 18. **First agents.** Cursor over ACP, and Codex over app-server. Claude and Gemini are later adapters. The eval harness and the throwaway spikes follow that order.
 19. **Models.** Trace cannot always choose the model. For an app-triggered run the user picks the coding agent. The evals compare that agent's available models and name a best-value model per agent (quality, then cost), scored on the model that actually ran. If only some models handle a skill well, the skill may ask for that model in a subagent. On Cursor that request is a preference, never a gate: the skill still runs, a mismatch is not a failure, and the skill is labeled **best effort on Cursor** when the pin does not stick.
 20. **Minimum macOS is 14.**
-21. **Skills, not a plugin.** Three portable Agent Skills share one set of schemas, scripts, and safety rules. They install into the host's own skills folder. Each project gets one line saying when to use them. Hooks are optional and only call the same helper or queue work. Memory is written during the work or at the end of a turn. There is no MCP server. A plugin, later, is only a thin wrapper for marketplace install or team policy. [ADR-0004](adr/0004-skills-not-a-plugin.md).
+21. **Install unit.** Three portable Agent Skills share one set of schemas, scripts, and safety rules. Descriptions name concrete situations so they can fire without the user asking. Each project gets one removable rule in `AGENTS.md`, `.cursor/rules/trace.mdc`, and `CLAUDE.md`, with a per-project opt-out. Stop and session-end hooks are on by default for Cursor, Codex, and Claude Code; they only enqueue, well under a second, and never clean up. The plugin bundle per harness is the install unit. There is no MCP server. Memory is still written during the work or at the end of a turn. [ADR-0014](adr/0014-v1-install-unit.md).
 
 Conservative defaults are part of the safety rules: shared, unknown, protected, and prior-regret items are not preselected.
 
@@ -65,15 +65,15 @@ Skills do the everyday work inside the coding agent, while the user is still in 
 
 Skills work with the app closed. They share Trash, the never-delete list, and the journal through a small local action boundary, so a skill does not need a window open to move an already-approved path to Trash.
 
-### Skills, not a plugin
+### Install unit
 
-The three skills are Agent Skills: a directory a host loads from its own skills folder, with one `SKILL.md` each. The layout of that directory is a guess. The split is not. Schemas, scripts, and safety rules live in one shared place. The three skills call that place. They are not three copies, and they are not a plugin.
+The three skills are Agent Skills: a directory a host loads from its own skills folder, with one `SKILL.md` each. Schemas, scripts, and safety rules live in one shared place. The descriptions name the situation (an npm install, a pytest cache at session end, a build directory just created) so the model can start the skill without being asked. Vercel saw a skill go unused in 56% of runs when nothing said when to use it. Explicit instructions raised use above 95%.
 
-Install is two steps. Copy the skills into the host's skills folder. `npx skills add` is the example, not a requirement that the command never change. Then add one line to that project's `AGENTS.md`, Cursor rule, or `CLAUDE.md` saying when to use them: before an install, before removing session leftovers, and when recording what the session created. Vercel saw a skill go unused in 56% of runs; explicit instructions raised use above 95%. A project that opted out does not get the line. The exact sentence is a guess. The requirement to say when is not.
+`./skills/install.sh --project <dir>` does the whole install. It copies the skills into the host folders (Cursor and Codex by default; `--host claude` for Claude Code). It writes one marked block into that project's `AGENTS.md`, `.cursor/rules/trace.mdc`, and `CLAUDE.md`. Running it again replaces the block. `--uninstall` removes it. `--opt-out --project <dir>` removes it and writes `.trace/opt-out`, and a later install leaves that project unwired.
 
-Hooks are optional, opt-in, and per host. Where a host has a stop or session-end hook, it may call the same helper or queue work. Session-end budgets are about 1–3 seconds, so the hook does not scan, delete, or write the log. The skill writes memory during the work or at the end of a turn, while the session still has time. A missing hook is not a broken install.
+Stop and session-end hooks are part of that install for Cursor (`.cursor/hooks.json`), Codex (`.codex/hooks.json`), and Claude Code (`.claude/settings.json`). The command is `python3 .trace/hooks/enqueue.py`. It appends one line to `~/.trace/hook-queue.jsonl` and to the project's `.trace/hook-queue.jsonl`, then exits. It does not scan, and it does not Trash. Session-end budgets are about 1–3 seconds, so the enqueue has to finish well under a second. The app or the next session drains the queue. The skill still writes memory during the turn.
 
-There is no MCP server. The log, the queue, and the index are versioned files. Replacing a file is a write to a temp file and a rename. Appending a log line stays append-only. A plugin, if M2 wants marketplace install or team policy, is a thin wrapper around this layout.
+The bundles under `plugins/cursor`, `plugins/claude`, and `plugins/codex` are the per-harness packages. They carry the same hook script. The shell script is the installer the app already calls. There is no MCP server. The log, the queue, and the index are versioned files. Replacing a file is a write to a temp file and a rename. Appending a log line stays append-only.
 
 Run's three stages, in order:
 
@@ -205,7 +205,7 @@ A signed-in CLI is recorded as a status the adapter reports (`ready`, `unknown`,
 
 ### During a coding session
 
-Hygienic setup runs before the agent creates storage. It asks, looks up the current practice, and puts the steps on the agent's own checklist (Cursor, Codex, and Claude each keep one; the skill uses whichever list that session already has). It records the location it actually used and the decision the user made. Session-end cleanup runs while that session still has the context. It asks before a removal, writes proposals and queue items, and moves a path to Trash through the action boundary only when the user approved that exact item before. The memory writer appends events for all of that, including the decision, during the work or at the end of the turn. It does not wait for a hook. The app can be closed the whole time. The skill updates the project index if this project is new. An opted-in stop or session-end hook may call the same helper or queue work. It is not required.
+Hygienic setup runs before the agent creates storage. It asks, looks up the current practice, and puts the steps on the agent's own checklist (Cursor, Codex, and Claude each keep one; the skill uses whichever list that session already has). It records the location it actually used and the decision the user made. Session-end cleanup runs while that session still has the context. It asks before a removal, writes proposals and queue items, and moves a path to Trash through the action boundary only when the user approved that exact item before. The memory writer appends events for all of that, including the decision, during the work or at the end of the turn. It does not wait for a hook. The app can be closed the whole time. The skill updates the project index if this project is new. The installed stop or session-end hook only enqueues; it is not the cleanup.
 
 ### Home
 
@@ -227,7 +227,7 @@ If consumers are incomplete, the item is kept or queued. It is not proposed as s
 
 A current guess at the boundaries a spike is allowed to cross differently:
 
-- **Skills.** Three Agent Skills plus one shared set of schemas, scripts, and safety rules. Installation is opt-in, into the host's skills folder, whole agent by default, per-project opt-out, and has to be verified per harness. The project instruction line is part of that install. Do not inherit Shed's hook contract, and do not ship a plugin or an MCP server. If the evals show that only some of an agent's models do a skill well, the skill names that model and asks the agent to run it in a subagent. The mechanism is that agent's own, and it is a guess until the spike sees it work. On Cursor the pin is a preference.
+- **Skills.** Three Agent Skills plus one shared set of schemas, scripts, and safety rules. Installation is opt-in per host, into that host's skills folder, whole agent by default, per-project opt-out. The project rule and the default hooks are part of that install ([ADR-0014](adr/0014-v1-install-unit.md)). Do not inherit Shed's hook contract, and do not ship an MCP server. If the evals show that only some of an agent's models do a skill well, the skill names that model and asks the agent to run it in a subagent. The mechanism is that agent's own, and it is a guess until the spike sees it work. On Cursor the pin is a preference.
 - **Local store.** Skills append the per-project log and replace the index. The app reads both and is the only writer of the database, the journal, and checkpoints. Version check at the door.
 - **Action boundary.** The only path from "the user approved this exact id" to the Trash service. Skills and Execute both call it. Ask does not.
 - **Retrieval.** Given a question and a project id, return memory events and notes with ids and timestamps. No generation.

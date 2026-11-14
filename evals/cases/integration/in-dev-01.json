@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "in-dev-01",
+  "skill": "integration",
+  "split": "dev",
+  "title": "Naming the skill is prompted, so it is not an unprompted fire",
+  "fixture": {
+    "project_id": "in-dev-01",
+    "files": {
+      "project/keep.txt": "keep\n"
+    },
+    "protected": [
+      "project/keep.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Naming the skill is prompted, so it is not an unprompted fire"
+  },
+  "expected": {
+    "must_remain": [
+      "project/keep.txt"
+    ],
+    "must_be_trashed": [],
+    "trigger": {
+      "agent": "cursor",
+      "unprompted": false,
+      "situation": "Please use trace-hygienic-setup before npm install.",
+      "fires": [
+        "hygienic_setup"
+      ]
+    }
+  },
+  "stub_result": {
+    "proposals": [],
+    "decide_later": []
+  }
+}

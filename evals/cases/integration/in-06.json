@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "in-06",
+  "skill": "integration",
+  "split": "test",
+  "title": "Project rule and hooks install twice, uninstall, and opt out",
+  "fixture": {
+    "project_id": "in-06",
+    "files": {
+      "project/keep.txt": "keep\n"
+    },
+    "protected": [
+      "project/keep.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Project rule and hooks install twice, uninstall, and opt out"
+  },
+  "expected": {
+    "must_remain": [
+      "project/keep.txt"
+    ],
+    "must_be_trashed": [],
+    "install_roundtrip": true
+  },
+  "stub_result": {
+    "proposals": [],
+    "decide_later": []
+  }
+}

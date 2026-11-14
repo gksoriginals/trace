@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 hooks/enqueue.py --event Stop --host claude",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 hooks/enqueue.py --event SessionEnd --host claude",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}

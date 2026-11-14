@@ -21,7 +21,11 @@ Shared core: `shared/` (schemas, markdown frontmatter, safety, Trash, compose).
 ```bash
 ./skills/install.sh
 ./skills/install.sh --project ~/code/my-project
+./skills/install.sh --uninstall --project ~/code/my-project
+./skills/install.sh --opt-out --project ~/code/my-project
 ```
+
+`--project` also writes the rule and the enqueue-only hooks ([ADR-0014](../docs/adr/0014-v1-install-unit.md)). Hook lines go to `~/.trace/hook-queue.jsonl`. The app or the next session drains that file. The hook does not Trash.
 
 ## On-disk layout
 

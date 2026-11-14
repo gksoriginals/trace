@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -103,6 +104,12 @@ def grade(
         checks.append(_answer_unknown(bool(expected["answer_unknown"]), answer))
     if "attribution" in expected:
         checks.extend(_attribution(expected["attribution"], events, fixture))
+    if "trigger" in expected:
+        checks.append(_trigger(expected["trigger"], fixture))
+    if expected.get("hook_enqueue"):
+        checks.append(_hook_enqueue(workspace))
+    if expected.get("install_roundtrip"):
+        checks.append(_install_roundtrip(workspace))
     if expected.get("processes_alive"):
         if processes_alive is None:
             checks.append(Check("processes_alive", False, "harness did not track fixture processes"))
@@ -621,6 +628,158 @@ def _attribution(gold_rows: list[dict], events: list[dict], fixture: dict) -> li
         Check("attribution_label", not label_bad, ", ".join(label_bad) or "verified, inferred, or still unattributed"),
         Check("attribution_evidence", not evidence_bad, ", ".join(evidence_bad) or "citations resolve to fixture evidence"),
     ]
+
+
+TRIGGER_PHRASES = {
+    "hygienic_setup": (
+        "npm install", "pnpm install", "pip install", "python venv",
+        "container image", "model weights", "dataset copy",
+    ),
+    "session_end": ("pytest cache", "dist directory", "scratch file", "session is ending"),
+    "memory_writer": ("created a build directory", "created a cache", "created a virtualenv"),
+}
+SKILL_NAMES = ("trace-hygienic-setup", "trace-session-end", "trace-memory-writer", "use the trace skill")
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _skill_description(skill: str, override: str | None) -> str:
+    if override is not None:
+        return override
+    folder = {
+        "hygienic_setup": "hygienic-setup",
+        "session_end": "session-end-cleanup",
+        "memory_writer": "memory-writer",
+    }[skill]
+    text = (_repo_root() / "skills" / folder / "SKILL.md").read_text(encoding="utf-8")
+    if text.startswith("---"):
+        front = text.split("---", 2)[1]
+        for line in front.splitlines():
+            if line.startswith("description:"):
+                return line.split(":", 1)[1].strip()
+    return text
+
+
+def _triggered(description: str, situation: str, skill: str) -> bool:
+    desc = description.lower()
+    sit = situation.lower()
+    return any(phrase in desc and phrase in sit for phrase in TRIGGER_PHRASES[skill])
+
+
+def _trigger(gold: dict, fixture: dict) -> Check:
+    situation = str(gold.get("situation") or "")
+    override = fixture.get("description_override")
+    fired = [
+        skill for skill in TRIGGER_PHRASES
+        if _triggered(_skill_description(skill, override), situation, skill)
+    ]
+    named = any(token in situation.lower() for token in SKILL_NAMES)
+    want_unprompted = bool(gold.get("unprompted", True))
+    want = list(gold.get("fires") or [])
+    problems = []
+    if want_unprompted and named:
+        problems.append("situation names a skill, so this is not unprompted")
+    if not want_unprompted and not named:
+        problems.append("prompted case does not name a skill")
+    if set(fired) != set(want):
+        problems.append(f"fired={fired} want={want}")
+    missing = [skill for skill in want if not any(phrase in _skill_description(skill, override).lower() for phrase in TRIGGER_PHRASES[skill])]
+    if missing:
+        problems.append("description is not specific: " + ", ".join(missing))
+    if problems:
+        return Check("unprompted_trigger", False, "; ".join(problems))
+    agent = gold.get("agent") or "unspecified"
+    kind = "unprompted" if want_unprompted else "prompted, excluded from the unprompted rate"
+    return Check("unprompted_trigger", True, f"{agent}: {kind}; fires={fired or ['none']}")
+
+
+def _hook_enqueue(workspace: Path) -> Check:
+    import os
+    import subprocess
+    import time
+
+    script = _repo_root() / "skills" / "hooks" / "enqueue.py"
+    home = workspace / "trace-home"
+    env = os.environ.copy()
+    env["TRACE_HOME"] = str(home)
+    env["TRACE_PROJECT"] = str(workspace)
+    env["TRACE_HOST"] = "cursor"
+    started = time.perf_counter()
+    proc = subprocess.run(
+        [sys.executable, str(script), "--event", "stop", "--host", "cursor"],
+        input="{}",
+        text=True,
+        capture_output=True,
+        cwd=str(workspace),
+        env=env,
+        timeout=5,
+        check=False,
+    )
+    elapsed = time.perf_counter() - started
+    shared = home / "hook-queue.jsonl"
+    local = workspace / ".trace" / "hook-queue.jsonl"
+    trash = workspace / "trace-out" / "trash"
+    problems = []
+    if proc.returncode != 0:
+        problems.append(f"exit {proc.returncode} {proc.stderr.strip()}")
+    if elapsed >= 1.0:
+        problems.append(f"enqueue took {elapsed:.3f}s")
+    if not shared.is_file() or not local.is_file():
+        problems.append("queue line missing")
+    else:
+        line = shared.read_text(encoding="utf-8").strip().splitlines()[-1]
+        if "hook" not in line or "rm" in line or "trash" in line.lower():
+            problems.append("queue line is not an enqueue record")
+    if trash.exists():
+        problems.append("hook wrote trash")
+    if problems:
+        return Check("hook_enqueue", False, "; ".join(problems))
+    return Check("hook_enqueue", True, f"enqueued in {elapsed:.3f}s")
+
+
+def _install_roundtrip(workspace: Path) -> Check:
+    import importlib.util
+
+    project = workspace / "wired-project"
+    project.mkdir(parents=True, exist_ok=True)
+    (project / "keep.txt").write_text("keep\n", encoding="utf-8")
+    module_path = _repo_root() / "skills" / "install_project.py"
+    spec = importlib.util.spec_from_file_location("trace_install_project", module_path)
+    if spec is None or spec.loader is None:
+        return Check("install_roundtrip", False, "could not load install_project.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    script = _repo_root() / "skills" / "hooks" / "enqueue.py"
+    module.wire(project, script)
+    module.wire(project, script)
+    agents = (project / "AGENTS.md").read_text(encoding="utf-8")
+    claude = (project / "CLAUDE.md").read_text(encoding="utf-8")
+    rule = (project / ".cursor" / "rules" / "trace.mdc").read_text(encoding="utf-8")
+    problems = []
+    if agents.count(module.START) != 1 or claude.count(module.START) != 1 or rule.count(module.START) != 1:
+        problems.append("rule line is missing or duplicated")
+    for rel in (".cursor/hooks.json", ".codex/hooks.json", ".claude/settings.json"):
+        text = (project / rel).read_text(encoding="utf-8")
+        if text.count("enqueue.py") != 2:
+            problems.append(f"{rel} does not have stop and session-end")
+    module.unwire(project)
+    if (project / "AGENTS.md").exists() and module.START in (project / "AGENTS.md").read_text(encoding="utf-8"):
+        problems.append("uninstall left the rule")
+    if (project / ".cursor" / "hooks.json").exists():
+        problems.append("uninstall left cursor hooks")
+    module.opt_out(project)
+    module.wire(project, script)
+    if (project / ".cursor" / "hooks.json").exists():
+        problems.append("opt-out still installed hooks")
+    if not (project / ".trace" / "opt-out").is_file():
+        problems.append("opt-out marker missing")
+    if (project / "keep.txt").read_text(encoding="utf-8") != "keep\n":
+        problems.append("install changed project files")
+    if problems:
+        return Check("install_roundtrip", False, "; ".join(problems))
+    return Check("install_roundtrip", True, "rule and hooks install, reinstall, uninstall, and opt out")
 
 
 def _answer_unknown(want: bool, answer: dict) -> Check:

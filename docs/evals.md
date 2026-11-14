@@ -6,7 +6,7 @@ This follows the method in the eval article Gopi asked to apply (the file shared
 
 Trace's evals measure skill outcomes, the Decide-later queue helper, memory-only Ask Trace, and attribution. They measure outcomes on fixture projects: storage the session created is either proposed for cleanup, moved to Trash when the fixture already contains an exact yes, or recorded in memory; protected paths are untouched; nothing disappears without a yes; memory entries are complete and accurate. They do not measure how a skill is implemented.
 
-**Packaging:** the product installs **three** Agent Skills (hygienic setup, session-end cleanup, memory writer) per [ADR-0004](adr/0004-skills-not-a-plugin.md). Matrix rows `decide_later`, `ask_trace`, and `attribution` are **eval suites** (shared queue helper, app Ask surface, deep attribution pass) — not fourth/fifth/sixth marketed skills. Skill scripts live under [`skills/`](../skills/). The product number for M0 skills is `--agent skill` (or a live Cursor/Codex cell).
+**Packaging:** the product installs **three** Agent Skills (hygienic setup, session-end cleanup, memory writer) per [ADR-0014](adr/0014-v1-install-unit.md). Matrix rows `decide_later`, `ask_trace`, and `attribution` are **eval suites** (shared queue helper, app Ask surface, deep attribution pass) — not extra marketed skills. `integration` measures unprompted description triggers per agent, hook enqueue time, and rule/hook install round-trip. It is a description match, not a live model fire rate. Skill scripts live under [`skills/`](../skills/). The product number for M0 skills is `--agent skill` (or a live Cursor/Codex cell).
 
 The harness is [`evals/`](../evals/). It is not a CI gate. [docs/agent-policy.md](agent-policy.md) is the testing policy, loaded from [AGENTS.md](../AGENTS.md). It forbids weakening a test to get green, and it says when to stop patching the same failure.
 
@@ -48,6 +48,9 @@ Built in the order they would hurt a user. Code catches the ones with a definite
 | `attribution_source` | The creator, session, evidence kind, or ratio flag does not match | Code |
 | `attribution_label` | The verified, inferred, or unattributed label does not match the claim | Code |
 | `attribution_evidence` | A cited evidence id is missing, invented, or is a trap the gold forbids | Code |
+| `unprompted_trigger` | The skill description does not fire on the situation, or a prompted mention is counted as unprompted | Code, description match |
+| `hook_enqueue` | The stop hook took a second or more, or it wrote anything except a queue line | Code, timed |
+| `install_roundtrip` | The project rule or hooks duplicate, survive uninstall, or ignore opt-out | Code |
 | `unsupported_claim` | The why or the answer states something the session or the memory does not support | Judge, binary, with a quote |
 
 Similarity to a reference answer is not a grader. It can later act as a drift alarm between two live runs. It is not the headline.
@@ -74,9 +77,10 @@ Sample size of this seed:
 | Decide-later queueing | 4 | 8 | Dedup, every status, unknown size left unknown |
 | Ask from memory | 4 | 8 | Cited facts, unknowns, conflicts, stale notes, no deletion |
 | Attribution | 6 | 8 | One recoverable case per evidence kind, bytes that stay unknown, and misattribution traps; dev adds linked-worktree and DB-catalog fixtures |
-| Grader calibration | — | 11 planted failures | Not a product split |
+| Integration | 1 | 6 | Unprompted description match per agent, a situation that fires nothing, hook enqueue under one second, install/uninstall/opt-out |
+| Grader calibration | — | 12 planted failures | Not a product split |
 
-48 test cases and 36 dev cases is still the article's "start from a few dozen tasks" shape for the whole effort. The new dev cases are the first real-failure-derived tasks (Ally cleanup, 13 November 2026); promote some to test later, deliberately, in their own change. Per skill, 8 test cases cannot see a small regression. The variance section says how the report states that.
+54 test cases and 37 dev cases is still the article's "start from a few dozen tasks" shape for the whole effort. The Git-aware dev cases are the first real-failure-derived tasks (Ally cleanup, 13 November 2026); promote some to test later, deliberately, in their own change. Per skill, 8 test cases cannot see a small regression. The integration row is smaller on purpose: it checks the install contract, not a model sample. The variance section says how the report states that.
 
 Anthropic's agent-eval guidance, as the article cites it (Grace et al., 2026), is to start from real failures. Until those exist, this grid is persona-free on purpose: each row is a storage situation, not a story.
 

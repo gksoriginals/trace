@@ -1,0 +1,5 @@
+{
+  "name": "trace",
+  "description": "Trace skills, the project rule, and stop/session-end hooks that only enqueue work.",
+  "version": "1.0.0"
+}

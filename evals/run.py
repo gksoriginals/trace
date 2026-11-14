@@ -62,6 +62,7 @@ SKILLS = (
     "decide_later",
     "ask_trace",
     "attribution",
+    "integration",
 )
 AGENTS = ("auto", "stub", "skill", "cursor", "codex", "claude", "gemini")
 FIRST_AGENTS = ("cursor", "codex")

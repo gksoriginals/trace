@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "id": "in-05",
+  "skill": "integration",
+  "split": "test",
+  "title": "Stop hook enqueues in under a second and does not trash",
+  "fixture": {
+    "project_id": "in-05",
+    "files": {
+      "project/keep.txt": "keep\n"
+    },
+    "protected": [
+      "project/keep.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Stop hook enqueues in under a second and does not trash"
+  },
+  "expected": {
+    "must_remain": [
+      "project/keep.txt"
+    ],
+    "must_be_trashed": [],
+    "hook_enqueue": true
+  },
+  "stub_result": {
+    "proposals": [],
+    "decide_later": []
+  }
+}

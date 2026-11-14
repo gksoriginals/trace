@@ -7,7 +7,7 @@ Skills run **in-session** or via **app-composed prompts** to Cursor/Codex ([ADR-
 | Phase | Loop | Gate |
 | --- | --- | --- |
 | Record / Doubt / Cleanup / Prevent | Three skills + Decide-later queue + prepare-home | `evals/run.py --agent skill` |
-| Install | Host skills folders + project line | `./skills/install.sh --project …` |
+| Install | Host skills folders + removable project rule + enqueue hooks | `./skills/install.sh --project …` ([ADR-0014](adr/0014-v1-install-unit.md)) |
 
 Markdown: `~/.trace/index.md`, `<project>/.trace/memory/*.md`, `decide-later.md`, `insights.md`.
 

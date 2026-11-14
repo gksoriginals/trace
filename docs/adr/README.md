@@ -15,5 +15,7 @@ Trace keeps one short record per pivot. The current plan that is not a firm rule
 - [ADR-0010: Report-only items use `trace-out/report.json`](0010-report-only-channel.md)
 - [ADR-0011: Top nav chrome and per-agent skill opt-in](0011-top-nav-and-per-agent-skills.md)
 - [ADR-0012: No menu bar companion](0012-no-menu-bar-companion.md)
+- [ADR-0013: Preserve the existing layout; fix spacing](0013-preserve-layout-fix-spacing.md)
+- [ADR-0014: v1 install is skills, rule, hooks, and a plugin bundle](0014-v1-install-unit.md)
 
 Firm rules, and the rule that everything else is a current guess, live in [engineering.md](../engineering.md). Coding agents start at [AGENTS.md](../../AGENTS.md). The testing policy is [agent-policy.md](../agent-policy.md), and it is not copied into those files.

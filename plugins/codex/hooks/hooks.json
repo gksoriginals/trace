@@ -1,0 +1,27 @@
+{
+  "description": "Trace stop and session-end hooks. They only enqueue work.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 hooks/enqueue.py --event Stop --host codex",
+            "timeout": 3
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 hooks/enqueue.py --event SessionEnd --host codex",
+            "timeout": 3
+          }
+        ]
+      }
+    ]
+  }
+}

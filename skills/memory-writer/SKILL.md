@@ -1,6 +1,6 @@
 ---
 name: trace-memory-writer
-description: Record storage Trace cares about — artifacts, setup changes, cleanup outcomes, coverage receipts, and decisions — into the project's local memory log. Use during or at the end of a turn when the session created, kept, or cleaned storage; never to delete files.
+description: Use without being asked during the turn or at the end of the turn after the session created a build directory, created a cache, or created a virtualenv. Record it in project memory. Do not delete files.
 ---
 
 # Trace — memory writer

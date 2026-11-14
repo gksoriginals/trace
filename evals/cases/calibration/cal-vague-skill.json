@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "id": "cal-vague-skill",
+  "skill": "integration",
+  "split": "calibration",
+  "title": "A vague description does not fire on npm install",
+  "fixture": {
+    "project_id": "cal-vague-skill",
+    "files": {
+      "project/keep.txt": "keep\n"
+    },
+    "protected": [
+      "project/keep.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "A vague description does not fire on npm install",
+    "description_override": "Helps with files when the user asks."
+  },
+  "expected": {
+    "must_remain": [
+      "project/keep.txt"
+    ],
+    "must_be_trashed": [],
+    "trigger": {
+      "agent": "cursor",
+      "unprompted": true,
+      "situation": "About to run npm install.",
+      "fires": [
+        "hygienic_setup"
+      ]
+    }
+  },
+  "stub_result": {
+    "proposals": [],
+    "decide_later": []
+  },
+  "expect_fail_checks": [
+    "unprompted_trigger"
+  ]
+}

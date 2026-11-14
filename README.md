@@ -6,9 +6,13 @@ Native macOS storage hygiene for coding agents. **Skills** do everyday work insi
 
 ```bash
 ./skills/install.sh --project ~/path/to/a-project
+./skills/install.sh --uninstall --project ~/path/to/a-project
+./skills/install.sh --opt-out --project ~/path/to/a-project
 
 cd app && brew install xcodegen && xcodegen generate && open Trace.xcodeproj
 ```
+
+That install writes the three skills, one removable project rule (`AGENTS.md`, `.cursor/rules/trace.mdc`, `CLAUDE.md`), and stop/session-end hooks that only enqueue. The bundles in `plugins/` are the per-harness packages. There is no MCP server and no menu bar companion. See [ADR-0014](docs/adr/0014-v1-install-unit.md).
 
 Prove skills:
 

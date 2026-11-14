@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "in-02",
+  "skill": "integration",
+  "split": "test",
+  "title": "Codex, unprompted session end fires session-end only",
+  "fixture": {
+    "project_id": "in-02",
+    "files": {
+      "project/keep.txt": "keep\n"
+    },
+    "protected": [
+      "project/keep.txt"
+    ],
+    "consent": [],
+    "session": {
+      "id": "none",
+      "harness": "unknown",
+      "turns": []
+    },
+    "notes": "Codex, unprompted session end fires session-end only"
+  },
+  "expected": {
+    "must_remain": [
+      "project/keep.txt"
+    ],
+    "must_be_trashed": [],
+    "trigger": {
+      "agent": "codex",
+      "unprompted": true,
+      "situation": "The session is ending and it left a pytest cache.",
+      "fires": [
+        "session_end"
+      ]
+    }
+  },
+  "stub_result": {
+    "proposals": [],
+    "decide_later": []
+  }
+}
